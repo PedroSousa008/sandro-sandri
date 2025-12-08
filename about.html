@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Tangerine:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav scrolled">
+        <button class="menu-toggle" aria-label="Open menu">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </button>
+        
+        <a href="index.html" class="nav-logo">Sandro Sandri</a>
+        
+        <div class="nav-right">
+            <button class="nav-icon search-toggle" aria-label="Search">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+            </button>
+            <a href="cart.html" class="nav-icon cart-icon" aria-label="Shopping cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M6 6h15l-1.5 9h-12z"/>
+                    <circle cx="9" cy="20" r="1"/>
+                    <circle cx="18" cy="20" r="1"/>
+                    <path d="M6 6L5 3H2"/>
+                </svg>
+                <span class="cart-count">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <button class="menu-close" aria-label="Close menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="menu-content">
+            <nav class="menu-nav">
+                <a href="index.html" class="menu-link">Home</a>
+                <a href="collection.html" class="menu-link">Collection</a>
+                <a href="about.html" class="menu-link active">About</a>
+                <a href="contact.html" class="menu-link">Contact</a>
+            </nav>
+            <div class="menu-footer">
+                <div class="social-links">
+                    <a href="#" aria-label="Instagram">Instagram</a>
+                    <a href="#" aria-label="Pinterest">Pinterest</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay">
+        <button class="search-close" aria-label="Close search">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="search-content">
+            <form class="search-form" action="search.html" method="GET">
+                <input type="text" name="q" placeholder="Search..." class="search-input" autocomplete="off">
+                <button type="submit" class="search-submit">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div class="menu-overlay"></div>
+
+    <!-- Main Content -->
+    <main class="page-main">
+        <!-- About Hero -->
+        <section class="about-hero">
+            <div class="hero-content">
+                <span class="page-label">Our Story</span>
+                <h1 class="page-title">Sandro Sandri</h1>
+                <p class="page-subtitle">Dreamed in Italy, Produced in Portugal, and worn by a few</p>
+            </div>
+        </section>
+
+        <!-- Origin Story -->
+        <section class="about-section" id="story">
+            <div class="container">
+                <div class="about-grid">
+                    <div class="about-content">
+                        <span class="about-label">The Beginning</span>
+                        <h2 class="about-title">Born from a dream of effortless elegance</h2>
+                        <p class="about-text">
+                            Sandro Sandri was born from a simple observation: true elegance lies not in 
+                            following trends, but in wearing pieces that transcend time. Our founder, 
+                            inspired by the sartorial traditions of Milan and the master craftsmen of 
+                            Porto, set out to create a brand that would bridge these two worlds.
+                        </p>
+                        <p class="about-text">
+                            Each collection tells a story—a chapter in our ongoing exploration of what 
+                            it means to dress with intention. We believe that the clothes we wear should 
+                            be as considered as the life we lead.
+                        </p>
+                    </div>
+                    <div class="about-image">
+                        <div class="image-placeholder about-image-placeholder">
+                            <span>The Founder</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Craftsmanship -->
+        <section class="about-section" id="craftsmanship">
+            <div class="container">
+                <div class="about-grid reverse">
+                    <div class="about-content">
+                        <span class="about-label">Craftsmanship</span>
+                        <h2 class="about-title">Where tradition meets innovation</h2>
+                        <p class="about-text">
+                            Every Sandro Sandri piece is handcrafted in our partner ateliers in 
+                            northern Portugal, where generations of artisans have perfected their 
+                            craft. We work exclusively with master tailors who share our uncompromising 
+                            standards for quality.
+                        </p>
+                        <p class="about-text">
+                            From the initial sketch to the final stitch, each garment passes through 
+                            over 100 hands. This meticulous process ensures that every piece meets our 
+                            exacting standards—garments worthy of becoming treasured possessions.
+                        </p>
+                    </div>
+                    <div class="about-image">
+                        <div class="image-placeholder about-image-placeholder">
+                            <span>The Atelier</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Materials -->
+        <section class="about-section" id="materials">
+            <div class="container">
+                <div class="about-grid">
+                    <div class="about-content">
+                        <span class="about-label">Materials</span>
+                        <h2 class="about-title">The finest fabrics from Europe's heritage mills</h2>
+                        <p class="about-text">
+                            We source our fabrics from the finest mills in Italy, Portugal, and Belgium—
+                            suppliers who have been perfecting their craft for centuries. Our wool comes 
+                            from Portuguese flocks, our linen from Belgian fields, and our cotton from 
+                            Egyptian delta.
+                        </p>
+                        <p class="about-text">
+                            We never compromise on materials. Every fabric is selected not just for its 
+                            beauty, but for its ability to age gracefully, becoming more beautiful with 
+                            each wear.
+                        </p>
+                    </div>
+                    <div class="about-image">
+                        <div class="image-placeholder about-image-placeholder">
+                            <span>The Fabrics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sustainability -->
+        <section class="about-section" id="sustainability">
+            <div class="container">
+                <div class="about-grid reverse">
+                    <div class="about-content">
+                        <span class="about-label">Sustainability</span>
+                        <h2 class="about-title">Slow fashion, by design</h2>
+                        <p class="about-text">
+                            True sustainability isn't about trends or certifications—it's about creating 
+                            pieces that last. Every Sandro Sandri garment is designed to be worn for 
+                            years, even decades. We believe the most sustainable choice is to buy less, 
+                            but buy better.
+                        </p>
+                        <p class="about-text">
+                            Our limited production runs ensure minimal waste, while our local supply 
+                            chain keeps our carbon footprint small. We repair, we restore, and we stand 
+                            behind every piece we create.
+                        </p>
+                    </div>
+                    <div class="about-image">
+                        <div class="image-placeholder about-image-placeholder">
+                            <span>Sustainable Craft</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Values -->
+        <section class="about-section">
+            <div class="container">
+                <div class="preview-header" style="margin-bottom: var(--space-lg);">
+                    <span class="preview-label">Our Values</span>
+                    <h2 class="section-title">What Guides Us</h2>
+                </div>
+                <div class="values-grid">
+                    <div class="value-card">
+                        <div class="value-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <h3 class="value-title">Quality</h3>
+                        <p class="value-text">
+                            We never compromise on materials or craftsmanship. Every detail matters.
+                        </p>
+                    </div>
+                    <div class="value-card">
+                        <div class="value-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                        </div>
+                        <h3 class="value-title">Timelessness</h3>
+                        <p class="value-text">
+                            We design for decades, not seasons. Our pieces transcend fleeting trends.
+                        </p>
+                    </div>
+                    <div class="value-card">
+                        <div class="value-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                                <path d="M12 6v6"/>
+                                <path d="M12 17h.01"/>
+                            </svg>
+                        </div>
+                        <h3 class="value-title">Transparency</h3>
+                        <p class="value-text">
+                            We share our process, our sources, and our values openly.
+                        </p>
+                    </div>
+                    <div class="value-card">
+                        <div class="value-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                        </div>
+                        <h3 class="value-title">Heritage</h3>
+                        <p class="value-text">
+                            We honor the traditions of European craftsmanship while looking forward.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Newsletter Section -->
+        <section class="newsletter-section">
+            <div class="container">
+                <div class="newsletter-content">
+                    <h2 class="newsletter-title">Join the Few</h2>
+                    <p class="newsletter-text">Be the first to know about new collections and exclusive pieces</p>
+                    <form class="newsletter-form" id="newsletter-form">
+                        <input type="email" placeholder="Your email address" class="newsletter-input" required>
+                        <button type="submit" class="newsletter-button">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3 class="footer-logo">Sandro Sandri</h3>
+                    <p class="footer-tagline">Dreamed in Italy, Produced in Portugal</p>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">Shop</h4>
+                    <a href="collection.html">All Pieces</a>
+                    <a href="collection.html?category=blazers">Blazers</a>
+                    <a href="collection.html?category=trousers">Trousers</a>
+                    <a href="collection.html?category=shirts">Shirts</a>
+                    <a href="collection.html?category=coats">Coats</a>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">About</h4>
+                    <a href="about.html">Our Story</a>
+                    <a href="about.html#craftsmanship">Craftsmanship</a>
+                    <a href="about.html#sustainability">Sustainability</a>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">Help</h4>
+                    <a href="contact.html">Contact Us</a>
+                    <a href="shipping.html">Shipping</a>
+                    <a href="returns.html">Returns</a>
+                    <a href="faq.html">FAQ</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="copyright">© 2024 Sandro Sandri. All rights reserved.</p>
+                <div class="footer-social">
+                    <a href="#" aria-label="Instagram">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="2" width="20" height="20" rx="5"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="18" cy="6" r="1"/>
+                        </svg>
+                    </a>
+                    <a href="#" aria-label="Pinterest">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v12M9 15l3 3 3-3"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Cart Drawer -->
+    <div class="cart-drawer">
+        <div class="cart-drawer-header">
+            <h3 class="cart-drawer-title">Your Cart</h3>
+            <button class="cart-drawer-close" aria-label="Close cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="cart-drawer-content">
+            <div class="cart-empty">
+                <p>Your cart is empty</p>
+                <a href="collection.html" class="continue-shopping">Continue Shopping</a>
+            </div>
+            <div class="cart-items"></div>
+        </div>
+        <div class="cart-drawer-footer">
+            <div class="cart-subtotal">
+                <span>Subtotal</span>
+                <span class="subtotal-amount">€0</span>
+            </div>
+            <a href="cart.html" class="view-cart-btn">View Cart</a>
+            <a href="checkout.html" class="checkout-btn">Checkout</a>
+        </div>
+    </div>
+    <div class="cart-overlay"></div>
+
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
+

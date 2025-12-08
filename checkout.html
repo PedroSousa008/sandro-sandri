@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Tangerine:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav scrolled">
+        <button class="menu-toggle" aria-label="Open menu">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </button>
+        
+        <a href="index.html" class="nav-logo">Sandro Sandri</a>
+        
+        <div class="nav-right">
+            <a href="cart.html" class="nav-icon cart-icon" aria-label="Shopping cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M6 6h15l-1.5 9h-12z"/>
+                    <circle cx="9" cy="20" r="1"/>
+                    <circle cx="18" cy="20" r="1"/>
+                    <path d="M6 6L5 3H2"/>
+                </svg>
+                <span class="cart-count">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <button class="menu-close" aria-label="Close menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="menu-content">
+            <nav class="menu-nav">
+                <a href="index.html" class="menu-link">Home</a>
+                <a href="collection.html" class="menu-link">Collection</a>
+                <a href="about.html" class="menu-link">About</a>
+                <a href="contact.html" class="menu-link">Contact</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div class="menu-overlay"></div>
+
+    <!-- Main Content -->
+    <main class="page-main">
+        <!-- Page Header -->
+        <section class="page-header">
+            <h1 class="page-title">Checkout</h1>
+        </section>
+
+        <!-- Checkout Content -->
+        <section class="cart-content">
+            <div class="container">
+                <div class="checkout-layout">
+                    <!-- Checkout Form -->
+                    <div class="checkout-form-container">
+                        <form class="checkout-form" id="checkout-form">
+                            <!-- Contact Information -->
+                            <div class="checkout-form-section">
+                                <h2 class="checkout-section-title">Contact Information</h2>
+                                <div class="form-group">
+                                    <label class="form-label" for="email">Email</label>
+                                    <input type="email" id="email" name="email" class="checkout-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="phone">Phone</label>
+                                    <input type="tel" id="phone" name="phone" class="checkout-input">
+                                </div>
+                            </div>
+
+                            <!-- Shipping Address -->
+                            <div class="checkout-form-section">
+                                <h2 class="checkout-section-title">Shipping Address</h2>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="firstName">First Name</label>
+                                        <input type="text" id="firstName" name="firstName" class="checkout-input" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="lastName">Last Name</label>
+                                        <input type="text" id="lastName" name="lastName" class="checkout-input" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="address">Address</label>
+                                    <input type="text" id="address" name="address" class="checkout-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="apartment">Apartment, suite, etc. (optional)</label>
+                                    <input type="text" id="apartment" name="apartment" class="checkout-input">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="city">City</label>
+                                        <input type="text" id="city" name="city" class="checkout-input" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="postalCode">Postal Code</label>
+                                        <input type="text" id="postalCode" name="postalCode" class="checkout-input" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="country">Country</label>
+                                    <select id="country" name="country" class="checkout-select" required>
+                                        <option value="">Select country</option>
+                                        <option value="PT">Portugal</option>
+                                        <option value="IT">Italy</option>
+                                        <option value="ES">Spain</option>
+                                        <option value="FR">France</option>
+                                        <option value="DE">Germany</option>
+                                        <option value="NL">Netherlands</option>
+                                        <option value="BE">Belgium</option>
+                                        <option value="AT">Austria</option>
+                                        <option value="CH">Switzerland</option>
+                                        <option value="UK">United Kingdom</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Payment -->
+                            <div class="checkout-form-section">
+                                <h2 class="checkout-section-title">Payment</h2>
+                                <p style="font-family: var(--font-serif); color: var(--color-text-light); margin-bottom: var(--space-md);">
+                                    This is a demo checkout. No real payment will be processed.
+                                </p>
+                                <div class="form-group">
+                                    <label class="form-label" for="cardNumber">Card Number</label>
+                                    <input type="text" id="cardNumber" name="cardNumber" class="checkout-input" placeholder="1234 5678 9012 3456" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="expiry">Expiry Date</label>
+                                        <input type="text" id="expiry" name="expiry" class="checkout-input" placeholder="MM/YY" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="cvv">CVV</label>
+                                        <input type="text" id="cvv" name="cvv" class="checkout-input" placeholder="123" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="place-order-btn">Place Order</button>
+                        </form>
+                    </div>
+
+                    <!-- Order Summary -->
+                    <aside class="checkout-summary">
+                        <h2 class="cart-summary-title">Order Summary</h2>
+                        <div class="checkout-items" id="checkout-items">
+                            <!-- Items loaded via JS -->
+                        </div>
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span class="summary-subtotal">€0</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Shipping</span>
+                            <span>Free</span>
+                        </div>
+                        <div class="summary-row summary-total">
+                            <span>Total</span>
+                            <span class="summary-total">€0</span>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p class="copyright">© 2024 Sandro Sandri. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/checkout.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Tangerine:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav scrolled">
+        <button class="menu-toggle" aria-label="Open menu">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </button>
+        
+        <a href="index.html" class="nav-logo">Sandro Sandri</a>
+        
+        <div class="nav-right">
+            <button class="nav-icon search-toggle" aria-label="Search">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+            </button>
+            <a href="cart.html" class="nav-icon cart-icon" aria-label="Shopping cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M6 6h15l-1.5 9h-12z"/>
+                    <circle cx="9" cy="20" r="1"/>
+                    <circle cx="18" cy="20" r="1"/>
+                    <path d="M6 6L5 3H2"/>
+                </svg>
+                <span class="cart-count">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <button class="menu-close" aria-label="Close menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="menu-content">
+            <nav class="menu-nav">
+                <a href="index.html" class="menu-link">Home</a>
+                <a href="collection.html" class="menu-link">Collection</a>
+                <a href="about.html" class="menu-link">About</a>
+                <a href="contact.html" class="menu-link">Contact</a>
+            </nav>
+            <div class="menu-footer">
+                <div class="social-links">
+                    <a href="#" aria-label="Instagram">Instagram</a>
+                    <a href="#" aria-label="Pinterest">Pinterest</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay">
+        <button class="search-close" aria-label="Close search">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="search-content">
+            <form class="search-form" action="search.html" method="GET">
+                <input type="text" name="q" placeholder="Search..." class="search-input" autocomplete="off">
+                <button type="submit" class="search-submit">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div class="menu-overlay"></div>
+
+    <!-- Main Content -->
+    <main class="page-main product-page">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <div class="container">
+                <a href="index.html">Home</a>
+                <span class="separator">/</span>
+                <a href="collection.html">Collection</a>
+                <span class="separator">/</span>
+                <span class="current" id="breadcrumb-product">Product</span>
+            </div>
+        </nav>
+
+        <!-- Product Section -->
+        <section class="product-section">
+            <div class="container">
+                <div class="product-layout">
+                    <!-- Product Images -->
+                    <div class="product-gallery">
+                        <div class="product-main-image">
+                            <div class="image-placeholder product-image-large" id="product-image">
+                                <span id="product-sku">SS-001</span>
+                            </div>
+                        </div>
+                        <div class="product-thumbnails">
+                            <button class="thumbnail active">
+                                <div class="image-placeholder thumbnail-placeholder">1</div>
+                            </button>
+                            <button class="thumbnail">
+                                <div class="image-placeholder thumbnail-placeholder">2</div>
+                            </button>
+                            <button class="thumbnail">
+                                <div class="image-placeholder thumbnail-placeholder">3</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Product Info -->
+                    <div class="product-details">
+                        <h1 class="product-title" id="product-title">The Milano Blazer</h1>
+                        <p class="product-price-large" id="product-price">€485</p>
+                        
+                        <p class="product-description" id="product-description">
+                            A masterfully tailored blazer that embodies Italian sophistication. Crafted from premium Portuguese wool, featuring hand-finished details and a contemporary slim fit.
+                        </p>
+
+                        <!-- Add to Cart Form -->
+                        <form class="add-to-cart-form" id="add-to-cart-form" data-product-id="1">
+                            <!-- Size Selection -->
+                            <div class="form-group">
+                                <label class="form-label">Size</label>
+                                <div class="size-options" id="size-options">
+                                    <!-- Sizes loaded via JS -->
+                                </div>
+                                <a href="#size-guide" class="size-guide-link">Size Guide</a>
+                            </div>
+
+                            <!-- Color Selection -->
+                            <div class="form-group">
+                                <label class="form-label">Color: <span id="selected-color">Navy</span></label>
+                                <div class="color-options" id="color-options">
+                                    <!-- Colors loaded via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="form-group">
+                                <label class="form-label">Quantity</label>
+                                <div class="quantity-selector product-quantity">
+                                    <button type="button" class="quantity-btn minus">−</button>
+                                    <input type="number" name="quantity" value="1" min="1" max="10" class="quantity-input">
+                                    <button type="button" class="quantity-btn plus">+</button>
+                                </div>
+                            </div>
+
+                            <!-- Hidden inputs for form submission -->
+                            <input type="hidden" name="size" id="selected-size-input">
+                            <input type="hidden" name="color" id="selected-color-input">
+
+                            <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+                        </form>
+
+                        <!-- Product Details -->
+                        <div class="product-accordions">
+                            <div class="accordion">
+                                <button class="accordion-header">
+                                    <span>Details</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </button>
+                                <div class="accordion-content">
+                                    <ul class="details-list" id="product-details-list">
+                                        <!-- Details loaded via JS -->
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="accordion">
+                                <button class="accordion-header">
+                                    <span>Shipping & Returns</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </button>
+                                <div class="accordion-content">
+                                    <p>Complimentary shipping on all orders within the EU. Express delivery available.</p>
+                                    <p>Returns accepted within 14 days of delivery. Items must be unworn with tags attached.</p>
+                                </div>
+                            </div>
+                            <div class="accordion">
+                                <button class="accordion-header">
+                                    <span>Care Instructions</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </button>
+                                <div class="accordion-content">
+                                    <p>Dry clean only. Store on a wide, padded hanger. Brush gently after wear to maintain appearance.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Related Products -->
+        <section class="related-section">
+            <div class="container">
+                <h2 class="section-title">You May Also Like</h2>
+                <div class="products-grid related-grid" id="related-products">
+                    <!-- Related products loaded via JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3 class="footer-logo">Sandro Sandri</h3>
+                    <p class="footer-tagline">Dreamed in Italy, Produced in Portugal</p>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">Shop</h4>
+                    <a href="collection.html">All Pieces</a>
+                    <a href="collection.html?category=blazers">Blazers</a>
+                    <a href="collection.html?category=trousers">Trousers</a>
+                    <a href="collection.html?category=shirts">Shirts</a>
+                    <a href="collection.html?category=coats">Coats</a>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">About</h4>
+                    <a href="about.html">Our Story</a>
+                    <a href="about.html#craftsmanship">Craftsmanship</a>
+                    <a href="about.html#sustainability">Sustainability</a>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">Help</h4>
+                    <a href="contact.html">Contact Us</a>
+                    <a href="shipping.html">Shipping</a>
+                    <a href="returns.html">Returns</a>
+                    <a href="faq.html">FAQ</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="copyright">© 2024 Sandro Sandri. All rights reserved.</p>
+                <div class="footer-social">
+                    <a href="#" aria-label="Instagram">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="2" width="20" height="20" rx="5"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="18" cy="6" r="1"/>
+                        </svg>
+                    </a>
+                    <a href="#" aria-label="Pinterest">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v12M9 15l3 3 3-3"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Cart Drawer -->
+    <div class="cart-drawer">
+        <div class="cart-drawer-header">
+            <h3 class="cart-drawer-title">Your Cart</h3>
+            <button class="cart-drawer-close" aria-label="Close cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="cart-drawer-content">
+            <div class="cart-empty">
+                <p>Your cart is empty</p>
+                <a href="collection.html" class="continue-shopping">Continue Shopping</a>
+            </div>
+            <div class="cart-items"></div>
+        </div>
+        <div class="cart-drawer-footer">
+            <div class="cart-subtotal">
+                <span>Subtotal</span>
+                <span class="subtotal-amount">€0</span>
+            </div>
+            <a href="cart.html" class="view-cart-btn">View Cart</a>
+            <a href="checkout.html" class="checkout-btn">Checkout</a>
+        </div>
+    </div>
+    <div class="cart-overlay"></div>
+
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/product.js"></script>
+</body>
+</html>
+
