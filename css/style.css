@@ -17,8 +17,8 @@
     --color-text-light: #5a6a7f;
     
     /* Typography */
-    --font-script: 'Tangerine', cursive;
-    --font-serif: 'Cormorant Garamond', serif;
+    --font-script: 'Allura', cursive;
+    --font-serif: 'Arapey', serif;
     --font-sans: 'Montserrat', sans-serif;
     
     /* Spacing */
@@ -1172,4 +1172,5 @@ img {
         text-align: center;
     }
 }
+
 

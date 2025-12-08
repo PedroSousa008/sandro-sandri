@@ -254,3 +254,4 @@ window.ProductsAPI = {
     formatPrice: formatPrice
 };
 
+

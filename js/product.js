@@ -233,3 +233,4 @@ function loadRelatedProducts(currentProduct) {
     `).join('');
 }
 
+
