@@ -59,6 +59,12 @@
             <div class="menu-footer">
                 <div class="social-links">
                     <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">Instagram</a>
+                    <a href="profile.html" aria-label="Profile" class="profile-link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </a>
                     <a href="#" aria-label="Pinterest">Pinterest</a>
                 </div>
             </div>
@@ -345,26 +351,45 @@
             });
         });
 
-        // Contact Form
+        // Contact Form - Submit to Formspree
         document.getElementById('contact-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const button = e.target.querySelector('.contact-submit');
+            const form = e.target;
+            const button = form.querySelector('.contact-submit');
             const originalText = button.textContent;
+            const formContainer = document.querySelector('.contact-form-container');
+            const successMessage = document.getElementById('form-success');
             
             button.textContent = 'Sending...';
             button.disabled = true;
             
-            // Simulate form submission
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            button.textContent = 'Message Sent!';
-            e.target.reset();
-            
-            setTimeout(() => {
-                button.textContent = originalText;
+            try {
+                const formData = new FormData(form);
+                
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    // Show success message
+                    form.style.display = 'none';
+                    successMessage.style.display = 'block';
+                    
+                    // Reset form
+                    form.reset();
+                } else {
+                    throw new Error('Form submission failed');
+                }
+            } catch (error) {
+                button.textContent = 'Error - Try Again';
                 button.disabled = false;
-            }, 3000);
+                alert('There was an error sending your message. Please try again.');
+            }
         });
     </script>
 </body>

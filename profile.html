@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Allura&family=Arapey:ital@0;1&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav scrolled">
+        <button class="menu-toggle" aria-label="Open menu">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </button>
+        
+        <a href="index.html" class="nav-logo">Sandro Sandri</a>
+        
+        <div class="nav-right">
+            <button class="nav-icon search-toggle" aria-label="Search">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+            </button>
+            <a href="cart.html" class="nav-icon cart-icon" aria-label="Shopping cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M6 6h15l-1.5 9h-12z"/>
+                    <circle cx="9" cy="20" r="1"/>
+                    <circle cx="18" cy="20" r="1"/>
+                    <path d="M6 6L5 3H2"/>
+                </svg>
+                <span class="cart-count">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <button class="menu-close" aria-label="Close menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="menu-content">
+            <nav class="menu-nav">
+                <a href="index.html" class="menu-link">Home</a>
+                <a href="collection.html" class="menu-link">Collection</a>
+                <a href="about.html" class="menu-link">The Essence of Sandro Sandri</a>
+                <a href="membership.html" class="menu-link">The Exclusive Club Membership</a>
+                <a href="contact.html" class="menu-link">Contact</a>
+            </nav>
+            <div class="menu-footer">
+                <div class="social-links">
+                    <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">Instagram</a>
+                    <a href="profile.html" aria-label="Profile" class="profile-link active">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </a>
+                    <a href="#" aria-label="Pinterest">Pinterest</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay">
+        <button class="search-close" aria-label="Close search">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="search-content">
+            <form class="search-form" action="search.html" method="GET">
+                <input type="text" name="q" placeholder="Search..." class="search-input" autocomplete="off">
+                <button type="submit" class="search-submit">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div class="menu-overlay"></div>
+
+    <!-- Main Content -->
+    <main class="page-main">
+        <!-- Profile Header -->
+        <section class="page-header">
+            <h1 class="page-title">My Profile</h1>
+            <p class="page-subtitle">Manage your account, orders, and preferences</p>
+        </section>
+
+        <!-- Profile Content -->
+        <section class="profile-section">
+            <div class="container">
+                <div class="profile-tabs">
+                    <button class="profile-tab active" data-tab="overview">Overview</button>
+                    <button class="profile-tab" data-tab="personal">Personal Info</button>
+                    <button class="profile-tab" data-tab="orders">Orders</button>
+                    <button class="profile-tab" data-tab="favorites">Favorites</button>
+                    <button class="profile-tab" data-tab="settings">Settings</button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="profile-tab-content active" id="overview-tab">
+                    <div class="profile-overview">
+                        <div class="profile-header-card">
+                            <div class="profile-avatar">
+                                <div class="avatar-placeholder" id="avatar-placeholder">
+                                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                                <img id="avatar-image" src="" alt="Profile" style="display: none;">
+                            </div>
+                            <div class="profile-header-info">
+                                <h2 class="profile-name" id="overview-name">Guest User</h2>
+                                <p class="profile-email" id="overview-email"></p>
+                                <div class="membership-badge" id="membership-badge" style="display: none;">
+                                    <span class="membership-label">Membership:</span>
+                                    <span class="membership-tier" id="membership-tier"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-stats">
+                            <div class="stat-card">
+                                <div class="stat-number" id="orders-count">0</div>
+                                <div class="stat-label">Orders</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="favorites-count">0</div>
+                                <div class="stat-label">Favorites</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="total-spent">€0</div>
+                                <div class="stat-label">Total Spent</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Info Tab -->
+                <div class="profile-tab-content" id="personal-tab">
+                    <div class="profile-form-container">
+                        <h3 class="section-title">Personal Information</h3>
+                        <form class="profile-form" id="profile-form-element">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="profile-name">Full Name *</label>
+                                    <input type="text" id="profile-name" name="name" placeholder="Enter your full name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-email">Email *</label>
+                                    <input type="email" id="profile-email" name="email" placeholder="your.email@example.com" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="profile-phone">Phone</label>
+                                    <input type="tel" id="profile-phone" name="phone" placeholder="+1 234 567 8900">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-country">Country</label>
+                                    <select id="profile-country" name="country">
+                                        <option value="">Select Country</option>
+                                        <option value="PT">Portugal</option>
+                                        <option value="IT">Italy</option>
+                                        <option value="US">United States</option>
+                                        <option value="GB">United Kingdom</option>
+                                        <option value="FR">France</option>
+                                        <option value="ES">Spain</option>
+                                        <option value="DE">Germany</option>
+                                        <option value="NL">Netherlands</option>
+                                        <option value="BE">Belgium</option>
+                                        <option value="CH">Switzerland</option>
+                                        <option value="AT">Austria</option>
+                                        <option value="CA">Canada</option>
+                                        <option value="AU">Australia</option>
+                                        <option value="BR">Brazil</option>
+                                        <option value="MX">Mexico</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-address">Address</label>
+                                <textarea id="profile-address" name="address" rows="3" placeholder="Street address, City, Postal Code"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-bio">Bio</label>
+                                <textarea id="profile-bio" name="bio" rows="4" placeholder="Tell us about yourself..."></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="cta-button">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div class="profile-tab-content" id="orders-tab">
+                    <div class="orders-container">
+                        <h3 class="section-title">Order History</h3>
+                        <div id="orders-list" class="orders-list">
+                            <div class="empty-state">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                                    <path d="M3 6h18"/>
+                                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                                </svg>
+                                <p>No orders yet</p>
+                                <a href="collection.html" class="cta-button">Start Shopping</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorites Tab -->
+                <div class="profile-tab-content" id="favorites-tab">
+                    <div class="favorites-container">
+                        <h3 class="section-title">My Favorites</h3>
+                        <div id="favorites-list" class="favorites-grid">
+                            <div class="empty-state">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                                <p>No favorites yet</p>
+                                <a href="collection.html" class="cta-button">Browse Collection</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="profile-tab-content" id="settings-tab">
+                    <div class="settings-container">
+                        <h3 class="section-title">Account Settings</h3>
+                        <div class="settings-section">
+                            <h4 class="settings-subtitle">Notifications</h4>
+                            <div class="setting-item">
+                                <label class="setting-label">
+                                    <input type="checkbox" id="notify-orders" checked>
+                                    <span>Order updates and shipping notifications</span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">
+                                    <input type="checkbox" id="notify-collections" checked>
+                                    <span>New collection launches</span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">
+                                    <input type="checkbox" id="notify-exclusive">
+                                    <span>Exclusive offers and promotions</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h4 class="settings-subtitle">Privacy</h4>
+                            <div class="setting-item">
+                                <label class="setting-label">
+                                    <input type="checkbox" id="privacy-profile">
+                                    <span>Make profile visible to other members</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <h4 class="settings-subtitle">Account Actions</h4>
+                            <button class="secondary-button" id="export-data-btn">Export My Data</button>
+                            <button class="secondary-button danger" id="delete-account-btn">Delete Account</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3 class="footer-logo">Sandro Sandri</h3>
+                    <p class="footer-tagline">Dreamed in Italy, Produced in Portugal</p>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">Shop</h4>
+                    <a href="collection.html?collection=voglia">Voglia di Viaggiare</a>
+                    <a href="collection.html?collection=connoisseur">Connoisseur</a>
+                    <a href="collection.html?collection=italia">L'Italia per un viaggio indimenticabile</a>
+                    <a href="collection.html?collection=rinascimento">Rinascimento Couture</a>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">About</h4>
+                    <a href="about.html">Our Story</a>
+                    <a href="about.html#collections">Collections</a>
+                    <a href="about.html#founder">Founder</a>
+                    <a href="about.html#the-craft">The Craft</a>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">Help</h4>
+                    <a href="contact.html">Contact Us</a>
+                    <a href="shipping.html">Shipping</a>
+                    <a href="returns.html">Returns</a>
+                    <a href="faq.html">FAQ</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="copyright">© 2024 Sandro Sandri. All rights reserved.</p>
+                <div class="footer-social">
+                    <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="2" width="20" height="20" rx="5"/>
+                            <circle cx="12" cy="12" r="4"/>
+                            <circle cx="18" cy="6" r="1"/>
+                        </svg>
+                    </a>
+                    <a href="#" aria-label="Pinterest">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v12M9 15l3 3 3-3"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Cart Drawer -->
+    <div class="cart-drawer">
+        <div class="cart-drawer-header">
+            <h3 class="cart-drawer-title">Your Cart</h3>
+            <button class="cart-drawer-close" aria-label="Close cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="cart-drawer-content">
+            <div class="cart-empty">
+                <p>Your cart is empty</p>
+                <a href="collection.html" class="continue-shopping">Continue Shopping</a>
+            </div>
+            <div class="cart-items"></div>
+        </div>
+        <div class="cart-drawer-footer">
+            <div class="cart-subtotal">
+                <span>Subtotal</span>
+                <span class="subtotal-amount">€0</span>
+            </div>
+            <a href="cart.html" class="view-cart-btn">View Cart</a>
+            <a href="checkout.html" class="checkout-btn">Checkout</a>
+        </div>
+    </div>
+    <div class="cart-overlay"></div>
+
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>

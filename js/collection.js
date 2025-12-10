@@ -148,14 +148,10 @@ function initCollection() {
                 e.stopPropagation();
                 const productId = parseInt(btn.dataset.productId);
                 const product = window.ProductsAPI.getById(productId);
-                if (product) {
-                    window.CartAPI.addItem({
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        size: 'M', // Default size
-                        image: product.images[0]
-                    });
+                if (product && window.cart) {
+                    // Get default size from product or use 'M'
+                    const defaultSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M';
+                    window.cart.addItem(productId, defaultSize, null, 1);
                 }
             });
         });

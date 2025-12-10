@@ -63,6 +63,12 @@ function initCheckoutForm() {
 
         await new Promise(resolve => setTimeout(resolve, 2000));
 
+        // Save order before clearing cart
+        if (window.saveOrder) {
+            const cartItems = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
+            window.saveOrder(cartItems);
+        }
+
         // Clear cart
         localStorage.removeItem('sandroSandriCart');
 

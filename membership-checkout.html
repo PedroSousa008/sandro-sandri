@@ -230,6 +230,12 @@
             <div class="menu-footer">
                 <div class="social-links">
                     <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">Instagram</a>
+                    <a href="profile.html" aria-label="Profile" class="profile-link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </a>
                     <a href="#" aria-label="Pinterest">Pinterest</a>
                 </div>
             </div>
@@ -306,7 +312,8 @@
                         <input type="text" id="country" name="country" required>
                     </div>
                     
-                    <button type="submit" class="checkout-submit">Complete Subscription</button>
+                    <button type="button" class="checkout-submit" id="complete-checkout-btn">Complete Checkout</button>
+                    <button type="submit" class="checkout-submit" id="complete-subscription-btn" style="display: none; margin-top: 1rem;">Complete Subscription</button>
                     <p class="secure-note">🔒 Your information is secure and encrypted</p>
                 </form>
             </div>
@@ -410,6 +417,97 @@
         
         // Update page title
         document.title = `Join ${tier.name} | Sandro Sandri`;
+        
+        // Two-step checkout process
+        const checkoutBtn = document.getElementById('complete-checkout-btn');
+        const subscriptionBtn = document.getElementById('complete-subscription-btn');
+        const membershipForm = document.getElementById('membership-form');
+        
+        checkoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Validate form
+            const formData = new FormData(membershipForm);
+            const requiredFields = ['firstName', 'lastName', 'email', 'address', 'city', 'postalCode', 'country'];
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                const input = document.getElementById(field === 'firstName' ? 'firstName' : 
+                                                      field === 'lastName' ? 'lastName' : field);
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.style.borderColor = '#c62828';
+                } else {
+                    input.style.borderColor = '';
+                }
+            });
+            
+            if (!isValid) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Show payment section (simulated)
+            checkoutBtn.textContent = 'Checkout Complete ✓';
+            checkoutBtn.disabled = true;
+            checkoutBtn.style.background = '#4caf50';
+            
+            // Show subscription button
+            subscriptionBtn.style.display = 'block';
+            
+            // Scroll to subscription button
+            subscriptionBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        
+        // Handle final subscription submission
+        membershipForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const button = subscriptionBtn;
+            const originalText = button.textContent;
+            
+            button.textContent = 'Processing...';
+            button.disabled = true;
+            
+            try {
+                const formData = new FormData(membershipForm);
+                
+                const response = await fetch(membershipForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    // Save membership to localStorage
+                    const membership = {
+                        tier: tier.name,
+                        tierKey: tierKey,
+                        price: tier.price,
+                        startDate: new Date().toISOString(),
+                        status: 'active'
+                    };
+                    localStorage.setItem('sandroSandriMembership', JSON.stringify(membership));
+                    
+                    // Show success
+                    button.textContent = 'Subscription Complete!';
+                    button.style.background = '#4caf50';
+                    
+                    // Redirect to profile after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = 'profile.html';
+                    }, 2000);
+                } else {
+                    throw new Error('Subscription failed');
+                }
+            } catch (error) {
+                button.textContent = 'Error - Try Again';
+                button.disabled = false;
+                alert('There was an error processing your subscription. Please try again.');
+            }
+        });
     </script>
 </body>
 </html>

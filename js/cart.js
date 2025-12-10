@@ -53,6 +53,10 @@ class ShoppingCart {
         this.saveCart();
         this.updateCartUI();
         this.showNotification(`${product.name} added to cart`);
+        
+        // Open cart drawer automatically
+        this.openCartDrawer();
+        
         return true;
     }
 
@@ -247,6 +251,18 @@ class ShoppingCart {
                 
                 this.addItem(productId, size, color, quantity);
             });
+        }
+    }
+
+    // Open cart drawer
+    openCartDrawer() {
+        const cartDrawer = document.querySelector('.cart-drawer');
+        const cartOverlay = document.querySelector('.cart-overlay');
+        
+        if (cartDrawer && cartOverlay) {
+            cartDrawer.classList.add('open');
+            cartOverlay.classList.add('visible');
+            document.body.classList.add('cart-open');
         }
     }
 

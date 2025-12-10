@@ -29,6 +29,7 @@ function initProductPage() {
     initQuantitySelector();
     initAccordions();
     initAddToCartForm(product);
+    initFavoritesButton(product);
     loadRelatedProducts(product);
 }
 
@@ -236,6 +237,82 @@ function initAddToCartForm(product) {
             document.body.classList.add('cart-open');
         }
     });
+}
+
+function initFavoritesButton(product) {
+    const favoriteBtn = document.getElementById('favorite-btn');
+    if (!favoriteBtn) return;
+
+    // Helper functions for favorites
+    const getFavorites = () => {
+        const saved = localStorage.getItem('sandroSandriFavorites');
+        return saved ? JSON.parse(saved) : [];
+    };
+
+    const isFavorited = () => {
+        const favorites = getFavorites();
+        return favorites.includes(product.id);
+    };
+
+    const addToFavorites = () => {
+        const favorites = getFavorites();
+        if (!favorites.includes(product.id)) {
+            favorites.push(product.id);
+            localStorage.setItem('sandroSandriFavorites', JSON.stringify(favorites));
+            return true;
+        }
+        return false;
+    };
+
+    const removeFromFavorites = () => {
+        const favorites = getFavorites();
+        const updated = favorites.filter(id => id !== product.id);
+        localStorage.setItem('sandroSandriFavorites', JSON.stringify(updated));
+    };
+
+    // Check if product is already favorited
+    if (isFavorited()) {
+        favoriteBtn.classList.add('active');
+    }
+
+    favoriteBtn.addEventListener('click', () => {
+        if (isFavorited()) {
+            removeFromFavorites();
+            favoriteBtn.classList.remove('active');
+            showNotification('Removed from favorites');
+        } else {
+            if (addToFavorites()) {
+                favoriteBtn.classList.add('active');
+                showNotification('Added to favorites');
+            }
+        }
+        
+        // Update profile stats if profile page is open
+        if (window.updateProfileStats) {
+            window.updateProfileStats();
+        }
+    });
+}
+
+function showNotification(message) {
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add('visible');
+    });
+
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 400);
+    }, 3000);
 }
 
 function loadRelatedProducts(currentProduct) {
