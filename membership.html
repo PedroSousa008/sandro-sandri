@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Exclusive Club | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Allura&family=Arapey:ital@0;1&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <style>
+        .membership-hero {
+            padding: 120px 0 60px;
+            text-align: center;
+            background: var(--color-cream);
+        }
+        
+        .membership-title {
+            font-family: 'Allura', cursive;
+            font-size: 3.5rem;
+            font-weight: normal;
+            color: var(--color-navy);
+            margin-bottom: 1rem;
+        }
+        
+        .membership-subtitle {
+            font-family: 'Arapey', serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--color-text-light);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+        
+        .membership-tiers {
+            padding: 80px 0;
+            background: #fff;
+        }
+        
+        .tiers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .tier-card {
+            background: var(--color-cream);
+            border: 1px solid rgba(26, 43, 60, 0.1);
+            padding: 50px 35px;
+            text-align: center;
+            position: relative;
+            transition: all 0.4s ease;
+        }
+        
+        .tier-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(26, 43, 60, 0.1);
+        }
+        
+        .tier-card.featured {
+            border-color: var(--color-navy);
+            transform: scale(1.05);
+        }
+        
+        .tier-card.featured:hover {
+            transform: scale(1.05) translateY(-10px);
+        }
+        
+        .tier-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--color-navy);
+            color: #fff;
+            padding: 6px 20px;
+            font-family: 'Arapey', serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .tier-name {
+            font-family: 'Allura', cursive;
+            font-size: 2.2rem;
+            font-weight: normal;
+            color: var(--color-navy);
+            margin-bottom: 0.5rem;
+        }
+        
+        .tier-tagline {
+            font-family: 'Arapey', serif;
+            font-style: italic;
+            font-size: 0.9rem;
+            color: var(--color-text-light);
+            margin-bottom: 2rem;
+        }
+        
+        .tier-price {
+            font-family: 'Arapey', serif;
+            font-size: 2.5rem;
+            color: var(--color-navy);
+            margin-bottom: 0.25rem;
+        }
+        
+        .tier-price span {
+            font-size: 1rem;
+            color: var(--color-text-light);
+        }
+        
+        .tier-info-link {
+            font-family: 'Arapey', serif;
+            font-size: 0.85rem;
+            color: var(--color-navy);
+            margin-bottom: 2.5rem;
+            display: inline-block;
+            text-decoration: underline;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        
+        .tier-info-link:hover {
+            opacity: 0.7;
+        }
+        
+        /* Info Modal */
+        .info-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .info-modal-overlay.active {
+            display: flex;
+        }
+        
+        .info-modal {
+            background: #fff;
+            max-width: 500px;
+            width: 100%;
+            padding: 50px 40px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .info-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--color-navy);
+        }
+        
+        .info-modal-title {
+            font-family: 'Allura', cursive;
+            font-size: 2.5rem;
+            font-weight: normal;
+            color: var(--color-navy);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        
+        .info-modal-tagline {
+            font-family: 'Arapey', serif;
+            font-style: italic;
+            color: var(--color-text-light);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .info-modal-content {
+            font-family: 'Arapey', serif;
+            color: var(--color-text);
+            line-height: 1.8;
+        }
+        
+        .info-modal-content h4 {
+            color: var(--color-navy);
+            margin: 1.5rem 0 0.5rem;
+            font-weight: normal;
+        }
+        
+        .info-modal-content p {
+            margin-bottom: 1rem;
+        }
+        
+        .info-modal-content ul {
+            padding-left: 20px;
+            margin-bottom: 1rem;
+        }
+        
+        .info-modal-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .tier-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2.5rem 0;
+            text-align: left;
+        }
+        
+        .tier-features li {
+            font-family: 'Arapey', serif;
+            font-size: 0.95rem;
+            color: var(--color-text);
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(26, 43, 60, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .tier-features li:last-child {
+            border-bottom: none;
+        }
+        
+        .tier-features li::before {
+            content: "✓";
+            color: var(--color-navy);
+            font-weight: 600;
+        }
+        
+        .tier-btn {
+            display: block;
+            width: 100%;
+            padding: 16px 30px;
+            font-family: 'Arapey', serif;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: 1px solid var(--color-navy);
+            background: transparent;
+            color: var(--color-navy);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tier-btn:hover {
+            background: var(--color-navy);
+            color: #fff;
+        }
+        
+        .tier-card.featured .tier-btn {
+            background: var(--color-navy);
+            color: #fff;
+        }
+        
+        .tier-card.featured .tier-btn:hover {
+            background: transparent;
+            color: var(--color-navy);
+        }
+        
+        .membership-benefits {
+            padding: 80px 0;
+            background: var(--color-cream);
+        }
+        
+        .benefits-title {
+            font-family: 'Allura', cursive;
+            font-size: 2.5rem;
+            font-weight: normal;
+            color: var(--color-navy);
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .benefit-item {
+            text-align: center;
+        }
+        
+        .benefit-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .benefit-name {
+            font-family: 'Arapey', serif;
+            font-size: 1.1rem;
+            color: var(--color-navy);
+            margin-bottom: 0.5rem;
+        }
+        
+        .benefit-desc {
+            font-family: 'Arapey', serif;
+            font-size: 0.9rem;
+            color: var(--color-text-light);
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 900px) {
+            .tiers-grid {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+            
+            .tier-card.featured {
+                transform: none;
+                order: -1;
+            }
+            
+            .tier-card.featured:hover {
+                transform: translateY(-10px);
+            }
+            
+            .benefits-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav scrolled">
+        <button class="menu-toggle" aria-label="Open menu">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </button>
+        
+        <a href="index.html" class="nav-logo">Sandro Sandri</a>
+        
+        <div class="nav-right">
+            <button class="nav-icon search-toggle" aria-label="Search">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+            </button>
+            <a href="cart.html" class="nav-icon cart-icon" aria-label="Shopping cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M6 6h15l-1.5 9h-12z"/>
+                    <circle cx="9" cy="20" r="1"/>
+                    <circle cx="18" cy="20" r="1"/>
+                    <path d="M6 6L5 3H2"/>
+                </svg>
+                <span class="cart-count">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <button class="menu-close" aria-label="Close menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="menu-content">
+            <nav class="menu-nav">
+                <a href="index.html" class="menu-link">Home</a>
+                <a href="collection.html" class="menu-link">Collection</a>
+                <a href="about.html" class="menu-link">The Essence of Sandro Sandri</a>
+                <a href="membership.html" class="menu-link active">The Exclusive Club Membership</a>
+                <a href="contact.html" class="menu-link">Contact</a>
+            </nav>
+            <div class="menu-footer">
+                <div class="social-links">
+                    <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">Instagram</a>
+                    <a href="#" aria-label="Pinterest">Pinterest</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div class="menu-overlay"></div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay">
+        <button class="search-close" aria-label="Close search">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="search-content">
+            <form class="search-form" action="search.html" method="GET">
+                <input type="text" name="q" placeholder="Search..." class="search-input" autocomplete="off">
+                <button type="submit" class="search-submit">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section class="membership-hero">
+            <div class="container">
+                <h1 class="membership-title">The Exclusive Club</h1>
+                <p class="membership-subtitle">
+                    By joining the Sandro Sandri Society, you step into an enclave where exclusivity is effortless,
+                    and distinction is reserved for those who truly understand it.
+                </p>
+            </div>
+        </section>
+
+        <!-- Membership Tiers -->
+        <section class="membership-tiers">
+            <div class="tiers-grid">
+                <!-- Tier 1: Essenza -->
+                <div class="tier-card">
+                    <h3 class="tier-name">Essenza</h3>
+                    <p class="tier-tagline">The Beginning</p>
+                    <p class="tier-price">€10<span>/month</span></p>
+                    <a href="#" class="tier-info-link" data-tier="essenza">Information</a>
+                    <ul class="tier-features">
+                        <li>Early access to new collections</li>
+                        <li>Behind-the-scenes access</li>
+                        <li>Loyalty rewards</li>
+                        <li>Exclusive updates</li>
+                        <li>Members-only events invitations</li>
+                    </ul>
+                    <a href="membership-checkout.html?tier=essenza" class="tier-btn">Join Essenza</a>
+                </div>
+
+                <!-- Tier 2: Privilegio (Featured) -->
+                <div class="tier-card featured">
+                    <div class="tier-badge">Most Popular</div>
+                    <h3 class="tier-name">Privilegio</h3>
+                    <p class="tier-tagline">The Experience</p>
+                    <p class="tier-price">€25<span>/month</span></p>
+                    <a href="#" class="tier-info-link" data-tier="privilegio">Information</a>
+                    <ul class="tier-features">
+                        <li>All Essenza benefits</li>
+                        <li>Exclusive member pricing</li>
+                        <li>Early access to limited collections</li>
+                        <li>Priority customer service</li>
+                        <li>Free worldwide shipping</li>
+                    </ul>
+                    <a href="membership-checkout.html?tier=privilegio" class="tier-btn">Join Privilegio</a>
+                </div>
+
+                <!-- Tier 3: Élite -->
+                <div class="tier-card">
+                    <h3 class="tier-name">Élite</h3>
+                    <p class="tier-tagline">The Pinnacle</p>
+                    <p class="tier-price">€50<span>/month</span></p>
+                    <a href="#" class="tier-info-link" data-tier="elite">Information</a>
+                    <ul class="tier-features">
+                        <li>All Privilegio benefits</li>
+                        <li>Receive custom designed t-shirts</li>
+                        <li>One-on-One collaboration</li>
+                        <li>Limited pieces</li>
+                        <li>VIP event experiences</li>
+                    </ul>
+                    <a href="membership-checkout.html?tier=elite" class="tier-btn">Join Élite</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Benefits Section -->
+        <section class="membership-benefits">
+            <h2 class="benefits-title">Why Join The Club</h2>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">✦</div>
+                    <h4 class="benefit-name">Exclusive Access</h4>
+                    <p class="benefit-desc">Be the first to discover new pieces before anyone else</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">✦</div>
+                    <h4 class="benefit-name">Personal Service</h4>
+                    <p class="benefit-desc">Dedicated support and styling advice tailored to you</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">✦</div>
+                    <h4 class="benefit-name">Curated Experiences</h4>
+                    <p class="benefit-desc">Invitations to private events and unique moments</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="index.html" class="footer-logo">Sandro Sandri</a>
+                    <p class="footer-tagline">Dreamed in Italy, Produced in Portugal</p>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">Shop</h4>
+                    <a href="collection.html?collection=voglia">Voglia di Viaggiare</a>
+                    <a href="collection.html?collection=connoisseur">Connoisseur</a>
+                    <a href="collection.html?collection=italia">L'Italia per un viaggio indimenticabile</a>
+                    <a href="collection.html?collection=rinascimento">Rinascimento Couture</a>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">About</h4>
+                    <a href="about.html">Our Story</a>
+                    <a href="about.html#collections">Collections</a>
+                    <a href="about.html#founder">Founder</a>
+                    <a href="about.html#the-craft">The Craft</a>
+                </div>
+                <div class="footer-links">
+                    <h4 class="footer-heading">Help</h4>
+                    <a href="contact.html">Contact Us</a>
+                    <a href="shipping.html">Shipping</a>
+                    <a href="returns.html">Returns</a>
+                    <a href="faq.html">FAQ</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Sandro Sandri. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Cart Drawer -->
+    <div class="cart-overlay"></div>
+    <div class="cart-drawer">
+        <div class="cart-header">
+            <h3>Shopping Cart</h3>
+            <button class="cart-close" aria-label="Close cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="cart-items" id="cart-drawer-items">
+            <!-- Cart items loaded via JS -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total</span>
+                <span id="cart-drawer-total">€0</span>
+            </div>
+            <a href="cart.html" class="btn btn-secondary">View Cart</a>
+            <a href="checkout.html" class="btn btn-primary">Checkout</a>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="info-modal-overlay" id="info-modal">
+        <div class="info-modal">
+            <button class="info-modal-close" id="close-info-modal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+            <h3 class="info-modal-title" id="modal-title"></h3>
+            <p class="info-modal-tagline" id="modal-tagline"></p>
+            <div class="info-modal-content" id="modal-content"></div>
+        </div>
+    </div>
+
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Membership tier information
+        const tierInfo = {
+            essenza: {
+                title: "Essenza",
+                tagline: "The Beginning",
+                content: `
+                    <h4>Welcome to the Sandro Sandri Society</h4>
+                    <p>The Essenza membership is your first step into our exclusive world. As an Essenza member, you'll experience the essence of what makes Sandro Sandri unique.</p>
+                    
+                    <h4>What's Included</h4>
+                    <ul>
+                        <li><strong>Early Access:</strong> Be among the first to see and purchase new collections before they're released to the public.</li>
+                        <li><strong>Behind-the-Scenes:</strong> Exclusive content showing the creation process of our pieces.</li>
+                        <li><strong>Loyalty Rewards:</strong> Earn points with every interaction that can be redeemed for exclusive benefits.</li>
+                        <li><strong>Exclusive Updates:</strong> Receive curated newsletters with style tips and brand news.</li>
+                        <li><strong>Event Invitations:</strong> Access to members-only events and experiences.</li>
+                    </ul>
+                    
+                    <h4>Monthly Investment</h4>
+                    <p>€10/month - Cancel anytime</p>
+                `
+            },
+            privilegio: {
+                title: "Privilegio",
+                tagline: "The Experience",
+                content: `
+                    <h4>Elevate Your Experience</h4>
+                    <p>The Privilegio membership takes your Sandro Sandri experience to new heights. Enjoy all Essenza benefits plus exclusive privileges reserved for our most valued members.</p>
+                    
+                    <h4>What's Included</h4>
+                    <ul>
+                        <li><strong>All Essenza Benefits:</strong> Everything from our foundational tier.</li>
+                        <li><strong>Exclusive Pricing:</strong> Special member-only prices on all collections.</li>
+                        <li><strong>Limited Collections:</strong> Early access to our most exclusive, limited-edition pieces.</li>
+                        <li><strong>Priority Service:</strong> Dedicated customer support with faster response times.</li>
+                        <li><strong>Free Shipping:</strong> Complimentary worldwide shipping on all orders.</li>
+                    </ul>
+                    
+                    <h4>Monthly Investment</h4>
+                    <p>€25/month - Cancel anytime</p>
+                `
+            },
+            elite: {
+                title: "Élite",
+                tagline: "The Pinnacle",
+                content: `
+                    <h4>The Ultimate Sandro Sandri Experience</h4>
+                    <p>The Élite membership represents the pinnacle of exclusivity. Reserved for true connoisseurs who seek the extraordinary, this tier offers unparalleled access and personalization.</p>
+                    
+                    <h4>What's Included</h4>
+                    <ul>
+                        <li><strong>All Privilegio Benefits:</strong> Everything from our premium tier.</li>
+                        <li><strong>Custom Designs:</strong> Receive custom-designed t-shirts created exclusively for you.</li>
+                        <li><strong>One-on-One Collaboration:</strong> Work directly with our design team on personalized pieces.</li>
+                        <li><strong>Limited Pieces:</strong> First access to our most rare and collectible items.</li>
+                        <li><strong>VIP Experiences:</strong> Invitations to exclusive events, fashion shows, and private gatherings.</li>
+                    </ul>
+                    
+                    <h4>Monthly Investment</h4>
+                    <p>€50/month - Cancel anytime</p>
+                `
+            }
+        };
+
+        // Info modal functionality
+        document.querySelectorAll('.tier-info-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tier = e.target.dataset.tier;
+                const info = tierInfo[tier];
+                
+                document.getElementById('modal-title').textContent = info.title;
+                document.getElementById('modal-tagline').textContent = info.tagline;
+                document.getElementById('modal-content').innerHTML = info.content;
+                document.getElementById('info-modal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        document.getElementById('close-info-modal').addEventListener('click', () => {
+            document.getElementById('info-modal').classList.remove('active');
+            document.body.style.overflow = '';
+        });
+
+        document.getElementById('info-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('info-modal')) {
+                document.getElementById('info-modal').classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
+</body>
+</html>
+

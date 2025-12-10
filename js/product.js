@@ -40,7 +40,6 @@ function populateProduct(product) {
     document.getElementById('breadcrumb-product').textContent = product.name;
     
     // Update product info
-    document.getElementById('product-sku').textContent = product.sku;
     document.getElementById('product-title').textContent = product.name;
     document.getElementById('product-price').textContent = window.ProductsAPI.formatPrice(product.price);
     document.getElementById('product-description').textContent = product.description;
@@ -48,10 +47,51 @@ function populateProduct(product) {
     // Update form product ID
     document.getElementById('add-to-cart-form').dataset.productId = product.id;
     
+    // Update main product image
+    const mainImageContainer = document.getElementById('product-image');
+    if (mainImageContainer && product.images && product.images.length > 0) {
+        // Show first image (front) as main, or back if only one image
+        const mainImage = product.images[0];
+        mainImageContainer.innerHTML = `<img src="${mainImage}" alt="${product.name}">`;
+    }
+    
+    // Update thumbnails
+    const thumbnailsContainer = document.querySelector('.product-thumbnails');
+    if (thumbnailsContainer && product.images && product.images.length > 0) {
+        thumbnailsContainer.innerHTML = product.images.map((img, index) => `
+            <button class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${img}">
+                <img src="${img}" alt="${product.name} view ${index + 1}">
+            </button>
+        `).join('');
+        
+        // Add click handlers for thumbnails
+        const thumbnails = thumbnailsContainer.querySelectorAll('.thumbnail');
+        thumbnails.forEach(thumb => {
+            thumb.addEventListener('click', () => {
+                thumbnails.forEach(t => t.classList.remove('active'));
+                thumb.classList.add('active');
+                mainImageContainer.innerHTML = `<img src="${thumb.dataset.image}" alt="${product.name}">`;
+            });
+        });
+    }
+    
     // Populate details list
     const detailsList = document.getElementById('product-details-list');
     if (detailsList && product.details) {
         detailsList.innerHTML = product.details.map(detail => `<li>${detail}</li>`).join('');
+    }
+    
+    // Populate collection section
+    const collectionAccordion = document.getElementById('collection-accordion');
+    const collectionTitle = document.getElementById('collection-title');
+    const collectionDescription = document.getElementById('collection-description');
+    
+    if (product.collection && collectionAccordion) {
+        collectionTitle.textContent = product.collection.title;
+        collectionDescription.textContent = product.collection.description;
+        collectionAccordion.style.display = 'block';
+    } else if (collectionAccordion) {
+        collectionAccordion.style.display = 'none';
     }
 }
 
@@ -219,9 +259,10 @@ function loadRelatedProducts(currentProduct) {
         <article class="product-card" data-product-id="${product.id}">
             <a href="product.html?id=${product.id}" class="product-link">
                 <div class="product-image">
-                    <div class="image-placeholder product-placeholder">
-                        <span>${product.sku}</span>
-                    </div>
+                    ${product.images && product.images.length > 0 
+                        ? `<img src="${product.images[0]}" alt="${product.name}">`
+                        : `<div class="image-placeholder product-placeholder"><span>${product.sku}</span></div>`
+                    }
                 </div>
                 <div class="product-info">
                     <h3 class="product-name">${product.name}</h3>

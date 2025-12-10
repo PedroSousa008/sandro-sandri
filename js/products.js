@@ -5,191 +5,153 @@
 const PRODUCTS = [
     {
         id: 1,
-        name: "The Milano Blazer",
-        price: 485,
-        category: "blazers",
-        description: "A masterfully tailored blazer that embodies Italian sophistication. Crafted from premium Portuguese wool, featuring hand-finished details and a contemporary slim fit.",
+        name: "Isole Cayman",
+        price: 85,
+        category: "tshirts",
+        description: "In the Isole Cayman, Paradise is more than a place - it's a feeling. White sands, blue waters, and warm smiles welcome you with a cheerful \"Wha Happening?\". B O D D E N breezes carry the spirit of the sea, where diverse cultures and nautical charm meet. Explore the historic Turtle Crawls, unwind on dazzling shores. Unna will find both adventure and serenity.",
         details: [
-            "100% Portuguese Merino Wool",
-            "Half-canvas construction",
-            "Natural horn buttons",
-            "Functional surgeon cuffs",
-            "Interior silk lining"
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
         ],
-        sizes: ["46", "48", "50", "52", "54"],
+        sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Navy", code: "#2c3e5c" },
-            { name: "Charcoal", code: "#3a3a3a" }
+            { name: "Cream", code: "#f5f4f0" }
         ],
-        images: [],
+        images: [
+            "images/tshirt-1a.png",
+            "images/tshirt-1b.png"
+        ],
+        collection: {
+            title: "Voglia di Viaggiare Signature",
+            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+        },
         sku: "SS-001",
         inStock: true,
         featured: true
     },
     {
         id: 2,
-        name: "The Firenze Trousers",
-        price: 295,
-        category: "trousers",
-        description: "Elegantly cut trousers that transition seamlessly from day to evening. The perfect complement to our Milano Blazer.",
+        name: "Isola di Necker",
+        price: 85,
+        category: "tshirts",
+        description: "It is the pinnacle of private island luxury - a sanctuary where pristine nature and effortless elegance converge. Encircled by the crystal-clear waters of the Caribbean, this exclusive retreat offers an unparalleled blend of seclusion, adventure, and refined indulgence. Whether you're sailing through turquoise lagoons, unwinding in opulent beachfront villas, or savoring world-class cuisine under the stars, every moment on the Island is designed to elevate senses.",
         details: [
-            "98% Portuguese wool, 2% elastane",
-            "Flat front design",
-            "Extended waistband closure",
-            "French bearers",
-            "Italian Riri zipper"
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
         ],
-        sizes: ["46", "48", "50", "52", "54"],
+        sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Navy", code: "#2c3e5c" },
-            { name: "Charcoal", code: "#3a3a3a" },
-            { name: "Cream", code: "#f5f4f2" }
+            { name: "Cream", code: "#f5f4f0" }
         ],
-        images: [],
+        images: [
+            "images/tshirt-2a.png",
+            "images/tshirt-2b.png"
+        ],
+        collection: {
+            title: "Voglia di Viaggiare Signature",
+            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+        },
         sku: "SS-002",
         inStock: true,
         featured: true
     },
     {
         id: 3,
-        name: "The Roma Shirt",
-        price: 195,
-        category: "shirts",
-        description: "A refined dress shirt with impeccable construction. The spread collar and French cuffs add a touch of formality.",
+        name: "Monroe's Kisses",
+        price: 85,
+        category: "tshirts",
+        description: "Marilyn, they still speak of your kisses. Soft as cashmere and fleeting as champagne bubbles. They say your kisses carried the elegance of roses in full bloom, the decadence of midnight escapades, the allure of something just out of reach. But Marilyn, your kisses were never mere gestures. They were couture - tailored to the moment, unforgettable, and utterly, exquisitely divine. Ohhh, I could spend an eternity lost in the poetry of those kisses.",
         details: [
-            "100% Egyptian cotton",
-            "Mother of pearl buttons",
-            "Removable collar stays",
-            "Split yoke construction",
-            "Single needle stitching"
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
         ],
-        sizes: ["38", "39", "40", "41", "42", "43"],
+        sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "White", code: "#ffffff" },
-            { name: "Light Blue", code: "#d4e5f7" }
+            { name: "Cream", code: "#f5f4f0" }
         ],
-        images: [],
+        images: [
+            "images/tshirt-3a.png",
+            "images/tshirt-3b.png"
+        ],
+        collection: {
+            title: "Connoisseur Signature",
+            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+        },
         sku: "SS-003",
         inStock: true,
         featured: true
     },
     {
         id: 4,
-        name: "The Venezia Coat",
-        price: 695,
-        category: "coats",
-        description: "A statement piece for the modern gentleman. This overcoat features a relaxed silhouette with structured shoulders.",
+        name: "Sardinia",
+        price: 85,
+        category: "tshirts",
+        description: "Cradled in the embrace of the Mediterranean, Sardinia enchants with its rugged landscapes and tranquil shores, where timeless beauty and ancient traditions intertwine. Its serene coastline invites reflection, while its villages whisper stories of a slower, more deliberate life. Yet, as with the sea, not every desire is met. And in its mysteries, we find the soul of a land untouched by time.",
         details: [
-            "100% Italian cashmere blend",
-            "Full lining in silk",
-            "Peak lapels",
-            "Two interior pockets",
-            "Handcrafted in Porto"
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
         ],
-        sizes: ["46", "48", "50", "52", "54"],
+        sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Camel", code: "#c4a77d" },
-            { name: "Navy", code: "#2c3e5c" }
+            { name: "Cream", code: "#f5f4f0" }
         ],
-        images: [],
+        images: [
+            "images/tshirt-4a.png",
+            "images/tshirt-4b.png"
+        ],
+        collection: {
+            title: "L'Italia per un viaggio indimenticabile Signature",
+            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+        },
         sku: "SS-004",
         inStock: true,
         featured: true
     },
     {
         id: 5,
-        name: "The Napoli Polo",
-        price: 145,
-        category: "shirts",
-        description: "A luxurious polo shirt that defies casual expectations. Refined enough for the boardroom, comfortable enough for the weekend.",
+        name: "Port-Coton",
+        price: 85,
+        category: "tshirts",
+        description: "Les Pyramides de Port-Coton, mer sauvage by Claude Monet captures the untamed drama of sea and stone with breathtaking intensity. Towering rock formations rise defiantly from crashing waves, rendered in thick, expressive brushstrokes that mirror the raw energy of the Atlantic. Monet's bold use of colour - deep blues, stormy grays, and frothy whites - creates a vivid, almost physical sensation of wind and spray. This work departs from tranquil Impressionism. 1886",
         details: [
-            "100% Long-staple cotton piqué",
-            "Three-button placket",
-            "Ribbed collar and cuffs",
-            "Side vents",
-            "Embroidered logo"
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
         ],
-        sizes: ["S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Navy", code: "#2c3e5c" },
-            { name: "White", code: "#ffffff" },
-            { name: "Sage", code: "#9caf88" }
+            { name: "Cream", code: "#f5f4f0" }
         ],
-        images: [],
+        images: [
+            "images/tshirt-5a.png",
+            "images/tshirt-5b.png"
+        ],
+        collection: {
+            title: "Rinascimento Couture Signature",
+            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+        },
         sku: "SS-005",
         inStock: true,
-        featured: false
-    },
-    {
-        id: 6,
-        name: "The Torino Gilet",
-        price: 265,
-        category: "vests",
-        description: "A versatile layering piece that adds sophistication to any ensemble. Perfect worn over a shirt or under a blazer.",
-        details: [
-            "100% Portuguese wool",
-            "Five-button front",
-            "Adjustable back belt",
-            "Two welt pockets",
-            "Full silk lining"
-        ],
-        sizes: ["46", "48", "50", "52", "54"],
-        colors: [
-            { name: "Navy", code: "#2c3e5c" },
-            { name: "Burgundy", code: "#722f37" }
-        ],
-        images: [],
-        sku: "SS-006",
-        inStock: true,
-        featured: false
-    },
-    {
-        id: 7,
-        name: "The Amalfi Linen Shirt",
-        price: 175,
-        category: "shirts",
-        description: "Pure linen elegance for warm days. Light, breathable, and effortlessly refined.",
-        details: [
-            "100% Belgian linen",
-            "Mother of pearl buttons",
-            "Relaxed fit",
-            "Box pleat back",
-            "Rounded hem"
-        ],
-        sizes: ["38", "39", "40", "41", "42", "43"],
-        colors: [
-            { name: "White", code: "#ffffff" },
-            { name: "Sand", code: "#d4c4a8" },
-            { name: "Light Blue", code: "#d4e5f7" }
-        ],
-        images: [],
-        sku: "SS-007",
-        inStock: true,
-        featured: false
-    },
-    {
-        id: 8,
-        name: "The Portofino Shorts",
-        price: 185,
-        category: "trousers",
-        description: "Tailored shorts that maintain elegance while embracing leisure. Perfect for Mediterranean summers.",
-        details: [
-            "98% Cotton, 2% elastane",
-            "9-inch inseam",
-            "Side adjusters",
-            "Italian belt loops",
-            "On-seam pockets"
-        ],
-        sizes: ["46", "48", "50", "52", "54"],
-        colors: [
-            { name: "Navy", code: "#2c3e5c" },
-            { name: "Cream", code: "#f5f4f2" },
-            { name: "Olive", code: "#6b7c5c" }
-        ],
-        images: [],
-        sku: "SS-008",
-        inStock: true,
-        featured: false
+        featured: true
     }
 ];
 

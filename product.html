@@ -52,12 +52,13 @@
             <nav class="menu-nav">
                 <a href="index.html" class="menu-link">Home</a>
                 <a href="collection.html" class="menu-link">Collection</a>
-                <a href="about.html" class="menu-link">About</a>
+                <a href="about.html" class="menu-link">The Essence of Sandro Sandri</a>
+                <a href="membership.html" class="menu-link">The Exclusive Club Membership</a>
                 <a href="contact.html" class="menu-link">Contact</a>
             </nav>
             <div class="menu-footer">
                 <div class="social-links">
-                    <a href="#" aria-label="Instagram">Instagram</a>
+                    <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">Instagram</a>
                     <a href="#" aria-label="Pinterest">Pinterest</a>
                 </div>
             </div>
@@ -94,7 +95,7 @@
             <div class="container">
                 <a href="index.html">Home</a>
                 <span class="separator">/</span>
-                <a href="collection.html">Collection</a>
+                <a href="index.html#collection-section">Collection</a>
                 <span class="separator">/</span>
                 <span class="current" id="breadcrumb-product">Product</span>
             </div>
@@ -106,21 +107,11 @@
                 <div class="product-layout">
                     <!-- Product Images -->
                     <div class="product-gallery">
-                        <div class="product-main-image">
-                            <div class="image-placeholder product-image-large" id="product-image">
-                                <span id="product-sku">SS-001</span>
-                            </div>
+                        <div class="product-main-image" id="product-image">
+                            <!-- Image loaded via JS -->
                         </div>
                         <div class="product-thumbnails">
-                            <button class="thumbnail active">
-                                <div class="image-placeholder thumbnail-placeholder">1</div>
-                            </button>
-                            <button class="thumbnail">
-                                <div class="image-placeholder thumbnail-placeholder">2</div>
-                            </button>
-                            <button class="thumbnail">
-                                <div class="image-placeholder thumbnail-placeholder">3</div>
-                            </button>
+                            <!-- Thumbnails loaded via JS -->
                         </div>
                     </div>
 
@@ -207,6 +198,18 @@
                                     <p>Dry clean only. Store on a wide, padded hanger. Brush gently after wear to maintain appearance.</p>
                                 </div>
                             </div>
+                            <div class="accordion" id="collection-accordion">
+                                <button class="accordion-header">
+                                    <span>Collection</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </button>
+                                <div class="accordion-content">
+                                    <h4 class="collection-title" id="collection-title"></h4>
+                                    <p id="collection-description"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -234,17 +237,17 @@
                 </div>
                 <div class="footer-links">
                     <h4 class="footer-heading">Shop</h4>
-                    <a href="collection.html">All Pieces</a>
-                    <a href="collection.html?category=blazers">Blazers</a>
-                    <a href="collection.html?category=trousers">Trousers</a>
-                    <a href="collection.html?category=shirts">Shirts</a>
-                    <a href="collection.html?category=coats">Coats</a>
+                    <a href="index.html?collection=voglia#collection-section">Voglia di Viaggiare</a>
+                    <a href="index.html?collection=connoisseur#collection-section">Connoisseur</a>
+                    <a href="index.html?collection=italia#collection-section">L'Italia per un viaggio indimenticabile</a>
+                    <a href="index.html?collection=rinascimento#collection-section">Rinascimento Couture</a>
                 </div>
                 <div class="footer-links">
                     <h4 class="footer-heading">About</h4>
                     <a href="about.html">Our Story</a>
-                    <a href="about.html#craftsmanship">Craftsmanship</a>
-                    <a href="about.html#sustainability">Sustainability</a>
+                    <a href="about.html#collections">Collections</a>
+                    <a href="about.html#founder">Founder</a>
+                    <a href="about.html#the-craft">The Craft</a>
                 </div>
                 <div class="footer-links">
                     <h4 class="footer-heading">Help</h4>
@@ -257,7 +260,7 @@
             <div class="footer-bottom">
                 <p class="copyright">© 2024 Sandro Sandri. All rights reserved.</p>
                 <div class="footer-social">
-                    <a href="#" aria-label="Instagram">
+                    <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <rect x="2" y="2" width="20" height="20" rx="5"/>
                             <circle cx="12" cy="12" r="4"/>

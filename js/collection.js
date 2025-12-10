@@ -13,35 +13,31 @@ function initCollection() {
     
     if (!productsGrid) return;
 
-    let currentCategory = 'all';
+    let currentChapter = 'chapter-1';
     let currentSort = 'featured';
+    let currentCollection = null;
 
-    // Check URL params for category
+    // Check URL params for collection filter (from footer links)
     const urlParams = new URLSearchParams(window.location.search);
-    const categoryParam = urlParams.get('category');
-    if (categoryParam) {
-        currentCategory = categoryParam;
-        filterButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.category === categoryParam);
-        });
+    const collectionParam = urlParams.get('collection');
+    if (collectionParam) {
+        currentCollection = collectionParam;
     }
 
     // Initial render
     renderProducts();
 
-    // Filter buttons
+    // Filter buttons (for chapters)
     filterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             filterButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            currentCategory = btn.dataset.category;
+            currentChapter = btn.dataset.chapter;
+            currentCollection = null; // Reset collection filter when selecting chapter
             renderProducts();
             
             // Update URL without reload
-            const newUrl = currentCategory === 'all' 
-                ? window.location.pathname 
-                : `${window.location.pathname}?category=${currentCategory}`;
-            history.pushState({}, '', newUrl);
+            history.pushState({}, '', window.location.pathname);
         });
     });
 
@@ -52,7 +48,12 @@ function initCollection() {
     });
 
     function renderProducts() {
-        let products = window.ProductsAPI.getByCategory(currentCategory);
+        let products = window.ProductsAPI.getAll();
+        
+        // Filter by collection if set (from footer links)
+        if (currentCollection) {
+            products = filterByCollection(products, currentCollection);
+        }
         
         // Sort products
         products = sortProducts(products, currentSort);
@@ -62,9 +63,7 @@ function initCollection() {
             <article class="product-card" data-product-id="${product.id}">
                 <a href="product.html?id=${product.id}" class="product-link">
                     <div class="product-image">
-                        <div class="image-placeholder product-placeholder">
-                            <span>${product.sku}</span>
-                        </div>
+                        <img src="${product.images[1] || product.images[0]}" alt="${product.name}">
                     </div>
                     <div class="product-info">
                         <h3 class="product-name">${product.name}</h3>
@@ -75,8 +74,34 @@ function initCollection() {
             </article>
         `).join('');
 
+        // Add "View All" link if filtered
+        if (currentCollection) {
+            productsGrid.insertAdjacentHTML('beforeend', `
+                <div class="view-all-container">
+                    <a href="collection.html" class="view-all-link">View All Pieces</a>
+                </div>
+            `);
+        }
+
         // Animate cards
         animateCards();
+
+        // Add quick-add functionality
+        initQuickAdd();
+    }
+
+    function filterByCollection(products, collectionKey) {
+        const collectionMap = {
+            'voglia': 'Voglia di Viaggiare',
+            'connoisseur': 'Connoisseur',
+            'italia': "L'Italia per un viaggio indimenticabile",
+            'rinascimento': 'Rinascimento Couture'
+        };
+        
+        const collectionName = collectionMap[collectionKey];
+        if (!collectionName) return products;
+        
+        return products.filter(product => product.collection === collectionName);
     }
 
     function sortProducts(products, sortType) {
@@ -114,6 +139,25 @@ function initCollection() {
             }, index * 100);
         });
     }
+
+    function initQuickAdd() {
+        const quickAddButtons = productsGrid.querySelectorAll('.quick-add');
+        quickAddButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const productId = parseInt(btn.dataset.productId);
+                const product = window.ProductsAPI.getById(productId);
+                if (product) {
+                    window.CartAPI.addItem({
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        size: 'M', // Default size
+                        image: product.images[0]
+                    });
+                }
+            });
+        });
+    }
 }
-
-

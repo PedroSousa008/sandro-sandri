@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initScrollEffects();
     initAnimations();
     initNewsletter();
+    initFiltersPanel();
 });
 
 /* ========================================
@@ -265,6 +266,65 @@ function initNewsletter() {
 }
 
 /* ========================================
+   Filters Panel
+   ======================================== */
+function initFiltersPanel() {
+    const showFiltersBtn = document.getElementById('show-filters-btn');
+    const closeFiltersBtn = document.getElementById('close-filters-btn');
+    const filtersPanel = document.getElementById('filters-panel');
+    const filtersOverlay = document.getElementById('filters-overlay');
+    const clearFiltersBtn = document.querySelector('.clear-filters-btn');
+    const applyFiltersBtn = document.querySelector('.apply-filters-btn');
+
+    if (!showFiltersBtn || !filtersPanel) return;
+
+    function openFilters() {
+        filtersPanel.classList.add('open');
+        filtersOverlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeFilters() {
+        filtersPanel.classList.remove('open');
+        filtersOverlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+
+    showFiltersBtn.addEventListener('click', openFilters);
+    closeFiltersBtn?.addEventListener('click', closeFilters);
+    filtersOverlay?.addEventListener('click', closeFilters);
+
+    // Clear all filters
+    clearFiltersBtn?.addEventListener('click', () => {
+        const checkboxes = filtersPanel.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+        showNotification('Filters cleared');
+    });
+
+    // Apply filters
+    applyFiltersBtn?.addEventListener('click', () => {
+        const selectedFilters = [];
+        const checkboxes = filtersPanel.querySelectorAll('input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => {
+            selectedFilters.push({ name: cb.name, value: cb.value });
+        });
+        
+        closeFilters();
+        showNotification('Filters applied');
+        
+        // Here you would typically filter the products based on selectedFilters
+        console.log('Applied filters:', selectedFilters);
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && filtersPanel.classList.contains('open')) {
+            closeFilters();
+        }
+    });
+}
+
+/* ========================================
    Utility Functions
    ======================================== */
 function showNotification(message) {
@@ -309,5 +369,60 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 window.SandroSandri = {
     showNotification
 };
+
+/* ========================================
+   Collection Filter
+   ======================================== */
+function initCollectionFilter() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const collection = urlParams.get('collection');
+    
+    if (!collection) return;
+    
+    // Collection to product IDs mapping
+    const collectionProducts = {
+        'voglia': [1, 2],        // Isole Cayman, Isola di Necker
+        'connoisseur': [3],      // Monroe's Kisses
+        'italia': [4],           // Sardinia
+        'rinascimento': [5]      // Port-Coton
+    };
+    
+    const productIds = collectionProducts[collection];
+    if (!productIds) return;
+    
+    // Hide products not in this collection
+    const productCards = document.querySelectorAll('.product-card');
+    productCards.forEach(card => {
+        const productId = parseInt(card.dataset.productId);
+        if (!productIds.includes(productId)) {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Update the section title to show collection name
+    const collectionNames = {
+        'voglia': 'Voglia di Viaggiare',
+        'connoisseur': 'Connoisseur',
+        'italia': "L'Italia per un viaggio indimenticabile",
+        'rinascimento': 'Rinascimento Couture'
+    };
+    
+    const sectionTitle = document.querySelector('#collection-section .section-title');
+    if (sectionTitle && collectionNames[collection]) {
+        sectionTitle.textContent = collectionNames[collection];
+    }
+    
+    // Add a "View All" link
+    const productsGrid = document.querySelector('.products-grid');
+    if (productsGrid) {
+        const viewAllLink = document.createElement('div');
+        viewAllLink.style.cssText = 'grid-column: 1 / -1; text-align: center; margin-top: 2rem;';
+        viewAllLink.innerHTML = '<a href="index.html#collection-section" style="font-family: Arapey, serif; color: var(--color-navy); text-decoration: underline;">← View All Pieces</a>';
+        productsGrid.parentNode.insertBefore(viewAllLink, productsGrid.nextSibling);
+    }
+}
+
+// Initialize collection filter on page load
+document.addEventListener('DOMContentLoaded', initCollectionFilter);
 
 

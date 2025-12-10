@@ -45,7 +45,8 @@ class ShoppingCart {
                 size: size || product.sizes[0],
                 color: color || product.colors[0]?.name,
                 quantity,
-                sku: product.sku
+                sku: product.sku,
+                image: product.images && product.images.length > 0 ? product.images[0] : null
             });
         }
 
@@ -131,7 +132,7 @@ class ShoppingCart {
             cartItems.innerHTML = this.items.map((item, index) => `
                 <div class="cart-item" data-index="${index}">
                     <div class="cart-item-image">
-                        ${item.sku}
+                        ${item.image ? `<img src="${item.image}" alt="${item.name}">` : item.sku}
                     </div>
                     <div class="cart-item-details">
                         <h4 class="cart-item-name">${item.name}</h4>
@@ -174,7 +175,7 @@ class ShoppingCart {
             cartContainer.innerHTML = this.items.map((item, index) => `
                 <div class="cart-page-item" data-index="${index}">
                     <div class="cart-page-item-image">
-                        <div class="image-placeholder">${item.sku}</div>
+                        ${item.image ? `<img src="${item.image}" alt="${item.name}">` : `<div class="image-placeholder">${item.sku}</div>`}
                     </div>
                     <div class="cart-page-item-details">
                         <h3 class="cart-page-item-name">${item.name}</h3>

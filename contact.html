@@ -52,12 +52,13 @@
             <nav class="menu-nav">
                 <a href="index.html" class="menu-link">Home</a>
                 <a href="collection.html" class="menu-link">Collection</a>
-                <a href="about.html" class="menu-link">About</a>
+                <a href="about.html" class="menu-link">The Essence of Sandro Sandri</a>
+                <a href="membership.html" class="menu-link">The Exclusive Club Membership</a>
                 <a href="contact.html" class="menu-link active">Contact</a>
             </nav>
             <div class="menu-footer">
                 <div class="social-links">
-                    <a href="#" aria-label="Instagram">Instagram</a>
+                    <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">Instagram</a>
                     <a href="#" aria-label="Pinterest">Pinterest</a>
                 </div>
             </div>
@@ -112,28 +113,14 @@
                         <div class="contact-details">
                             <div class="contact-item">
                                 <span class="contact-item-label">Email</span>
-                                <a href="mailto:hello@sandrosandri.com" class="contact-item-value">
-                                    hello@sandrosandri.com
+                                <a href="mailto:sandrosandri.bysousa@gmail.com" class="contact-item-value">
+                                    sandrosandri.bysousa@gmail.com
                                 </a>
-                            </div>
-                            <div class="contact-item">
-                                <span class="contact-item-label">Phone</span>
-                                <a href="tel:+351123456789" class="contact-item-value">
-                                    +351 123 456 789
-                                </a>
-                            </div>
-                            <div class="contact-item">
-                                <span class="contact-item-label">Atelier</span>
-                                <p class="contact-item-value">
-                                    Porto, Portugal<br>
-                                    By appointment only
-                                </p>
                             </div>
                             <div class="contact-item">
                                 <span class="contact-item-label">Hours</span>
                                 <p class="contact-item-value">
-                                    Monday - Friday: 10:00 - 18:00<br>
-                                    Saturday: 10:00 - 14:00
+                                    Monday - Friday: 10:00 - 20:00
                                 </p>
                             </div>
                         </div>
@@ -141,7 +128,7 @@
                         <div class="contact-social">
                             <span class="contact-item-label">Follow Us</span>
                             <div class="footer-social" style="margin-top: var(--space-sm);">
-                                <a href="#" aria-label="Instagram">
+                                <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                         <rect x="2" y="2" width="20" height="20" rx="5"/>
                                         <circle cx="12" cy="12" r="4"/>
@@ -160,7 +147,7 @@
 
                     <!-- Contact Form -->
                     <div class="contact-form-container">
-                        <form class="contact-form" id="contact-form">
+                        <form class="contact-form" id="contact-form" action="https://formspree.io/f/meoyldeq" method="POST">
                             <div class="form-group">
                                 <label class="form-label" for="name">Name</label>
                                 <input type="text" id="name" name="name" required>
@@ -177,8 +164,14 @@
                                 <label class="form-label" for="message">Message</label>
                                 <textarea id="message" name="message" required></textarea>
                             </div>
+                            <input type="hidden" name="_subject" value="New message from Sandro Sandri Website">
+                            <input type="hidden" name="_next" value="https://your-website.com/contact.html?sent=true">
                             <button type="submit" class="contact-submit">Send Message</button>
                         </form>
+                        <div id="form-success" style="display: none; text-align: center; padding: 40px;">
+                            <h3 style="font-family: 'Allura', cursive; font-size: 2rem; color: var(--color-navy); margin-bottom: 1rem;">Thank You!</h3>
+                            <p style="font-family: 'Arapey', serif; color: var(--color-text-light);">Your message has been sent. We'll get back to you soon.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -263,17 +256,17 @@
                 </div>
                 <div class="footer-links">
                     <h4 class="footer-heading">Shop</h4>
-                    <a href="collection.html">All Pieces</a>
-                    <a href="collection.html?category=blazers">Blazers</a>
-                    <a href="collection.html?category=trousers">Trousers</a>
-                    <a href="collection.html?category=shirts">Shirts</a>
-                    <a href="collection.html?category=coats">Coats</a>
+                    <a href="index.html?collection=voglia#collection-section">Voglia di Viaggiare</a>
+                    <a href="index.html?collection=connoisseur#collection-section">Connoisseur</a>
+                    <a href="index.html?collection=italia#collection-section">L'Italia per un viaggio indimenticabile</a>
+                    <a href="index.html?collection=rinascimento#collection-section">Rinascimento Couture</a>
                 </div>
                 <div class="footer-links">
                     <h4 class="footer-heading">About</h4>
                     <a href="about.html">Our Story</a>
-                    <a href="about.html#craftsmanship">Craftsmanship</a>
-                    <a href="about.html#sustainability">Sustainability</a>
+                    <a href="about.html#collections">Collections</a>
+                    <a href="about.html#founder">Founder</a>
+                    <a href="about.html#the-craft">The Craft</a>
                 </div>
                 <div class="footer-links">
                     <h4 class="footer-heading">Help</h4>
@@ -286,7 +279,7 @@
             <div class="footer-bottom">
                 <p class="copyright">© 2024 Sandro Sandri. All rights reserved.</p>
                 <div class="footer-social">
-                    <a href="#" aria-label="Instagram">
+                    <a href="https://www.instagram.com/sandrosandri_ss" target="_blank" aria-label="Instagram">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <rect x="2" y="2" width="20" height="20" rx="5"/>
                             <circle cx="12" cy="12" r="4"/>
