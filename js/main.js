@@ -567,11 +567,9 @@ function openSizeSelectionModal(product) {
         </div>
     `;
 
-    // Show modal immediately
+    // Show modal immediately - force all styles
     console.log('Setting modal to visible...');
-    sizeModal.style.display = 'flex';
-    sizeModal.style.opacity = '1';
-    sizeModal.style.visibility = 'visible';
+    sizeModal.style.cssText = 'position: fixed; inset: 0; z-index: 10000; display: flex !important; align-items: center; justify-content: center; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;';
     sizeModal.classList.add('visible');
     document.body.style.overflow = 'hidden';
     
