@@ -583,6 +583,7 @@ function closeSizeSelectionModal() {
     const sizeModal = document.getElementById('size-selection-modal');
     if (sizeModal) {
         sizeModal.classList.remove('visible');
+        sizeModal.style.display = 'none';
         document.body.style.overflow = '';
     }
 }
