@@ -218,8 +218,17 @@ function initAddToCartForm(product) {
     const form = document.getElementById('add-to-cart-form');
     if (!form) return;
     
-    form.addEventListener('submit', (e) => {
+    // Remove any existing listeners to prevent duplicates
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    
+    newForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        
+        const submitBtn = newForm.querySelector('button[type="submit"]');
+        if (submitBtn.disabled) return; // Prevent double submission
+        
+        submitBtn.disabled = true;
         
         const size = document.getElementById('selected-size-input').value;
         const color = document.getElementById('selected-color-input').value;
@@ -227,6 +236,11 @@ function initAddToCartForm(product) {
         
         // Add to cart
         window.cart.addItem(product.id, size, color, quantity);
+        
+        // Re-enable button after a short delay
+        setTimeout(() => {
+            submitBtn.disabled = false;
+        }, 1000);
         
         // Open cart drawer
         const cartDrawer = document.querySelector('.cart-drawer');

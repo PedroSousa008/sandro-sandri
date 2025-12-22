@@ -29,30 +29,41 @@ class ShoppingCart {
         const product = window.ProductsAPI.getById(productId);
         if (!product) return false;
 
-        const existingItem = this.items.find(item => 
-            item.productId === productId && 
-            item.size === size && 
-            item.color === color
-        );
+        // Normalize size and color values for comparison
+        const normalizedSize = (size || product.sizes[0] || '').toString().trim();
+        const normalizedColor = (color || product.colors[0]?.name || '').toString().trim();
+
+        // Find existing item with matching productId, size, and color
+        const existingItem = this.items.find(item => {
+            const itemSize = (item.size || '').toString().trim();
+            const itemColor = (item.color || '').toString().trim();
+            return item.productId === productId && 
+                   itemSize === normalizedSize && 
+                   itemColor === normalizedColor;
+        });
 
         if (existingItem) {
+            // Update quantity of existing item
             existingItem.quantity += quantity;
+            this.saveCart();
+            this.updateCartUI();
+            this.showNotification(`${product.name} quantity updated`);
         } else {
+            // Add new item
             this.items.push({
                 productId,
                 name: product.name,
                 price: product.price,
-                size: size || product.sizes[0],
-                color: color || product.colors[0]?.name,
+                size: normalizedSize,
+                color: normalizedColor,
                 quantity,
                 sku: product.sku,
                 image: product.images && product.images.length > 0 ? product.images[0] : null
             });
+            this.saveCart();
+            this.updateCartUI();
+            this.showNotification(`${product.name} added to cart`);
         }
-
-        this.saveCart();
-        this.updateCartUI();
-        this.showNotification(`${product.name} added to cart`);
         
         // Open cart drawer automatically
         this.openCartDrawer();
