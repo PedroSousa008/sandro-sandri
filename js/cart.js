@@ -133,13 +133,15 @@ class ShoppingCart {
             if (cartEmpty) cartEmpty.style.display = 'block';
         } else {
             if (cartEmpty) cartEmpty.style.display = 'none';
-            cartItems.innerHTML = this.items.map((item, index) => `
+            cartItems.innerHTML = this.items.map((item, index) => {
+                const productUrl = `product.html?id=${item.productId}`;
+                return `
                 <div class="cart-item" data-index="${index}">
-                    <div class="cart-item-image">
+                    <a href="${productUrl}" class="cart-item-image">
                         ${item.image ? `<img src="${item.image}" alt="${item.name}">` : item.sku}
-                    </div>
+                    </a>
                     <div class="cart-item-details">
-                        <h4 class="cart-item-name">${item.name}</h4>
+                        <a href="${productUrl}" class="cart-item-name">${item.name}</a>
                         <p class="cart-item-price">${window.ProductsAPI.formatPrice(item.price)}</p>
                         <p class="cart-item-variant">${item.size} / ${item.color}</p>
                         <div class="cart-item-actions">
@@ -152,7 +154,8 @@ class ShoppingCart {
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         if (subtotalAmount) {
@@ -176,13 +179,15 @@ class ShoppingCart {
             if (emptyCart) emptyCart.style.display = 'none';
             if (cartSummary) cartSummary.style.display = 'block';
 
-            cartContainer.innerHTML = this.items.map((item, index) => `
+            cartContainer.innerHTML = this.items.map((item, index) => {
+                const productUrl = `product.html?id=${item.productId}`;
+                return `
                 <div class="cart-page-item" data-index="${index}">
-                    <div class="cart-page-item-image">
+                    <a href="${productUrl}" class="cart-page-item-image">
                         ${item.image ? `<img src="${item.image}" alt="${item.name}">` : `<div class="image-placeholder">${item.sku}</div>`}
-                    </div>
+                    </a>
                     <div class="cart-page-item-details">
-                        <h3 class="cart-page-item-name">${item.name}</h3>
+                        <a href="${productUrl}" class="cart-page-item-name">${item.name}</a>
                         <p class="cart-page-item-variant">Size: ${item.size} | Color: ${item.color}</p>
                         <div class="cart-page-item-quantity">
                             <div class="quantity-selector">
@@ -197,7 +202,8 @@ class ShoppingCart {
                         <button class="remove-item" data-index="${index}">Remove</button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             // Update summary
             const subtotal = document.querySelector('.summary-subtotal');

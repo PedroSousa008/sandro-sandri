@@ -1123,6 +1123,22 @@ img {
     font-size: 1rem;
     color: var(--color-navy);
     margin-bottom: var(--space-xs);
+    text-decoration: none;
+    display: block;
+    transition: opacity var(--transition-fast);
+}
+
+.cart-item-name:hover {
+    opacity: 0.7;
+}
+
+.cart-item-image {
+    text-decoration: none;
+    transition: opacity var(--transition-fast);
+}
+
+.cart-item-image:hover {
+    opacity: 0.8;
 }
 
 .cart-item-price {

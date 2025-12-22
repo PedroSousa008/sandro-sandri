@@ -40,16 +40,18 @@ function renderCheckoutItems(cart) {
             }
         }
         
+        const productUrl = `product.html?id=${item.productId}`;
+        
         return `
         <div class="checkout-item">
-            <div class="checkout-item-image">
+            <a href="${productUrl}" class="checkout-item-image">
                 ${productImage 
                     ? `<img src="${productImage}" alt="${item.name}">`
                     : `<span>${item.sku}</span>`
                 }
-            </div>
+            </a>
             <div class="checkout-item-details">
-                <p class="checkout-item-name">${item.name}</p>
+                <a href="${productUrl}" class="checkout-item-name">${item.name}</a>
                 <p class="checkout-item-variant">${item.size} / ${item.color} × ${item.quantity}</p>
             </div>
             <div class="checkout-item-price">
