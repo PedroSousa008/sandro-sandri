@@ -26,8 +26,20 @@ class ShoppingCart {
 
     // Add item to cart
     addItem(productId, size = null, color = null, quantity = 1) {
+        // Prevent rapid duplicate calls
+        const callKey = `${productId}-${size}-${color}-${Date.now()}`;
+        if (this._lastAddCall && Date.now() - this._lastAddCall.time < 500 && this._lastAddCall.key === `${productId}-${size}-${color}`) {
+            console.log('Duplicate addItem call prevented');
+            return false;
+        }
+        this._lastAddCall = { key: `${productId}-${size}-${color}`, time: Date.now() };
+        
         const product = window.ProductsAPI.getById(productId);
         if (!product) return false;
+
+        // Ensure quantity is a valid number
+        quantity = parseInt(quantity) || 1;
+        if (quantity < 1) quantity = 1;
 
         // Normalize size and color values for comparison
         const normalizedSize = (size || product.sizes[0] || '').toString().trim();
@@ -49,14 +61,14 @@ class ShoppingCart {
             this.updateCartUI();
             this.showNotification(`${product.name} quantity updated`);
         } else {
-            // Add new item
+            // Add new item with exact quantity specified
             this.items.push({
                 productId,
                 name: product.name,
                 price: product.price,
                 size: normalizedSize,
                 color: normalizedColor,
-                quantity,
+                quantity: quantity, // Use exact quantity, not default
                 sku: product.sku,
                 image: product.images && product.images.length > 0 ? product.images[0] : null
             });

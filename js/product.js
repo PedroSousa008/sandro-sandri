@@ -218,33 +218,62 @@ function initAddToCartForm(product) {
     const form = document.getElementById('add-to-cart-form');
     if (!form) return;
     
+    // Remove any existing event listeners by cloning the form
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    
+    // Get fresh references after cloning
+    const sizeInput = document.getElementById('selected-size-input');
+    const colorInput = document.getElementById('selected-color-input');
+    const quantityInput = document.querySelector('.quantity-input');
+    const submitBtn = newForm.querySelector('button[type="submit"]');
+    
     let isSubmitting = false;
     
-    form.addEventListener('submit', (e) => {
+    newForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        e.stopImmediatePropagation(); // Prevent any other handlers
         
         // Prevent double submission
-        if (isSubmitting) return;
+        if (isSubmitting) {
+            console.log('Already submitting, ignoring...');
+            return;
+        }
         isSubmitting = true;
         
-        const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
         submitBtn.disabled = true;
         submitBtn.textContent = 'Adding...';
         
-        const size = document.getElementById('selected-size-input').value;
-        const color = document.getElementById('selected-color-input').value;
-        const quantity = parseInt(document.querySelector('.quantity-input').value) || 1;
+        const size = sizeInput ? sizeInput.value : null;
+        const color = colorInput ? colorInput.value : null;
+        const quantityValue = quantityInput ? quantityInput.value : '1';
+        const quantity = parseInt(quantityValue) || 1;
         
-        // Add to cart
-        window.cart.addItem(product.id, size, color, quantity);
+        // Ensure quantity is valid
+        if (quantity < 1) {
+            console.error('Invalid quantity:', quantity);
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+        
+        console.log('Adding to cart:', { productId: product.id, size, color, quantity, quantityValue });
+        
+        // Add to cart - only once, with exact quantity
+        if (window.cart) {
+            window.cart.addItem(product.id, size, color, quantity);
+        } else {
+            console.error('Cart not initialized');
+        }
         
         // Re-enable button after a short delay
         setTimeout(() => {
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
             isSubmitting = false;
-        }, 1000);
+        }, 1500);
         
         // Open cart drawer
         const cartDrawer = document.querySelector('.cart-drawer');
@@ -254,7 +283,7 @@ function initAddToCartForm(product) {
             cartOverlay?.classList.add('visible');
             document.body.classList.add('cart-open');
         }
-    });
+    }, { once: false }); // Keep listener but use stopImmediatePropagation
 }
 
 function initFavoritesButton(product) {
