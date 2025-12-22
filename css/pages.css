@@ -821,12 +821,30 @@
 }
 
 .checkout-item-image {
-    aspect-ratio: 3/4;
-    background: var(--color-gray-light);
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+}
+
+.checkout-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.checkout-item-image span {
     font-size: 0.5rem;
+    color: var(--color-text-light);
+    background: var(--color-gray-light);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .checkout-item-name {

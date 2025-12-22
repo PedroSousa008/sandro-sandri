@@ -29,9 +29,25 @@ function renderCheckoutItems(cart) {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     // Render items
-    itemsContainer.innerHTML = cart.map(item => `
+    itemsContainer.innerHTML = cart.map(item => {
+        // Get product image - prefer front image (a version) or use stored image
+        let productImage = item.image;
+        if (!productImage && item.productId && window.ProductsAPI) {
+            const product = window.ProductsAPI.getById(item.productId);
+            if (product && product.images && product.images.length > 0) {
+                // Use front image (first image, which is the "a" version)
+                productImage = product.images[0];
+            }
+        }
+        
+        return `
         <div class="checkout-item">
-            <div class="checkout-item-image">${item.sku}</div>
+            <div class="checkout-item-image">
+                ${productImage 
+                    ? `<img src="${productImage}" alt="${item.name}">`
+                    : `<span>${item.sku}</span>`
+                }
+            </div>
             <div class="checkout-item-details">
                 <p class="checkout-item-name">${item.name}</p>
                 <p class="checkout-item-variant">${item.size} / ${item.color} × ${item.quantity}</p>
@@ -40,7 +56,8 @@ function renderCheckoutItems(cart) {
                 ${window.ProductsAPI.formatPrice(item.price * item.quantity)}
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     // Update totals
     if (subtotalEl) subtotalEl.textContent = window.ProductsAPI.formatPrice(total);
