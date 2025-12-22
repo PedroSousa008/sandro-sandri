@@ -360,8 +360,7 @@ class ShoppingCart {
                     </div>
                 </div>
                 <div class="edit-modal-footer">
-                    <button type="button" class="edit-save-btn" data-index="${index}">Save Changes</button>
-                    <button type="button" class="edit-cancel-btn">Cancel</button>
+                    <button type="button" class="edit-apply-btn" data-index="${index}">Apply</button>
                 </div>
             </div>
         `;
@@ -396,9 +395,9 @@ class ShoppingCart {
             quantityInput.value = current + 1;
         });
 
-        // Save changes
-        const saveBtn = editModal.querySelector('.edit-save-btn');
-        saveBtn.addEventListener('click', () => {
+        // Apply changes
+        const applyBtn = editModal.querySelector('.edit-apply-btn');
+        applyBtn.addEventListener('click', () => {
             const selectedSize = editModal.querySelector('.edit-size-btn.active')?.dataset.size || item.size;
             const newQuantity = parseInt(quantityInput.value) || 1;
 
