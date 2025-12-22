@@ -430,25 +430,32 @@ document.addEventListener('DOMContentLoaded', initCollectionFilter);
    Homepage Quick Add with Size Selection
    ======================================== */
 function initHomepageQuickAdd() {
-    // Only run on homepage
-    if (!document.querySelector('.collection-preview')) return;
-
-    const quickAddButtons = document.querySelectorAll('.quick-add');
-    
-    quickAddButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const productId = parseInt(btn.dataset.productId);
-            if (!productId || !window.ProductsAPI) return;
-            
-            const product = window.ProductsAPI.getById(productId);
-            if (!product) return;
-            
-            // Open size selection modal
-            openSizeSelectionModal(product);
-        });
+    // Use event delegation to handle dynamically added buttons
+    document.addEventListener('click', (e) => {
+        // Check if clicked element is a quick-add button or inside one
+        const quickAddBtn = e.target.closest('.quick-add');
+        if (!quickAddBtn) return;
+        
+        // Only handle on homepage (check for collection-preview section)
+        if (!document.querySelector('.collection-preview')) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const productId = parseInt(quickAddBtn.dataset.productId);
+        if (!productId || !window.ProductsAPI) {
+            console.error('Invalid product ID or ProductsAPI not available');
+            return;
+        }
+        
+        const product = window.ProductsAPI.getById(productId);
+        if (!product) {
+            console.error('Product not found:', productId);
+            return;
+        }
+        
+        // Open size selection modal
+        openSizeSelectionModal(product);
     });
 }
 
@@ -460,6 +467,16 @@ function openSizeSelectionModal(product) {
         sizeModal.id = 'size-selection-modal';
         sizeModal.className = 'size-selection-modal';
         document.body.appendChild(sizeModal);
+    }
+
+    // Check if product has sizes
+    if (!product.sizes || product.sizes.length === 0) {
+        console.error('Product has no sizes:', product);
+        // Fallback: add to cart with default
+        if (window.cart) {
+            window.cart.addItem(product.id, null, null, 1);
+        }
+        return;
     }
 
     // Generate size options
@@ -485,14 +502,16 @@ function openSizeSelectionModal(product) {
                 </div>
             </div>
             <div class="size-modal-footer">
-                <button type="button" class="size-add-btn" data-product-id="${product.id}">Add to Cart</button>
+                <button type="button" class="size-add-btn" data-product-id="${product.id}" disabled>Add to Cart</button>
             </div>
         </div>
     `;
 
-    // Show modal
-    sizeModal.classList.add('visible');
-    document.body.style.overflow = 'hidden';
+    // Show modal - use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+        sizeModal.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    });
 
     let selectedSize = null;
 
