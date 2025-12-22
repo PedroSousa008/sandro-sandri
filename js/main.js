@@ -472,6 +472,16 @@ function initHomepageQuickAdd() {
 }
 
 function createInlineSizeSelector(button, product) {
+    // Find the product card
+    const productCard = button.closest('.product-card');
+    if (!productCard) return;
+    
+    // Remove existing selector if any
+    const existingSelector = productCard.querySelector('.inline-size-selector');
+    if (existingSelector) {
+        existingSelector.remove();
+    }
+    
     // Create size selector container
     const sizeSelector = document.createElement('div');
     sizeSelector.className = 'inline-size-selector visible';
@@ -503,24 +513,19 @@ function createInlineSizeSelector(button, product) {
     // Add size buttons to selector
     sizeButtons.forEach(btn => sizeSelector.appendChild(btn));
     
-    // Wrap button in a container if not already wrapped
-    let buttonContainer = button.parentElement;
-    if (!buttonContainer.classList.contains('quick-add-wrapper')) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'quick-add-wrapper';
-        wrapper.style.position = 'relative';
-        button.parentNode.insertBefore(wrapper, button);
-        wrapper.appendChild(button);
-        buttonContainer = wrapper;
+    // Insert after product info (before the button)
+    const productInfo = productCard.querySelector('.product-info');
+    if (productInfo) {
+        productInfo.insertAdjacentElement('afterend', sizeSelector);
+    } else {
+        // Fallback: insert before the button
+        button.parentNode.insertBefore(sizeSelector, button);
     }
-    
-    // Insert size selector into the wrapper
-    buttonContainer.insertBefore(sizeSelector, button);
     
     // Close when clicking outside
     setTimeout(() => {
         const closeOnOutsideClick = (e) => {
-            if (!sizeSelector.contains(e.target) && !button.contains(e.target)) {
+            if (!sizeSelector.contains(e.target) && !button.contains(e.target) && !productCard.contains(e.target)) {
                 sizeSelector.remove();
                 document.removeEventListener('click', closeOnOutsideClick);
             }
