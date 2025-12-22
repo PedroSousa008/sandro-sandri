@@ -218,17 +218,19 @@ function initAddToCartForm(product) {
     const form = document.getElementById('add-to-cart-form');
     if (!form) return;
     
-    // Remove any existing listeners to prevent duplicates
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
+    let isSubmitting = false;
     
-    newForm.addEventListener('submit', (e) => {
+    form.addEventListener('submit', (e) => {
         e.preventDefault();
         
-        const submitBtn = newForm.querySelector('button[type="submit"]');
-        if (submitBtn.disabled) return; // Prevent double submission
+        // Prevent double submission
+        if (isSubmitting) return;
+        isSubmitting = true;
         
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
         submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
         
         const size = document.getElementById('selected-size-input').value;
         const color = document.getElementById('selected-color-input').value;
@@ -240,6 +242,8 @@ function initAddToCartForm(product) {
         // Re-enable button after a short delay
         setTimeout(() => {
             submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            isSubmitting = false;
         }, 1000);
         
         // Open cart drawer
