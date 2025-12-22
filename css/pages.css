@@ -1945,19 +1945,21 @@
 .size-selection-modal {
     position: fixed;
     inset: 0;
-    z-index: 10000;
+    z-index: 10000 !important;
     display: none;
     align-items: center;
     justify-content: center;
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--transition-medium), visibility var(--transition-medium);
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .size-selection-modal.visible {
-    display: flex;
-    opacity: 1;
-    visibility: visible;
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 .size-modal-overlay {
@@ -1974,8 +1976,9 @@
     width: 85%;
     max-height: 90vh;
     overflow-y: auto;
-    z-index: 1;
+    z-index: 10001;
     padding: var(--space-lg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 .size-modal-header {
