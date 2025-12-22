@@ -503,8 +503,19 @@ function createInlineSizeSelector(button, product) {
     // Add size buttons to selector
     sizeButtons.forEach(btn => sizeSelector.appendChild(btn));
     
-    // Insert before the button
-    button.parentNode.insertBefore(sizeSelector, button);
+    // Wrap button in a container if not already wrapped
+    let buttonContainer = button.parentElement;
+    if (!buttonContainer.classList.contains('quick-add-wrapper')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'quick-add-wrapper';
+        wrapper.style.position = 'relative';
+        button.parentNode.insertBefore(wrapper, button);
+        wrapper.appendChild(button);
+        buttonContainer = wrapper;
+    }
+    
+    // Insert size selector into the wrapper
+    buttonContainer.insertBefore(sizeSelector, button);
     
     // Close when clicking outside
     setTimeout(() => {

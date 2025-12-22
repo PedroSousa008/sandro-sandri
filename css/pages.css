@@ -1946,6 +1946,11 @@
     position: relative;
 }
 
+.quick-add-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
 .inline-size-selector {
     display: none;
     position: absolute;
