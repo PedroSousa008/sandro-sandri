@@ -2116,7 +2116,14 @@
 }
 
 /* Edit buttons in cart */
-.cart-item-buttons,
+.cart-item-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+}
+
 .cart-page-item-buttons {
     display: flex;
     flex-direction: column;
@@ -2137,7 +2144,6 @@
     transition: color var(--transition-fast);
     padding: 0;
     text-align: left;
-    align-self: flex-start;
 }
 
 .edit-item:hover {
