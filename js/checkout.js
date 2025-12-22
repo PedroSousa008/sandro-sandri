@@ -67,6 +67,18 @@ function renderCheckoutItems(cart) {
     // Update totals
     if (subtotalEl) subtotalEl.textContent = window.ProductsAPI.formatPrice(total);
     if (totalEl) totalEl.textContent = window.ProductsAPI.formatPrice(total);
+
+    // Add edit button event listeners
+    itemsContainer.querySelectorAll('.edit-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const index = parseInt(btn.dataset.index);
+            const productId = parseInt(btn.dataset.productId);
+            if (window.cart && window.cart.openEditModal) {
+                window.cart.openEditModal(index, productId);
+            }
+        });
+    });
 }
 
 function initCheckoutForm() {
