@@ -1941,6 +1941,143 @@
     color: var(--color-white);
 }
 
+/* Size Selection Modal */
+.size-selection-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-medium), visibility var(--transition-medium);
+}
+
+.size-selection-modal.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.size-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.size-modal-content {
+    position: relative;
+    background: var(--color-white);
+    max-width: 400px;
+    width: 85%;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 1;
+    padding: var(--space-lg);
+}
+
+.size-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-gray);
+}
+
+.size-modal-header h3 {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--color-navy);
+}
+
+.size-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-xs);
+    color: var(--color-text);
+    transition: opacity var(--transition-fast);
+}
+
+.size-modal-close:hover {
+    opacity: 0.7;
+}
+
+.size-modal-body {
+    margin-bottom: var(--space-md);
+}
+
+.size-modal-product-name {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--color-text);
+    margin-bottom: var(--space-md);
+    text-align: center;
+}
+
+.size-selection-options {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.size-selection-btn {
+    padding: var(--space-sm) var(--space-md);
+    min-width: 60px;
+    font-family: var(--font-serif);
+    font-size: 0.875rem;
+    color: var(--color-text);
+    background: var(--color-white);
+    border: 1px solid var(--color-gray);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.size-selection-btn:hover {
+    border-color: var(--color-navy);
+}
+
+.size-selection-btn.active {
+    background: var(--color-navy);
+    color: var(--color-white);
+    border-color: var(--color-navy);
+}
+
+.size-modal-footer {
+    display: flex;
+    margin-top: var(--space-lg);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-gray);
+}
+
+.size-add-btn {
+    width: 100%;
+    padding: var(--space-md);
+    font-family: var(--font-serif);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--color-navy);
+    color: var(--color-white);
+    border: none;
+}
+
+.size-add-btn:hover:not(:disabled) {
+    background: var(--color-navy-dark);
+}
+
+.size-add-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Edit Item Modal */
 .edit-item-modal {
     position: fixed;

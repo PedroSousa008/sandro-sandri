@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAnimations();
     initNewsletter();
     initFiltersPanel();
+    initHomepageQuickAdd();
 });
 
 /* ========================================
@@ -424,5 +425,124 @@ function initCollectionFilter() {
 
 // Initialize collection filter on page load
 document.addEventListener('DOMContentLoaded', initCollectionFilter);
+
+/* ========================================
+   Homepage Quick Add with Size Selection
+   ======================================== */
+function initHomepageQuickAdd() {
+    // Only run on homepage
+    if (!document.querySelector('.collection-preview')) return;
+
+    const quickAddButtons = document.querySelectorAll('.quick-add');
+    
+    quickAddButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const productId = parseInt(btn.dataset.productId);
+            if (!productId || !window.ProductsAPI) return;
+            
+            const product = window.ProductsAPI.getById(productId);
+            if (!product) return;
+            
+            // Open size selection modal
+            openSizeSelectionModal(product);
+        });
+    });
+}
+
+function openSizeSelectionModal(product) {
+    // Create or get size selection modal
+    let sizeModal = document.getElementById('size-selection-modal');
+    if (!sizeModal) {
+        sizeModal = document.createElement('div');
+        sizeModal.id = 'size-selection-modal';
+        sizeModal.className = 'size-selection-modal';
+        document.body.appendChild(sizeModal);
+    }
+
+    // Generate size options
+    const sizeOptions = product.sizes.map(size => 
+        `<button type="button" class="size-selection-btn" data-size="${size}">${size}</button>`
+    ).join('');
+
+    sizeModal.innerHTML = `
+        <div class="size-modal-overlay"></div>
+        <div class="size-modal-content">
+            <div class="size-modal-header">
+                <h3>Select Size</h3>
+                <button class="size-modal-close" aria-label="Close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="size-modal-body">
+                <p class="size-modal-product-name">${product.name}</p>
+                <div class="size-selection-options">
+                    ${sizeOptions}
+                </div>
+            </div>
+            <div class="size-modal-footer">
+                <button type="button" class="size-add-btn" data-product-id="${product.id}">Add to Cart</button>
+            </div>
+        </div>
+    `;
+
+    // Show modal
+    sizeModal.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+
+    let selectedSize = null;
+
+    // Size selection
+    const sizeButtons = sizeModal.querySelectorAll('.size-selection-btn');
+    sizeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sizeButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedSize = btn.dataset.size;
+            
+            // Enable add button
+            const addBtn = sizeModal.querySelector('.size-add-btn');
+            if (addBtn) {
+                addBtn.disabled = false;
+                addBtn.style.opacity = '1';
+            }
+        });
+    });
+
+    // Add to cart
+    const addBtn = sizeModal.querySelector('.size-add-btn');
+    addBtn.disabled = true;
+    addBtn.style.opacity = '0.5';
+    addBtn.addEventListener('click', () => {
+        if (!selectedSize) return;
+        
+        if (window.cart) {
+            window.cart.addItem(product.id, selectedSize, null, 1);
+        }
+        closeSizeSelectionModal();
+    });
+
+    // Close modal
+    const closeBtn = sizeModal.querySelector('.size-modal-close');
+    const overlay = sizeModal.querySelector('.size-modal-overlay');
+
+    [closeBtn, overlay].forEach(el => {
+        el?.addEventListener('click', () => {
+            closeSizeSelectionModal();
+        });
+    });
+}
+
+function closeSizeSelectionModal() {
+    const sizeModal = document.getElementById('size-selection-modal');
+    if (sizeModal) {
+        sizeModal.classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+}
 
 
