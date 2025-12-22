@@ -2347,9 +2347,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    transition: color var(--transition-fast);
     padding: 0;
-    text-align: left;
 }
 
 .edit-item:hover {
