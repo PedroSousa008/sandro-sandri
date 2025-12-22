@@ -408,10 +408,9 @@ class ShoppingCart {
 
         // Close modal
         const closeBtn = editModal.querySelector('.edit-modal-close');
-        const cancelBtn = editModal.querySelector('.edit-cancel-btn');
         const overlay = editModal.querySelector('.edit-modal-overlay');
 
-        [closeBtn, cancelBtn, overlay].forEach(el => {
+        [closeBtn, overlay].forEach(el => {
             el?.addEventListener('click', () => {
                 this.closeEditModal();
             });
