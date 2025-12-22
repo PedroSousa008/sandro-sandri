@@ -1951,16 +1951,18 @@
     width: 100%;
     justify-content: center;
     align-items: center;
-    margin: var(--space-sm) 0;
-    padding: var(--space-sm) 0;
+    margin: var(--space-sm) auto 0;
+    padding: 0;
     background: transparent;
     border: none;
     z-index: 100;
+    text-align: center;
 }
 
 .inline-size-selector.visible {
     display: flex;
-    gap: var(--space-sm);
+    align-items: center;
+    justify-content: center;
     animation: fadeIn 0.2s ease;
 }
 
@@ -1974,26 +1976,31 @@
 }
 
 .inline-size-btn {
-    padding: var(--space-sm) var(--space-md);
+    padding: 0;
     font-family: var(--font-serif);
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 400;
     color: var(--color-text);
-    background: var(--color-white);
-    border: 1px solid var(--color-gray);
+    background: transparent;
+    border: none;
     cursor: pointer;
     transition: all var(--transition-fast);
-    min-width: 50px;
     text-align: center;
-    border-radius: 2px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .inline-size-btn:hover {
-    border-color: var(--color-navy);
-    color: var(--color-white);
-    background: var(--color-navy);
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    color: var(--color-navy);
+    text-decoration-thickness: 2px;
+}
+
+.size-separator {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--color-text);
+    margin: 0 var(--space-xs);
+    user-select: none;
 }
 
 /* Size Selection Modal (kept for other pages) */

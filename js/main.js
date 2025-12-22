@@ -486,8 +486,8 @@ function createInlineSizeSelector(button, product) {
     const sizeSelector = document.createElement('div');
     sizeSelector.className = 'inline-size-selector visible';
     
-    // Create size buttons
-    const sizeButtons = product.sizes.map(size => {
+    // Create size buttons with separators
+    product.sizes.forEach((size, index) => {
         const sizeBtn = document.createElement('button');
         sizeBtn.type = 'button';
         sizeBtn.className = 'inline-size-btn';
@@ -507,20 +507,19 @@ function createInlineSizeSelector(button, product) {
             sizeSelector.remove();
         });
         
-        return sizeBtn;
+        sizeSelector.appendChild(sizeBtn);
+        
+        // Add separator after each button except the last one
+        if (index < product.sizes.length - 1) {
+            const separator = document.createElement('span');
+            separator.className = 'size-separator';
+            separator.textContent = ' / ';
+            sizeSelector.appendChild(separator);
+        }
     });
     
-    // Add size buttons to selector
-    sizeButtons.forEach(btn => sizeSelector.appendChild(btn));
-    
-    // Insert after product info (before the button)
-    const productInfo = productCard.querySelector('.product-info');
-    if (productInfo) {
-        productInfo.insertAdjacentElement('afterend', sizeSelector);
-    } else {
-        // Fallback: insert before the button
-        button.parentNode.insertBefore(sizeSelector, button);
-    }
+    // Insert right after the Add to Cart button
+    button.insertAdjacentElement('afterend', sizeSelector);
     
     // Close when clicking outside
     setTimeout(() => {
