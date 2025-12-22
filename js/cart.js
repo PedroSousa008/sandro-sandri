@@ -173,7 +173,10 @@ class ShoppingCart {
                                 <span class="quantity-value">${item.quantity}</span>
                                 <button class="quantity-btn plus" data-index="${index}">+</button>
                             </div>
-                            <button class="remove-item" data-index="${index}">Remove</button>
+                            <div class="cart-item-buttons">
+                                <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
+                                <button class="remove-item" data-index="${index}">Remove</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -222,7 +225,10 @@ class ShoppingCart {
                     </div>
                     <div class="cart-page-item-price">
                         <p class="item-total">${window.ProductsAPI.formatPrice(item.price * item.quantity)}</p>
-                        <button class="remove-item" data-index="${index}">Remove</button>
+                        <div class="cart-page-item-buttons">
+                            <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
+                            <button class="remove-item" data-index="${index}">Remove</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -268,6 +274,15 @@ class ShoppingCart {
             }
         });
 
+        // Edit buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-item')) {
+                const index = parseInt(e.target.dataset.index);
+                const productId = parseInt(e.target.dataset.productId);
+                this.openEditModal(index, productId);
+            }
+        });
+
         // Add to cart form (product page)
         const addToCartForm = document.querySelector('.add-to-cart-form');
         if (addToCartForm) {
@@ -292,6 +307,155 @@ class ShoppingCart {
             cartDrawer.classList.add('open');
             cartOverlay.classList.add('visible');
             document.body.classList.add('cart-open');
+        }
+    }
+
+    // Open edit modal
+    openEditModal(index, productId) {
+        const item = this.items[index];
+        if (!item) return;
+
+        const product = window.ProductsAPI.getById(productId);
+        if (!product) return;
+
+        // Create or get edit modal
+        let editModal = document.getElementById('edit-item-modal');
+        if (!editModal) {
+            editModal = document.createElement('div');
+            editModal.id = 'edit-item-modal';
+            editModal.className = 'edit-item-modal';
+            document.body.appendChild(editModal);
+        }
+
+        // Generate size options
+        const sizeOptions = product.sizes.map(size => 
+            `<button type="button" class="edit-size-btn ${item.size === size ? 'active' : ''}" data-size="${size}">${size}</button>`
+        ).join('');
+
+        editModal.innerHTML = `
+            <div class="edit-modal-overlay"></div>
+            <div class="edit-modal-content">
+                <div class="edit-modal-header">
+                    <h3>Edit ${item.name}</h3>
+                    <button class="edit-modal-close" aria-label="Close">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="edit-modal-body">
+                    <div class="edit-section">
+                        <label class="edit-label">Size</label>
+                        <div class="edit-size-options" id="edit-size-options">
+                            ${sizeOptions}
+                        </div>
+                    </div>
+                    <div class="edit-section">
+                        <label class="edit-label">Quantity</label>
+                        <div class="edit-quantity-selector">
+                            <button type="button" class="edit-quantity-btn minus" data-action="minus">−</button>
+                            <input type="number" class="edit-quantity-input" value="${item.quantity}" min="1" id="edit-quantity">
+                            <button type="button" class="edit-quantity-btn plus" data-action="plus">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="edit-modal-footer">
+                    <button type="button" class="edit-save-btn" data-index="${index}">Save Changes</button>
+                    <button type="button" class="edit-cancel-btn">Cancel</button>
+                </div>
+            </div>
+        `;
+
+        // Show modal
+        editModal.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+
+        // Size selection
+        const sizeButtons = editModal.querySelectorAll('.edit-size-btn');
+        sizeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sizeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Quantity controls
+        const quantityInput = editModal.querySelector('#edit-quantity');
+        const quantityMinus = editModal.querySelector('.edit-quantity-btn.minus');
+        const quantityPlus = editModal.querySelector('.edit-quantity-btn.plus');
+
+        quantityMinus.addEventListener('click', () => {
+            const current = parseInt(quantityInput.value) || 1;
+            if (current > 1) {
+                quantityInput.value = current - 1;
+            }
+        });
+
+        quantityPlus.addEventListener('click', () => {
+            const current = parseInt(quantityInput.value) || 1;
+            quantityInput.value = current + 1;
+        });
+
+        // Save changes
+        const saveBtn = editModal.querySelector('.edit-save-btn');
+        saveBtn.addEventListener('click', () => {
+            const selectedSize = editModal.querySelector('.edit-size-btn.active')?.dataset.size || item.size;
+            const newQuantity = parseInt(quantityInput.value) || 1;
+
+            // Update item
+            this.updateItem(index, selectedSize, newQuantity);
+            this.closeEditModal();
+        });
+
+        // Close modal
+        const closeBtn = editModal.querySelector('.edit-modal-close');
+        const cancelBtn = editModal.querySelector('.edit-cancel-btn');
+        const overlay = editModal.querySelector('.edit-modal-overlay');
+
+        [closeBtn, cancelBtn, overlay].forEach(el => {
+            el?.addEventListener('click', () => {
+                this.closeEditModal();
+            });
+        });
+    }
+
+    // Close edit modal
+    closeEditModal() {
+        const editModal = document.getElementById('edit-item-modal');
+        if (editModal) {
+            editModal.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Update cart item
+    updateItem(index, newSize, newQuantity) {
+        if (index < 0 || index >= this.items.length) return;
+
+        const item = this.items[index];
+        const oldSize = item.size;
+        const oldQuantity = item.quantity;
+
+        // Check if same product with new size already exists
+        const existingItem = this.items.find((it, idx) => 
+            idx !== index &&
+            it.productId === item.productId && 
+            it.size === newSize && 
+            it.color === item.color
+        );
+
+        if (existingItem) {
+            // Merge with existing item
+            existingItem.quantity += newQuantity;
+            this.removeItem(index);
+            this.showNotification('Item updated and merged with existing');
+        } else {
+            // Update current item
+            item.size = newSize;
+            item.quantity = newQuantity;
+            this.saveCart();
+            this.updateCartUI();
+            this.showNotification('Item updated');
         }
     }
 

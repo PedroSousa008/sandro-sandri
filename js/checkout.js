@@ -53,6 +53,9 @@ function renderCheckoutItems(cart) {
             <div class="checkout-item-details">
                 <a href="${productUrl}" class="checkout-item-name">${item.name}</a>
                 <p class="checkout-item-variant">${item.size} / ${item.color} × ${item.quantity}</p>
+                <div class="checkout-item-actions">
+                    <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
+                </div>
             </div>
             <div class="checkout-item-price">
                 ${window.ProductsAPI.formatPrice(item.price * item.quantity)}
