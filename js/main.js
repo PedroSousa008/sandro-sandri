@@ -430,16 +430,31 @@ document.addEventListener('DOMContentLoaded', initCollectionFilter);
    Homepage Quick Add with Size Selection
    ======================================== */
 function initHomepageQuickAdd() {
+    console.log('initHomepageQuickAdd called');
+    
     // Wait a bit for DOM to be fully ready
     setTimeout(() => {
         // Only run on homepage
         const collectionPreview = document.querySelector('.collection-preview');
-        if (!collectionPreview) return;
+        if (!collectionPreview) {
+            console.log('Not on homepage, skipping quick add init');
+            return;
+        }
+        
+        console.log('On homepage, looking for quick-add buttons...');
         
         // Get all quick-add buttons
         const quickAddButtons = document.querySelectorAll('.quick-add');
+        console.log('Found', quickAddButtons.length, 'quick-add buttons');
         
-        quickAddButtons.forEach(btn => {
+        if (quickAddButtons.length === 0) {
+            console.error('No quick-add buttons found!');
+            return;
+        }
+        
+        quickAddButtons.forEach((btn, index) => {
+            console.log(`Setting up button ${index + 1}, product ID:`, btn.dataset.productId);
+            
             // Remove any existing listeners by cloning
             const newBtn = btn.cloneNode(true);
             btn.parentNode.replaceChild(newBtn, btn);
@@ -449,31 +464,40 @@ function initHomepageQuickAdd() {
                 e.preventDefault();
                 e.stopPropagation();
                 
+                console.log('=== ADD TO CART CLICKED ===');
                 const productId = parseInt(this.dataset.productId);
-                console.log('Quick add clicked, product ID:', productId);
+                console.log('Product ID:', productId);
                 
                 if (!productId) {
+                    alert('Error: Invalid product ID. Please check the console for details.');
                     console.error('Invalid product ID');
                     return;
                 }
                 
                 // Wait for ProductsAPI if needed
                 if (!window.ProductsAPI) {
-                    console.log('Waiting for ProductsAPI...');
+                    console.log('ProductsAPI not ready, waiting...');
                     setTimeout(() => {
-                        const product = window.ProductsAPI?.getById(productId);
+                        if (!window.ProductsAPI) {
+                            alert('Error: Products API not loaded. Please refresh the page.');
+                            console.error('ProductsAPI still not available');
+                            return;
+                        }
+                        const product = window.ProductsAPI.getById(productId);
                         if (product) {
                             console.log('Product found:', product);
                             openSizeSelectionModal(product);
                         } else {
+                            alert('Error: Product not found. Please check the console.');
                             console.error('Product not found:', productId);
                         }
-                    }, 200);
+                    }, 500);
                     return;
                 }
                 
                 const product = window.ProductsAPI.getById(productId);
                 if (!product) {
+                    alert('Error: Product not found. Please check the console.');
                     console.error('Product not found:', productId);
                     return;
                 }
@@ -482,15 +506,19 @@ function initHomepageQuickAdd() {
                 openSizeSelectionModal(product);
             });
         });
-    }, 100);
+        
+        console.log('Quick add buttons initialized successfully');
+    }, 200);
 }
 
 function openSizeSelectionModal(product) {
-    console.log('openSizeSelectionModal called for:', product);
+    console.log('=== OPENING SIZE MODAL ===');
+    console.log('Product:', product);
     
     // Remove existing modal if any
     const existingModal = document.getElementById('size-selection-modal');
     if (existingModal) {
+        console.log('Removing existing modal');
         existingModal.remove();
     }
     
@@ -499,6 +527,7 @@ function openSizeSelectionModal(product) {
     sizeModal.id = 'size-selection-modal';
     sizeModal.className = 'size-selection-modal';
     document.body.appendChild(sizeModal);
+    console.log('Modal element created and added to body');
 
     // Check if product has sizes
     if (!product.sizes || product.sizes.length === 0) {
@@ -539,11 +568,21 @@ function openSizeSelectionModal(product) {
     `;
 
     // Show modal immediately
+    console.log('Setting modal to visible...');
     sizeModal.style.display = 'flex';
+    sizeModal.style.opacity = '1';
+    sizeModal.style.visibility = 'visible';
     sizeModal.classList.add('visible');
     document.body.style.overflow = 'hidden';
     
-    console.log('Modal created and should be visible');
+    console.log('Modal should now be visible');
+    console.log('Modal element:', sizeModal);
+    console.log('Modal classes:', sizeModal.className);
+    console.log('Modal styles:', {
+        display: sizeModal.style.display,
+        opacity: sizeModal.style.opacity,
+        visibility: sizeModal.style.visibility
+    });
 
     let selectedSize = null;
 
