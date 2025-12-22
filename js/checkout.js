@@ -29,7 +29,7 @@ function renderCheckoutItems(cart) {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     // Render items
-    itemsContainer.innerHTML = cart.map(item => {
+    itemsContainer.innerHTML = cart.map((item, index) => {
         // Get product image - prefer front image (a version) or use stored image
         let productImage = item.image;
         if (!productImage && item.productId && window.ProductsAPI) {
