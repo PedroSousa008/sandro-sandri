@@ -1945,8 +1945,8 @@
 .size-selection-modal {
     position: fixed;
     inset: 0;
-    z-index: 1000;
-    display: flex;
+    z-index: 10000;
+    display: none;
     align-items: center;
     justify-content: center;
     opacity: 0;
@@ -1955,6 +1955,7 @@
 }
 
 .size-selection-modal.visible {
+    display: flex;
     opacity: 1;
     visibility: visible;
 }

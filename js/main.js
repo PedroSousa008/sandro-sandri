@@ -429,7 +429,14 @@ document.addEventListener('DOMContentLoaded', initCollectionFilter);
 /* ========================================
    Homepage Quick Add with Size Selection
    ======================================== */
+// Global flag to prevent multiple event listeners
+let homepageQuickAddInitialized = false;
+
 function initHomepageQuickAdd() {
+    // Prevent multiple initializations
+    if (homepageQuickAddInitialized) return;
+    homepageQuickAddInitialized = true;
+    
     // Use event delegation to handle dynamically added buttons
     document.addEventListener('click', (e) => {
         // Check if clicked element is a quick-add button or inside one
@@ -443,8 +450,21 @@ function initHomepageQuickAdd() {
         e.stopPropagation();
         
         const productId = parseInt(quickAddBtn.dataset.productId);
-        if (!productId || !window.ProductsAPI) {
-            console.error('Invalid product ID or ProductsAPI not available');
+        if (!productId) {
+            console.error('Invalid product ID');
+            return;
+        }
+        
+        // Wait for ProductsAPI to be available
+        if (!window.ProductsAPI) {
+            console.error('ProductsAPI not available yet');
+            // Try again after a short delay
+            setTimeout(() => {
+                const product = window.ProductsAPI?.getById(productId);
+                if (product) {
+                    openSizeSelectionModal(product);
+                }
+            }, 100);
             return;
         }
         
@@ -456,7 +476,7 @@ function initHomepageQuickAdd() {
         
         // Open size selection modal
         openSizeSelectionModal(product);
-    });
+    }, true); // Use capture phase to ensure we catch the event
 }
 
 function openSizeSelectionModal(product) {
@@ -507,11 +527,14 @@ function openSizeSelectionModal(product) {
         </div>
     `;
 
-    // Show modal - use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
-        sizeModal.classList.add('visible');
-        document.body.style.overflow = 'hidden';
-    });
+    // Show modal immediately
+    sizeModal.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+    
+    // Force display in case CSS transition is slow
+    setTimeout(() => {
+        sizeModal.style.display = 'flex';
+    }, 10);
 
     let selectedSize = null;
 
