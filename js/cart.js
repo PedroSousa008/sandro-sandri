@@ -245,8 +245,14 @@ class ShoppingCart {
     // Bind events
     bindEvents() {
         // Quick add buttons
+        // NOTE: Homepage quick-add is handled in main.js with size selection
+        // This handler only applies to collection page and other pages
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('quick-add')) {
+                // Skip if on homepage (has collection-preview section)
+                if (document.querySelector('.collection-preview')) {
+                    return; // Let main.js handle it with size selection
+                }
                 const productId = e.target.dataset.productId;
                 this.addItem(parseInt(productId));
             }
