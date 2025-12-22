@@ -2069,6 +2069,7 @@
 
 .edit-modal-footer {
     display: flex;
+    flex-direction: column;
     gap: var(--space-sm);
     margin-top: var(--space-xl);
     padding-top: var(--space-lg);
@@ -2077,18 +2078,22 @@
 
 .edit-save-btn,
 .edit-cancel-btn {
-    flex: 1;
+    width: 100%;
     padding: var(--space-md);
     font-family: var(--font-serif);
     font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .edit-save-btn {
     background: var(--color-navy);
     color: var(--color-white);
     border: none;
+    order: 1;
 }
 
 .edit-save-btn:hover {
@@ -2099,6 +2104,7 @@
     background: transparent;
     color: var(--color-text);
     border: 1px solid var(--color-gray);
+    order: 2;
 }
 
 .edit-cancel-btn:hover {
@@ -2110,25 +2116,26 @@
 .cart-item-buttons,
 .cart-page-item-buttons {
     display: flex;
-    gap: var(--space-sm);
+    flex-direction: column;
+    gap: var(--space-xs);
     margin-top: var(--space-xs);
 }
 
 .edit-item {
-    padding: 0.5rem 1rem;
-    font-family: var(--font-serif);
-    font-size: 0.75rem;
-    color: var(--color-text);
-    background: transparent;
-    border: 1px solid var(--color-gray);
-    cursor: pointer;
-    transition: all var(--transition-fast);
+    font-family: var(--font-sans);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    color: var(--color-gray-dark);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    padding: 0;
+    text-align: left;
 }
 
 .edit-item:hover {
-    border-color: var(--color-navy);
     color: var(--color-navy);
 }
 

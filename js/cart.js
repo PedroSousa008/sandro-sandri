@@ -174,8 +174,8 @@ class ShoppingCart {
                                 <button class="quantity-btn plus" data-index="${index}">+</button>
                             </div>
                             <div class="cart-item-buttons">
-                                <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
                                 <button class="remove-item" data-index="${index}">Remove</button>
+                                <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
                             </div>
                         </div>
                     </div>
@@ -226,8 +226,8 @@ class ShoppingCart {
                     <div class="cart-page-item-price">
                         <p class="item-total">${window.ProductsAPI.formatPrice(item.price * item.quantity)}</p>
                         <div class="cart-page-item-buttons">
-                            <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
                             <button class="remove-item" data-index="${index}">Remove</button>
+                            <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
                         </div>
                     </div>
                 </div>
