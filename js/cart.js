@@ -455,6 +455,16 @@ class ShoppingCart {
             this.updateCartUI();
             this.showNotification('Item updated');
         }
+
+        // Trigger checkout totals update if on checkout page
+        if (window.updateCheckoutTotals) {
+            window.updateCheckoutTotals();
+            // Re-render checkout items
+            if (document.getElementById('checkout-items')) {
+                const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
+                window.renderCheckoutItems(cart);
+            }
+        }
     }
 
     // Show notification

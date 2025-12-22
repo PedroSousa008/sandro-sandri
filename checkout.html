@@ -119,15 +119,23 @@
                                     <select id="country" name="country" class="checkout-select" required>
                                         <option value="">Select country</option>
                                         <option value="PT">Portugal</option>
-                                        <option value="IT">Italy</option>
                                         <option value="ES">Spain</option>
                                         <option value="FR">France</option>
+                                        <option value="IT">Italy</option>
                                         <option value="DE">Germany</option>
                                         <option value="NL">Netherlands</option>
                                         <option value="BE">Belgium</option>
                                         <option value="AT">Austria</option>
                                         <option value="CH">Switzerland</option>
                                         <option value="UK">United Kingdom</option>
+                                        <option value="IE">Ireland</option>
+                                        <option value="DK">Denmark</option>
+                                        <option value="SE">Sweden</option>
+                                        <option value="NO">Norway</option>
+                                        <option value="FI">Finland</option>
+                                        <option value="PL">Poland</option>
+                                        <option value="CZ">Czech Republic</option>
+                                        <option value="GR">Greece</option>
                                     </select>
                                 </div>
                             </div>
@@ -170,8 +178,9 @@
                         </div>
                         <div class="summary-row">
                             <span>Shipping</span>
-                            <span>Free</span>
+                            <span class="summary-shipping">Select country</span>
                         </div>
+                        <div class="free-shipping-message" style="display: none; font-family: var(--font-serif); font-size: 0.875rem; color: var(--color-text-light); margin-top: var(--space-xs); padding-top: var(--space-xs); border-top: 1px solid var(--color-gray);"></div>
                         <div class="summary-row summary-total">
                             <span>Total</span>
                             <span class="summary-total">€0</span>

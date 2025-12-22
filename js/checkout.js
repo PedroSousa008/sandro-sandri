@@ -2,6 +2,41 @@
    Sandro Sandri - Checkout Page
    ======================================== */
 
+// Shipping fees by country (in EUR)
+const SHIPPING_FEES = {
+    // Domestic
+    'PT': 5.00, // Portugal
+    
+    // EU Countries
+    'ES': 8.00, // Spain
+    'FR': 8.00, // France
+    'IT': 8.00, // Italy
+    'DE': 10.00, // Germany
+    'NL': 10.00, // Netherlands
+    'BE': 10.00, // Belgium
+    'AT': 10.00, // Austria
+    'CH': 12.00, // Switzerland
+    
+    // UK
+    'UK': 12.00, // United Kingdom
+    'GB': 12.00, // United Kingdom (ISO code)
+    
+    // Rest of Europe
+    'IE': 12.00, // Ireland
+    'DK': 12.00, // Denmark
+    'SE': 12.00, // Sweden
+    'NO': 15.00, // Norway
+    'FI': 12.00, // Finland
+    'PL': 12.00, // Poland
+    'CZ': 12.00, // Czech Republic
+    'GR': 12.00, // Greece
+    
+    // Rest of World (default)
+    'DEFAULT': 20.00
+};
+
+const FREE_SHIPPING_THRESHOLD = 100; // €100
+
 document.addEventListener('DOMContentLoaded', () => {
     initCheckout();
 });
@@ -16,17 +51,14 @@ function initCheckout() {
 
     renderCheckoutItems(cart);
     initCheckoutForm();
+    
+    // Initial totals update
+    updateCheckoutTotals();
 }
 
 function renderCheckoutItems(cart) {
     const itemsContainer = document.getElementById('checkout-items');
-    const subtotalEl = document.querySelector('.summary-subtotal');
-    const totalEl = document.querySelector('.summary-total');
-
     if (!itemsContainer) return;
-
-    // Calculate total
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     // Render items
     itemsContainer.innerHTML = cart.map((item, index) => {
@@ -64,10 +96,6 @@ function renderCheckoutItems(cart) {
         `;
     }).join('');
 
-    // Update totals
-    if (subtotalEl) subtotalEl.textContent = window.ProductsAPI.formatPrice(total);
-    if (totalEl) totalEl.textContent = window.ProductsAPI.formatPrice(total);
-
     // Add edit button event listeners
     itemsContainer.querySelectorAll('.edit-item').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -79,11 +107,93 @@ function renderCheckoutItems(cart) {
             }
         });
     });
+
+    // Update totals
+    updateCheckoutTotals();
 }
+
+function calculateShipping(subtotal, country) {
+    // Free shipping if order is over threshold
+    if (subtotal >= FREE_SHIPPING_THRESHOLD) {
+        return 0;
+    }
+
+    // Calculate shipping based on country
+    if (!country) {
+        return 0; // No shipping fee until country is selected
+    }
+
+    return SHIPPING_FEES[country] || SHIPPING_FEES['DEFAULT'];
+}
+
+// Make function globally accessible
+window.updateCheckoutTotals = function() {
+    const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
+    const country = document.getElementById('country')?.value || '';
+    
+    // Calculate subtotal
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // Calculate shipping
+    const shipping = calculateShipping(subtotal, country);
+    
+    // Calculate total
+    const total = subtotal + shipping;
+    
+    // Update UI
+    const subtotalEl = document.querySelector('.summary-subtotal');
+    const shippingEl = document.querySelector('.summary-shipping');
+    const totalEl = document.querySelector('.summary-total');
+    
+    if (subtotalEl) subtotalEl.textContent = window.ProductsAPI.formatPrice(subtotal);
+    
+    if (shippingEl) {
+        if (shipping === 0) {
+            shippingEl.textContent = 'Free';
+            shippingEl.classList.add('free-shipping');
+        } else {
+            shippingEl.textContent = window.ProductsAPI.formatPrice(shipping);
+            shippingEl.classList.remove('free-shipping');
+        }
+    }
+    
+    if (totalEl) totalEl.textContent = window.ProductsAPI.formatPrice(total);
+    
+    // Show free shipping message if applicable
+    const freeShippingMsg = document.querySelector('.free-shipping-message');
+    if (subtotal < FREE_SHIPPING_THRESHOLD && shipping > 0) {
+        const remaining = FREE_SHIPPING_THRESHOLD - subtotal;
+        if (freeShippingMsg) {
+            freeShippingMsg.textContent = `Add ${window.ProductsAPI.formatPrice(remaining)} more for free shipping`;
+            freeShippingMsg.style.display = 'block';
+        }
+    } else if (freeShippingMsg) {
+        freeShippingMsg.style.display = 'none';
+    }
+};
+
+// Make function globally accessible
+window.renderCheckoutItems = renderCheckoutItems;
 
 function initCheckoutForm() {
     const form = document.getElementById('checkout-form');
     if (!form) return;
+
+    // Update totals when country changes
+    const countrySelect = document.getElementById('country');
+    if (countrySelect) {
+        countrySelect.addEventListener('change', () => {
+            updateCheckoutTotals();
+        });
+    }
+
+    // Update totals when cart changes (e.g., after editing)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'sandroSandriCart') {
+            updateCheckoutTotals();
+            renderCheckoutItems(JSON.parse(localStorage.getItem('sandroSandriCart') || '[]'));
+        }
+    });
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
