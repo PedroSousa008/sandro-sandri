@@ -157,6 +157,42 @@ function initSizeSelection(product) {
         if (window.updateAddToCartButton) {
             window.updateAddToCartButton(product.id, size);
         }
+        
+        // Update quantity max based on available inventory
+        updateQuantityMax(product.id, size);
+    }
+    
+    // Function to update quantity max based on available inventory
+    function updateQuantityMax(productId, size) {
+        const quantityInput = document.querySelector('.quantity-input');
+        if (!quantityInput) return;
+        
+        if (window.InventoryAPI) {
+            const availableStock = window.InventoryAPI.get(productId, size);
+            const currentValue = parseInt(quantityInput.value) || 1;
+            
+            // Set max to available stock
+            quantityInput.max = availableStock;
+            quantityInput.setAttribute('max', availableStock);
+            
+            // If current value exceeds available stock, reduce it
+            if (currentValue > availableStock) {
+                quantityInput.value = availableStock;
+            }
+            
+            // Ensure minimum is 1
+            if (availableStock === 0) {
+                quantityInput.value = 0;
+                quantityInput.disabled = true;
+            } else {
+                quantityInput.disabled = false;
+                if (quantityInput.value < 1) {
+                    quantityInput.value = 1;
+                }
+            }
+            
+            console.log('Quantity max updated to:', availableStock, 'for size:', size);
+        }
     }
     
     // Render size buttons with simple onclick
@@ -275,13 +311,25 @@ function initColorSelection(product) {
     });
 }
 
-function initQuantitySelector() {
+function initQuantitySelector(product) {
     const quantityContainer = document.querySelector('.product-quantity');
     if (!quantityContainer) return;
     
     const input = quantityContainer.querySelector('.quantity-input');
     const minusBtn = quantityContainer.querySelector('.minus');
     const plusBtn = quantityContainer.querySelector('.plus');
+    
+    // Function to get current max based on selected size
+    function getCurrentMax() {
+        const sizeInput = document.getElementById('selected-size-input');
+        const selectedSize = sizeInput ? sizeInput.value : null;
+        
+        if (selectedSize && window.InventoryAPI && product) {
+            return window.InventoryAPI.get(product.id, selectedSize);
+        }
+        
+        return parseInt(input.max) || 10;
+    }
     
     minusBtn.addEventListener('click', () => {
         const currentVal = parseInt(input.value) || 1;
@@ -292,21 +340,44 @@ function initQuantitySelector() {
     
     plusBtn.addEventListener('click', () => {
         const currentVal = parseInt(input.value) || 1;
-        const maxVal = parseInt(input.max) || 10;
+        const maxVal = getCurrentMax();
+        
         if (currentVal < maxVal) {
             input.value = currentVal + 1;
+        } else {
+            // Show notification if trying to exceed max
+            if (window.showNotification) {
+                window.showNotification(`Only ${maxVal} available in this size`);
+            }
         }
     });
     
     input.addEventListener('change', () => {
         let val = parseInt(input.value) || 1;
         const minVal = parseInt(input.min) || 1;
-        const maxVal = parseInt(input.max) || 10;
+        const maxVal = getCurrentMax();
         
         if (val < minVal) val = minVal;
-        if (val > maxVal) val = maxVal;
+        if (val > maxVal) {
+            val = maxVal;
+            if (window.showNotification) {
+                window.showNotification(`Only ${maxVal} available in this size`);
+            }
+        }
         
         input.value = val;
+    });
+    
+    input.addEventListener('input', () => {
+        const maxVal = getCurrentMax();
+        const currentVal = parseInt(input.value) || 1;
+        
+        if (currentVal > maxVal) {
+            input.value = maxVal;
+            if (window.showNotification) {
+                window.showNotification(`Only ${maxVal} available in this size`);
+            }
+        }
     });
 }
 
@@ -391,11 +462,23 @@ function initAddToCartForm(product) {
             
             const availableStock = window.InventoryAPI.get(product.id, size);
             if (quantity > availableStock) {
-                showNotification(`Only ${availableStock} available in this size`);
+                showNotification(`Only ${availableStock} available in this size. Please reduce quantity.`);
+                // Reset quantity to available stock
+                if (quantityInput) {
+                    quantityInput.value = availableStock;
+                }
                 isSubmitting = false;
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
                 return;
+            }
+            
+            // Ensure quantity doesn't exceed available stock
+            if (quantity > availableStock) {
+                quantity = availableStock;
+                if (quantityInput) {
+                    quantityInput.value = quantity;
+                }
             }
         }
         
