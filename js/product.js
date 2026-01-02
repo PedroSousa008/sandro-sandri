@@ -100,10 +100,39 @@ function initSizeSelection(product) {
     const sizeOptions = document.getElementById('size-options');
     const sizeInput = document.getElementById('selected-size-input');
     
-    if (!sizeOptions || !product.sizes) return;
+    if (!sizeOptions || !product.sizes) {
+        console.error('Size options container or product sizes not found');
+        return;
+    }
     
-    // Clear any existing content
+    // Clear any existing content and event listeners
     sizeOptions.innerHTML = '';
+    
+    // Use event delegation on the container
+    sizeOptions.addEventListener('click', function(e) {
+        const btn = e.target.closest('.size-btn');
+        if (!btn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        const selectedSize = btn.dataset.size;
+        
+        // Remove active from all buttons
+        sizeOptions.querySelectorAll('.size-btn').forEach(b => {
+            b.classList.remove('active');
+        });
+        
+        // Add active to clicked button
+        btn.classList.add('active');
+        
+        // Update hidden input
+        if (sizeInput) {
+            sizeInput.value = selectedSize;
+            console.log('Size selected:', selectedSize, 'Input value:', sizeInput.value);
+        }
+    }, true); // Use capture phase
     
     // Render size buttons
     product.sizes.forEach((size, index) => {
@@ -112,29 +141,8 @@ function initSizeSelection(product) {
         btn.className = `size-btn ${index === 0 ? 'active' : ''}`;
         btn.dataset.size = size;
         btn.textContent = size;
-        btn.style.cursor = 'pointer';
-        btn.style.pointerEvents = 'auto';
-        
-        // Add click handler directly
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Remove active from all buttons
-            sizeOptions.querySelectorAll('.size-btn').forEach(b => {
-                b.classList.remove('active');
-            });
-            
-            // Add active to clicked button
-            btn.classList.add('active');
-            
-            // Update hidden input
-            if (sizeInput) {
-                sizeInput.value = size;
-            }
-            
-            console.log('Size selected:', size);
-        });
+        btn.style.cssText = 'cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 10;';
+        btn.setAttribute('tabindex', '0');
         
         sizeOptions.appendChild(btn);
     });
@@ -143,6 +151,8 @@ function initSizeSelection(product) {
     if (sizeInput) {
         sizeInput.value = product.sizes[0];
     }
+    
+    console.log('Size selection initialized with', product.sizes.length, 'sizes');
 }
 
 function initColorSelection(product) {
