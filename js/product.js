@@ -214,6 +214,33 @@ function initSizeSelection(product) {
         }
     }
     
+    // Define updateAddToCartButton function if not already defined
+    if (!window.updateAddToCartButton) {
+        window.updateAddToCartButton = function(productId, size) {
+            const addToCartBtn = document.querySelector('.add-to-cart-btn');
+            if (!addToCartBtn) return;
+            
+            // Check if size is in stock
+            const inStock = window.InventoryAPI && window.InventoryAPI.isInStock(productId, size);
+            
+            if (inStock) {
+                addToCartBtn.textContent = 'Add to Cart';
+                addToCartBtn.disabled = false;
+                addToCartBtn.style.background = '#1a1a2e';
+                addToCartBtn.style.color = '#ffffff';
+                addToCartBtn.style.cursor = 'pointer';
+                addToCartBtn.style.opacity = '1';
+            } else {
+                addToCartBtn.textContent = 'Sold Out';
+                addToCartBtn.disabled = true;
+                addToCartBtn.style.background = '#8a8a8a';
+                addToCartBtn.style.color = '#ffffff';
+                addToCartBtn.style.cursor = 'not-allowed';
+                addToCartBtn.style.opacity = '1';
+            }
+        };
+    }
+    
     console.log('Size selection initialized. Total buttons:', sizeOptions.querySelectorAll('.size-btn').length);
 }
 
