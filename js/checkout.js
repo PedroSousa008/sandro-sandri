@@ -148,10 +148,12 @@ window.updateCheckoutTotals = function() {
     if (subtotalEl) subtotalEl.textContent = window.ProductsAPI.formatPrice(subtotal);
     
     if (shippingEl) {
-        if (!country) {
+        // Always show "Select country" if no country is selected, regardless of order total
+        if (!country || country.trim() === '') {
             shippingEl.textContent = 'Select country';
             shippingEl.classList.remove('free-shipping');
-        } else if (shipping === 0) {
+        } else if (shipping === 0 && subtotal >= FREE_SHIPPING_THRESHOLD) {
+            // Only show "Free" if country is selected AND order is over threshold
             shippingEl.textContent = 'Free';
             shippingEl.classList.add('free-shipping');
         } else {
