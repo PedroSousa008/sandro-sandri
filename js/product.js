@@ -225,8 +225,75 @@ function initAddToCartForm(product) {
     // Get fresh references after cloning
     const sizeInput = document.getElementById('selected-size-input');
     const colorInput = document.getElementById('selected-color-input');
-    const quantityInput = document.querySelector('.quantity-input');
+    const quantityInput = newForm.querySelector('.quantity-input');
     const submitBtn = newForm.querySelector('button[type="submit"]');
+    
+    // Re-attach size button listeners after cloning
+    const sizeOptions = document.getElementById('size-options');
+    if (sizeOptions && sizeInput) {
+        const sizeButtons = sizeOptions.querySelectorAll('.size-btn');
+        sizeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sizeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                sizeInput.value = btn.dataset.size;
+            });
+        });
+    }
+    
+    // Re-attach color button listeners after cloning
+    const colorOptions = document.getElementById('color-options');
+    const selectedColorText = document.getElementById('selected-color');
+    if (colorOptions && colorInput && selectedColorText) {
+        const colorButtons = colorOptions.querySelectorAll('.color-btn');
+        colorButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                colorButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                colorInput.value = btn.dataset.color;
+                selectedColorText.textContent = btn.dataset.color;
+            });
+        });
+    }
+    
+    // Re-attach quantity selector listeners after cloning
+    if (quantityInput) {
+        const quantityContainer = newForm.querySelector('.product-quantity');
+        if (quantityContainer) {
+            const minusBtn = quantityContainer.querySelector('.minus');
+            const plusBtn = quantityContainer.querySelector('.plus');
+            
+            if (minusBtn) {
+                minusBtn.addEventListener('click', () => {
+                    const currentVal = parseInt(quantityInput.value) || 1;
+                    if (currentVal > 1) {
+                        quantityInput.value = currentVal - 1;
+                    }
+                });
+            }
+            
+            if (plusBtn) {
+                plusBtn.addEventListener('click', () => {
+                    const currentVal = parseInt(quantityInput.value) || 1;
+                    const maxVal = parseInt(quantityInput.max) || 10;
+                    if (currentVal < maxVal) {
+                        quantityInput.value = currentVal + 1;
+                    }
+                });
+            }
+            
+            quantityInput.addEventListener('change', () => {
+                let val = parseInt(quantityInput.value) || 1;
+                const minVal = parseInt(quantityInput.min) || 1;
+                const maxVal = parseInt(quantityInput.max) || 10;
+                
+                if (val < minVal) val = minVal;
+                if (val > maxVal) val = maxVal;
+                
+                quantityInput.value = val;
+            });
+        }
+    }
     
     let isSubmitting = false;
     
@@ -250,9 +317,19 @@ function initAddToCartForm(product) {
         const quantityValue = quantityInput ? quantityInput.value : '1';
         const quantity = parseInt(quantityValue) || 1;
         
+        // Validate size is selected
+        if (!size || size.trim() === '') {
+            showNotification('Please select a size');
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+        }
+        
         // Ensure quantity is valid
         if (quantity < 1) {
             console.error('Invalid quantity:', quantity);
+            showNotification('Please enter a valid quantity');
             isSubmitting = false;
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
