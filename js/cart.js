@@ -47,6 +47,11 @@ class ShoppingCart {
 
         // Check inventory BEFORE adding to cart
         if (window.InventoryAPI) {
+            // Ensure inventory is initialized
+            if (window.InventoryAPI.init) {
+                window.InventoryAPI.init();
+            }
+            
             // First check if size is in stock at all
             const inStock = window.InventoryAPI.isInStock(productId, normalizedSize);
             if (!inStock) {
@@ -56,6 +61,12 @@ class ShoppingCart {
             
             // Get available stock from inventory
             const availableStock = window.InventoryAPI.get(productId, normalizedSize);
+            
+            // If no stock available, block
+            if (availableStock <= 0) {
+                this.showNotification(`${product.name} - Size ${normalizedSize} is sold out`);
+                return false;
+            }
             
             // Find existing item in cart to calculate total quantity
             const existingItem = this.items.find(item => {
@@ -70,6 +81,7 @@ class ShoppingCart {
             const requestedTotal = currentCartQuantity + quantity;
             
             // Only block if the total requested exceeds available stock
+            // This allows normal purchases (1, 2, etc.) but blocks excessive quantities (51 when only 50 available)
             if (requestedTotal > availableStock) {
                 const maxCanAdd = availableStock - currentCartQuantity;
                 if (maxCanAdd <= 0) {

@@ -89,15 +89,33 @@ function increaseInventory(productId, size, quantity = 1) {
     return true;
 }
 
-// Initialize on load
-if (window.ProductsAPI) {
-    initializeInventory();
-} else {
-    document.addEventListener('DOMContentLoaded', () => {
-        if (window.ProductsAPI) {
+// Initialize on load - ensure it runs after ProductsAPI is loaded
+function initInventoryWhenReady() {
+    if (window.ProductsAPI && window.ProductsAPI.getAll) {
+        const products = window.ProductsAPI.getAll();
+        if (products && products.length > 0) {
             initializeInventory();
+            console.log('Inventory initialized:', JSON.parse(localStorage.getItem('sandroSandriInventory') || '{}'));
+        } else {
+            // Wait a bit and try again
+            setTimeout(initInventoryWhenReady, 100);
         }
-    });
+    } else {
+        // Wait a bit and try again
+        setTimeout(initInventoryWhenReady, 100);
+    }
+}
+
+// Try to initialize immediately
+if (window.ProductsAPI) {
+    initInventoryWhenReady();
+} else {
+    // Wait for DOM and ProductsAPI
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initInventoryWhenReady);
+    } else {
+        initInventoryWhenReady();
+    }
 }
 
 // Export functions
