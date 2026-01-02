@@ -275,7 +275,6 @@ class ShoppingCart {
                             </div>
                             <div class="cart-item-buttons">
                                 <button class="remove-item" data-index="${index}">Remove</button>
-                                <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
                             </div>
                         </div>
                     </div>
