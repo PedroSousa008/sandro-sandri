@@ -54,6 +54,7 @@ class ShoppingCart {
             }
             
             const availableStock = window.InventoryAPI.get(productId, normalizedSize);
+            console.log('Inventory check:', { productId, size: normalizedSize, availableStock, requestedQuantity: quantity });
             
             // Find existing item to calculate total quantity
             const existingItem = this.items.find(item => {
@@ -67,8 +68,11 @@ class ShoppingCart {
             const currentCartQuantity = existingItem ? existingItem.quantity : 0;
             const requestedTotal = currentCartQuantity + quantity;
             
+            console.log('Cart check:', { currentCartQuantity, requestedTotal, availableStock });
+            
             if (requestedTotal > availableStock) {
                 const maxCanAdd = availableStock - currentCartQuantity;
+                console.log('BLOCKED: Exceeds available stock', { requestedTotal, availableStock, maxCanAdd });
                 if (maxCanAdd <= 0) {
                     this.showNotification(`Only ${currentCartQuantity} already in cart. ${product.name} - Size ${normalizedSize} is sold out`);
                 } else {
@@ -76,6 +80,8 @@ class ShoppingCart {
                 }
                 return false;
             }
+            
+            console.log('PASSED: Inventory check passed', { requestedTotal, availableStock });
         }
 
         // Find existing item with matching productId, size, and color
