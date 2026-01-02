@@ -2413,7 +2413,9 @@
 
 /* Ensure edit and remove buttons match in cart drawer */
 .cart-drawer .edit-item,
-.cart-drawer .remove-item {
+.cart-drawer .remove-item,
+.cart-item-buttons .edit-item,
+.cart-item-buttons .remove-item {
     font-family: var(--font-sans) !important;
     font-size: 0.625rem !important;
     letter-spacing: 0.1em !important;
@@ -2427,10 +2429,13 @@
     font-weight: inherit !important;
     line-height: inherit !important;
     display: inline-block !important;
+    margin: 0 !important;
 }
 
 .cart-drawer .edit-item:hover,
-.cart-drawer .remove-item:hover {
+.cart-drawer .remove-item:hover,
+.cart-item-buttons .edit-item:hover,
+.cart-item-buttons .remove-item:hover {
     color: var(--color-navy) !important;
 }
 
