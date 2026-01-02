@@ -125,6 +125,12 @@ class ShoppingCart {
     removeItem(index) {
         if (index >= 0 && index < this.items.length) {
             const removedItem = this.items.splice(index, 1)[0];
+            
+            // Increase inventory when item is removed from cart
+            if (window.InventoryAPI && removedItem.productId && removedItem.size) {
+                window.InventoryAPI.increase(removedItem.productId, removedItem.size, removedItem.quantity);
+            }
+            
             this.saveCart();
             this.updateCartUI();
             this.showNotification(`${removedItem.name} removed from cart`);
@@ -136,11 +142,50 @@ class ShoppingCart {
         if (index >= 0 && index < this.items.length) {
             if (quantity <= 0) {
                 this.removeItem(index);
-            } else {
-                this.items[index].quantity = quantity;
-                this.saveCart();
-                this.updateCartUI();
+                return;
             }
+            
+            const item = this.items[index];
+            const oldQuantity = item.quantity;
+            
+            // Check inventory before updating quantity
+            if (window.InventoryAPI && item.productId && item.size) {
+                const availableStock = window.InventoryAPI.get(item.productId, item.size);
+                
+                // Calculate how many are already in cart (excluding current item)
+                const otherItemsQuantity = this.items
+                    .filter((it, idx) => idx !== index && it.productId === item.productId && it.size === item.size)
+                    .reduce((sum, it) => sum + it.quantity, 0);
+                
+                const maxAllowed = availableStock - otherItemsQuantity;
+                
+                if (quantity > maxAllowed) {
+                    this.showNotification(`Only ${availableStock} available. Maximum ${maxAllowed} allowed (${otherItemsQuantity} already in cart)`);
+                    // Set to max allowed
+                    quantity = maxAllowed;
+                    if (quantity <= 0) {
+                        this.removeItem(index);
+                        return;
+                    }
+                }
+            }
+            
+            this.items[index].quantity = quantity;
+            
+            // Update inventory if quantity changed
+            if (window.InventoryAPI && item.productId && item.size) {
+                const quantityDiff = quantity - oldQuantity;
+                if (quantityDiff > 0) {
+                    // Increasing quantity - decrease inventory
+                    window.InventoryAPI.decrease(item.productId, item.size, quantityDiff);
+                } else if (quantityDiff < 0) {
+                    // Decreasing quantity - increase inventory
+                    window.InventoryAPI.increase(item.productId, item.size, Math.abs(quantityDiff));
+                }
+            }
+            
+            this.saveCart();
+            this.updateCartUI();
         }
     }
 
