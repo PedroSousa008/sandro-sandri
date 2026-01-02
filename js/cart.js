@@ -47,16 +47,17 @@ class ShoppingCart {
 
         // Check inventory BEFORE adding to cart
         if (window.InventoryAPI) {
+            // First check if size is in stock at all
             const inStock = window.InventoryAPI.isInStock(productId, normalizedSize);
             if (!inStock) {
                 this.showNotification(`${product.name} - Size ${normalizedSize} is sold out`);
                 return false;
             }
             
+            // Get available stock from inventory
             const availableStock = window.InventoryAPI.get(productId, normalizedSize);
-            console.log('Inventory check:', { productId, size: normalizedSize, availableStock, requestedQuantity: quantity });
             
-            // Find existing item to calculate total quantity
+            // Find existing item in cart to calculate total quantity
             const existingItem = this.items.find(item => {
                 const itemSize = (item.size || '').toString().trim();
                 const itemColor = (item.color || '').toString().trim();
@@ -68,20 +69,18 @@ class ShoppingCart {
             const currentCartQuantity = existingItem ? existingItem.quantity : 0;
             const requestedTotal = currentCartQuantity + quantity;
             
-            console.log('Cart check:', { currentCartQuantity, requestedTotal, availableStock });
-            
+            // Only block if the total requested exceeds available stock
             if (requestedTotal > availableStock) {
                 const maxCanAdd = availableStock - currentCartQuantity;
-                console.log('BLOCKED: Exceeds available stock', { requestedTotal, availableStock, maxCanAdd });
                 if (maxCanAdd <= 0) {
-                    this.showNotification(`Only ${currentCartQuantity} already in cart. ${product.name} - Size ${normalizedSize} is sold out`);
+                    this.showNotification(`${product.name} - Size ${normalizedSize} is sold out (${currentCartQuantity} already in cart)`);
                 } else {
-                    this.showNotification(`Only ${availableStock} available. You can add ${maxCanAdd} more (${currentCartQuantity} already in cart)`);
+                    this.showNotification(`Only ${availableStock} available in size ${normalizedSize}. You can add ${maxCanAdd} more (${currentCartQuantity} already in cart)`);
                 }
-                return false;
+                return false; // BLOCK the action - don't add to cart
             }
             
-            console.log('PASSED: Inventory check passed', { requestedTotal, availableStock });
+            // If we get here, the quantity is valid - proceed with adding to cart
         }
 
         // Find existing item with matching productId, size, and color
