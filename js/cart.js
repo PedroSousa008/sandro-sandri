@@ -287,6 +287,30 @@ class ShoppingCart {
         if (subtotalAmount) {
             subtotalAmount.textContent = window.ProductsAPI.formatPrice(this.getTotal());
         }
+        
+        // Re-bind event listeners after rendering
+        this.bindEditButtons();
+    }
+    
+    // Bind edit button event listeners
+    bindEditButtons() {
+        const editButtons = document.querySelectorAll('.cart-drawer .edit-item, .cart-page-item-buttons .edit-item');
+        editButtons.forEach(btn => {
+            // Remove existing listeners by cloning
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // Add fresh event listener
+            newBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const index = parseInt(newBtn.dataset.index);
+                const productId = parseInt(newBtn.dataset.productId);
+                if (index >= 0 && productId) {
+                    this.openEditModal(index, productId);
+                }
+            });
+        });
     }
 
     // Render cart page
