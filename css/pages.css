@@ -695,23 +695,8 @@
 }
 
 .summary-total {
-    border-top: 1px solid var(--color-gray);
-    padding-top: var(--space-md);
-    margin-top: var(--space-md);
-    margin-bottom: var(--space-md);
-}
-
-.summary-total span:first-child {
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-navy);
-}
-
-.summary-total span:last-child {
-    font-family: var(--font-sans);
-    font-size: 1.125rem;
-    font-weight: 600;
     color: var(--color-navy);
 }
 
@@ -726,15 +711,6 @@
     font-weight: 500;
 }
 
-.free-shipping-message {
-    font-family: var(--font-serif);
-    font-size: 0.875rem;
-    color: var(--color-text-light);
-    margin-top: var(--space-xs);
-    padding-top: var(--space-xs);
-    border-top: 1px solid var(--color-gray);
-    text-align: center;
-}
 
 .checkout-page-btn {
     display: block;

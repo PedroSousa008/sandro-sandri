@@ -158,18 +158,6 @@ window.updateCheckoutTotals = function() {
     }
     
     if (totalEl) totalEl.textContent = window.ProductsAPI.formatPrice(total);
-    
-    // Show free shipping message if applicable
-    const freeShippingMsg = document.querySelector('.free-shipping-message');
-    if (subtotal < FREE_SHIPPING_THRESHOLD && shipping > 0) {
-        const remaining = FREE_SHIPPING_THRESHOLD - subtotal;
-        if (freeShippingMsg) {
-            freeShippingMsg.textContent = `Add ${window.ProductsAPI.formatPrice(remaining)} more for free shipping`;
-            freeShippingMsg.style.display = 'block';
-        }
-    } else if (freeShippingMsg) {
-        freeShippingMsg.style.display = 'none';
-    }
 };
 
 // Make function globally accessible
