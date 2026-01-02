@@ -95,6 +95,7 @@ img {
     max-width: var(--container-max);
     margin: 0 auto;
     padding: 0 var(--space-md);
+    overflow: visible; /* Allow sticky positioning to work */
 }
 
 /* ========================================
