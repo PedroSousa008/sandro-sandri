@@ -45,6 +45,39 @@ class ShoppingCart {
         const normalizedSize = (size || product.sizes[0] || '').toString().trim();
         const normalizedColor = (color || product.colors[0]?.name || '').toString().trim();
 
+        // Check inventory BEFORE adding to cart
+        if (window.InventoryAPI) {
+            const inStock = window.InventoryAPI.isInStock(productId, normalizedSize);
+            if (!inStock) {
+                this.showNotification(`${product.name} - Size ${normalizedSize} is sold out`);
+                return false;
+            }
+            
+            const availableStock = window.InventoryAPI.get(productId, normalizedSize);
+            
+            // Find existing item to calculate total quantity
+            const existingItem = this.items.find(item => {
+                const itemSize = (item.size || '').toString().trim();
+                const itemColor = (item.color || '').toString().trim();
+                return item.productId === productId && 
+                       itemSize === normalizedSize && 
+                       itemColor === normalizedColor;
+            });
+            
+            const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+            const requestedTotal = currentCartQuantity + quantity;
+            
+            if (requestedTotal > availableStock) {
+                const maxCanAdd = availableStock - currentCartQuantity;
+                if (maxCanAdd <= 0) {
+                    this.showNotification(`Only ${currentCartQuantity} already in cart. ${product.name} - Size ${normalizedSize} is sold out`);
+                } else {
+                    this.showNotification(`Only ${availableStock} available. You can add ${maxCanAdd} more (${currentCartQuantity} already in cart)`);
+                }
+                return false;
+            }
+        }
+
         // Find existing item with matching productId, size, and color
         const existingItem = this.items.find(item => {
             const itemSize = (item.size || '').toString().trim();
@@ -75,6 +108,11 @@ class ShoppingCart {
             this.saveCart();
             this.updateCartUI();
             this.showNotification(`${product.name} added to cart`);
+        }
+        
+        // Decrease inventory when successfully added to cart
+        if (window.InventoryAPI) {
+            window.InventoryAPI.decrease(productId, normalizedSize, quantity);
         }
         
         // Open cart drawer automatically

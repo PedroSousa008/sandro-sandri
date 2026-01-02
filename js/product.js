@@ -498,15 +498,24 @@ function initAddToCartForm(product) {
         console.log('Adding to cart:', { productId: product.id, size, color, quantity, quantityValue });
         
         // Add to cart - only once, with exact quantity
+        // Note: cart.addItem now handles inventory checking and decreasing
         if (window.cart) {
             const added = window.cart.addItem(product.id, size, color, quantity);
-            if (added && window.InventoryAPI) {
-                // Decrease inventory when successfully added to cart
-                window.InventoryAPI.decrease(product.id, size, quantity);
+            if (added) {
                 // Update button state after adding
                 if (window.updateAddToCartButton) {
                     window.updateAddToCartButton(product.id, size);
                 }
+                // Update quantity max after adding
+                const updateQuantityMax = window.updateQuantityMax || function(productId, size) {
+                    const quantityInput = document.querySelector('.quantity-input');
+                    if (quantityInput && window.InventoryAPI) {
+                        const availableStock = window.InventoryAPI.get(productId, size);
+                        quantityInput.max = availableStock;
+                        quantityInput.setAttribute('max', availableStock);
+                    }
+                };
+                updateQuantityMax(product.id, size);
             }
         } else {
             console.error('Cart not initialized');
