@@ -97,62 +97,115 @@ function populateProduct(product) {
 }
 
 function initSizeSelection(product) {
-    const sizeOptions = document.getElementById('size-options');
-    const sizeInput = document.getElementById('selected-size-input');
-    
-    if (!sizeOptions || !product.sizes) {
-        console.error('Size options container or product sizes not found');
-        return;
-    }
-    
-    // Clear any existing content and event listeners
-    sizeOptions.innerHTML = '';
-    
-    // Use event delegation on the container
-    sizeOptions.addEventListener('click', function(e) {
-        const btn = e.target.closest('.size-btn');
-        if (!btn) return;
+    // Wait a bit to ensure DOM is ready
+    setTimeout(() => {
+        const sizeOptions = document.getElementById('size-options');
+        const sizeInput = document.getElementById('selected-size-input');
         
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
+        if (!sizeOptions || !product.sizes) {
+            console.error('Size options container or product sizes not found', { sizeOptions, sizes: product.sizes });
+            return;
+        }
         
-        const selectedSize = btn.dataset.size;
+        // Clear any existing content
+        sizeOptions.innerHTML = '';
         
-        // Remove active from all buttons
-        sizeOptions.querySelectorAll('.size-btn').forEach(b => {
-            b.classList.remove('active');
+        // Render size buttons
+        product.sizes.forEach((size, index) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `size-btn ${index === 0 ? 'active' : ''}`;
+            btn.dataset.size = size;
+            btn.textContent = size;
+            
+            // Force styles
+            btn.style.cssText = `
+                cursor: pointer !important;
+                pointer-events: auto !important;
+                position: relative !important;
+                z-index: 999 !important;
+                background: var(--color-white) !important;
+                border: 1px solid var(--color-gray) !important;
+                min-width: 48px !important;
+                height: 48px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            `;
+            
+            // Add multiple event types to ensure it works
+            const handleSizeClick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                
+                console.log('Size button clicked:', size);
+                
+                // Remove active from all buttons
+                sizeOptions.querySelectorAll('.size-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'var(--color-white)';
+                    b.style.color = 'var(--color-navy)';
+                });
+                
+                // Add active to clicked button
+                btn.classList.add('active');
+                btn.style.background = 'var(--color-navy)';
+                btn.style.color = 'var(--color-white)';
+                btn.style.borderColor = 'var(--color-navy)';
+                
+                // Update hidden input
+                if (sizeInput) {
+                    sizeInput.value = size;
+                    console.log('Size selected:', size, 'Input value:', sizeInput.value);
+                } else {
+                    console.error('Size input not found!');
+                }
+                
+                return false;
+            };
+            
+            // Add multiple event listeners
+            btn.addEventListener('click', handleSizeClick, true);
+            btn.addEventListener('mousedown', handleSizeClick, true);
+            btn.addEventListener('touchstart', handleSizeClick, true);
+            
+            sizeOptions.appendChild(btn);
         });
         
-        // Add active to clicked button
-        btn.classList.add('active');
-        
-        // Update hidden input
+        // Set default size
         if (sizeInput) {
-            sizeInput.value = selectedSize;
-            console.log('Size selected:', selectedSize, 'Input value:', sizeInput.value);
+            sizeInput.value = product.sizes[0];
         }
-    }, true); // Use capture phase
-    
-    // Render size buttons
-    product.sizes.forEach((size, index) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `size-btn ${index === 0 ? 'active' : ''}`;
-        btn.dataset.size = size;
-        btn.textContent = size;
-        btn.style.cssText = 'cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 10;';
-        btn.setAttribute('tabindex', '0');
         
-        sizeOptions.appendChild(btn);
-    });
-    
-    // Set default size
-    if (sizeInput) {
-        sizeInput.value = product.sizes[0];
-    }
-    
-    console.log('Size selection initialized with', product.sizes.length, 'sizes');
+        // Also add event delegation on container as backup
+        sizeOptions.addEventListener('click', function(e) {
+            const btn = e.target.closest('.size-btn');
+            if (btn && btn.dataset.size) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const selectedSize = btn.dataset.size;
+                
+                sizeOptions.querySelectorAll('.size-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'var(--color-white)';
+                    b.style.color = 'var(--color-navy)';
+                });
+                
+                btn.classList.add('active');
+                btn.style.background = 'var(--color-navy)';
+                btn.style.color = 'var(--color-white)';
+                btn.style.borderColor = 'var(--color-navy)';
+                
+                if (sizeInput) {
+                    sizeInput.value = selectedSize;
+                }
+            }
+        }, true);
+        
+        console.log('Size selection initialized with', product.sizes.length, 'sizes');
+    }, 100);
 }
 
 function initColorSelection(product) {

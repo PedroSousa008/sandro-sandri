@@ -293,6 +293,9 @@
     gap: var(--space-xs);
     flex-wrap: wrap;
     margin-bottom: var(--space-xs);
+    position: relative;
+    z-index: 1;
+    pointer-events: auto !important;
 }
 
 .size-btn {
