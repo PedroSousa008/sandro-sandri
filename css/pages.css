@@ -7,6 +7,11 @@
    ======================================== */
 .page-main {
     padding-top: var(--nav-height);
+    overflow: visible !important; /* Ensure sticky works */
+}
+
+.page-main.product-page {
+    overflow: visible !important; /* Ensure sticky works on product page */
 }
 
 .nav-logo {
@@ -168,7 +173,8 @@
    ======================================== */
 .product-section {
     padding: var(--space-lg) 0 var(--space-xl);
-    overflow: visible; /* Ensure sticky works */
+    overflow: visible !important; /* Ensure sticky works */
+    min-height: 100vh; /* Ensure enough height for sticky */
 }
 
 .product-layout {
@@ -177,7 +183,8 @@
     gap: var(--space-xl);
     align-items: start;
     position: relative; /* Create positioning context */
-    overflow: visible; /* Ensure sticky works */
+    overflow: visible !important; /* Ensure sticky works */
+    min-height: 100vh; /* Ensure enough height for sticky */
 }
 
 @media (max-width: 968px) {
@@ -189,15 +196,16 @@
 
 /* Product Gallery */
 .product-gallery {
-    position: -webkit-sticky; /* Safari support */
-    position: sticky;
+    position: -webkit-sticky !important; /* Safari support */
+    position: sticky !important;
     top: 80px !important; /* Stick to top with some spacing from nav */
-    align-self: start;
-    height: fit-content;
-    max-height: calc(100vh - 100px);
+    align-self: start !important;
+    height: fit-content !important;
+    max-height: calc(100vh - 100px) !important;
     overflow-y: auto;
-    z-index: 1;
+    z-index: 10 !important;
     will-change: transform; /* Optimize for sticky */
+    background: var(--color-white); /* Ensure background doesn't show through */
 }
 
 .product-main-image {
