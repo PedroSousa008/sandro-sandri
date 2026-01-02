@@ -198,14 +198,15 @@
 .product-gallery {
     position: -webkit-sticky !important; /* Safari support */
     position: sticky !important;
-    top: 80px !important; /* Stick to top with some spacing from nav */
+    top: 0 !important; /* Stick to top of viewport */
     align-self: start !important;
     height: fit-content !important;
-    max-height: calc(100vh - 100px) !important;
+    max-height: 100vh !important;
     overflow-y: auto;
     z-index: 10 !important;
     will-change: transform; /* Optimize for sticky */
-    background: var(--color-white); /* Ensure background doesn't show through */
+    background: var(--color-white) !important; /* Ensure background doesn't show through */
+    padding-top: 80px !important; /* Add padding to account for nav */
 }
 
 .product-main-image {
