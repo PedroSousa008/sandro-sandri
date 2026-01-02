@@ -376,10 +376,13 @@
 .size-guide-table-container {
     overflow-x: auto;
     margin: var(--space-xl) 0;
+    display: flex;
+    justify-content: center;
 }
 
 .size-guide-table {
-    width: 100%;
+    width: auto;
+    min-width: 600px;
     border-collapse: collapse;
     font-family: var(--font-sans);
     margin: 0 auto;
@@ -391,19 +394,20 @@
 }
 
 .size-guide-table th {
-    padding: var(--space-md);
-    text-align: left;
+    padding: var(--space-lg);
+    text-align: center;
     font-weight: 500;
-    font-size: 0.875rem;
+    font-size: 1rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
 
 .size-guide-table td {
-    padding: var(--space-md);
+    padding: var(--space-lg);
     border-bottom: 1px solid var(--color-gray);
     color: var(--color-text);
-    font-size: 0.875rem;
+    font-size: 1rem;
+    text-align: center;
 }
 
 .size-guide-table tbody tr:hover {
@@ -413,16 +417,18 @@
 .size-guide-table td:first-child {
     font-weight: 600;
     color: var(--color-navy);
+    font-size: 1.125rem;
 }
 
 @media (max-width: 768px) {
     .size-guide-table {
-        font-size: 0.75rem;
+        min-width: 100%;
+        font-size: 0.875rem;
     }
     
     .size-guide-table th,
     .size-guide-table td {
-        padding: var(--space-sm);
+        padding: var(--space-md);
     }
 }
 
