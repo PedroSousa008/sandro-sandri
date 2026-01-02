@@ -2,9 +2,20 @@
    Sandro Sandri - Product Page
    ======================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
-    initProductPage();
-});
+// Wait for both DOM and ProductsAPI to be ready
+function waitForProductsAPI() {
+    if (window.ProductsAPI) {
+        initProductPage();
+    } else {
+        setTimeout(waitForProductsAPI, 50);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', waitForProductsAPI);
+} else {
+    waitForProductsAPI();
+}
 
 function initProductPage() {
     // Get product ID from URL
@@ -97,115 +108,92 @@ function populateProduct(product) {
 }
 
 function initSizeSelection(product) {
-    // Wait a bit to ensure DOM is ready
-    setTimeout(() => {
-        const sizeOptions = document.getElementById('size-options');
-        const sizeInput = document.getElementById('selected-size-input');
+    const sizeOptions = document.getElementById('size-options');
+    const sizeInput = document.getElementById('selected-size-input');
+    
+    if (!sizeOptions) {
+        console.error('Size options container not found!');
+        return;
+    }
+    
+    if (!product || !product.sizes || product.sizes.length === 0) {
+        console.error('Product or sizes not found!', product);
+        return;
+    }
+    
+    console.log('Initializing size selection with sizes:', product.sizes);
+    
+    // Clear any existing content
+    sizeOptions.innerHTML = '';
+    
+    // Create a simple click handler function
+    function selectSize(size) {
+        console.log('Selecting size:', size);
         
-        if (!sizeOptions || !product.sizes) {
-            console.error('Size options container or product sizes not found', { sizeOptions, sizes: product.sizes });
-            return;
-        }
-        
-        // Clear any existing content
-        sizeOptions.innerHTML = '';
-        
-        // Render size buttons
-        product.sizes.forEach((size, index) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = `size-btn ${index === 0 ? 'active' : ''}`;
-            btn.dataset.size = size;
-            btn.textContent = size;
-            
-            // Force styles
-            btn.style.cssText = `
-                cursor: pointer !important;
-                pointer-events: auto !important;
-                position: relative !important;
-                z-index: 999 !important;
-                background: var(--color-white) !important;
-                border: 1px solid var(--color-gray) !important;
-                min-width: 48px !important;
-                height: 48px !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-            `;
-            
-            // Add multiple event types to ensure it works
-            const handleSizeClick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                
-                console.log('Size button clicked:', size);
-                
-                // Remove active from all buttons
-                sizeOptions.querySelectorAll('.size-btn').forEach(b => {
-                    b.classList.remove('active');
-                    b.style.background = 'var(--color-white)';
-                    b.style.color = 'var(--color-navy)';
-                });
-                
-                // Add active to clicked button
-                btn.classList.add('active');
-                btn.style.background = 'var(--color-navy)';
-                btn.style.color = 'var(--color-white)';
-                btn.style.borderColor = 'var(--color-navy)';
-                
-                // Update hidden input
-                if (sizeInput) {
-                    sizeInput.value = size;
-                    console.log('Size selected:', size, 'Input value:', sizeInput.value);
-                } else {
-                    console.error('Size input not found!');
-                }
-                
-                return false;
-            };
-            
-            // Add multiple event listeners
-            btn.addEventListener('click', handleSizeClick, true);
-            btn.addEventListener('mousedown', handleSizeClick, true);
-            btn.addEventListener('touchstart', handleSizeClick, true);
-            
-            sizeOptions.appendChild(btn);
+        // Update all buttons
+        sizeOptions.querySelectorAll('.size-btn').forEach(b => {
+            if (b.dataset.size === size) {
+                b.classList.add('active');
+                b.style.background = '#1a1a2e';
+                b.style.color = '#ffffff';
+                b.style.borderColor = '#1a1a2e';
+            } else {
+                b.classList.remove('active');
+                b.style.background = '#ffffff';
+                b.style.color = '#1a1a2e';
+                b.style.borderColor = '#e5e5e5';
+            }
         });
         
-        // Set default size
+        // Update hidden input
         if (sizeInput) {
-            sizeInput.value = product.sizes[0];
+            sizeInput.value = size;
+            console.log('Size input updated to:', sizeInput.value);
+        } else {
+            console.error('Size input element not found!');
+        }
+    }
+    
+    // Render size buttons with simple onclick
+    product.sizes.forEach((size, index) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'size-btn';
+        btn.dataset.size = size;
+        btn.textContent = size;
+        
+        // Set default active state
+        if (index === 0) {
+            btn.classList.add('active');
         }
         
-        // Also add event delegation on container as backup
-        sizeOptions.addEventListener('click', function(e) {
-            const btn = e.target.closest('.size-btn');
-            if (btn && btn.dataset.size) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const selectedSize = btn.dataset.size;
-                
-                sizeOptions.querySelectorAll('.size-btn').forEach(b => {
-                    b.classList.remove('active');
-                    b.style.background = 'var(--color-white)';
-                    b.style.color = 'var(--color-navy)';
-                });
-                
-                btn.classList.add('active');
-                btn.style.background = 'var(--color-navy)';
-                btn.style.color = 'var(--color-white)';
-                btn.style.borderColor = 'var(--color-navy)';
-                
-                if (sizeInput) {
-                    sizeInput.value = selectedSize;
-                }
-            }
-        }, true);
+        // Simple inline onclick - most reliable
+        btn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Button clicked for size:', size);
+            selectSize(size);
+            return false;
+        };
         
-        console.log('Size selection initialized with', product.sizes.length, 'sizes');
-    }, 100);
+        // Also add addEventListener as backup
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Event listener triggered for size:', size);
+            selectSize(size);
+        }, false);
+        
+        sizeOptions.appendChild(btn);
+    });
+    
+    // Set default size
+    if (sizeInput) {
+        sizeInput.value = product.sizes[0];
+        console.log('Default size set to:', sizeInput.value);
+    }
+    
+    console.log('Size selection initialized. Total buttons:', sizeOptions.querySelectorAll('.size-btn').length);
 }
 
 function initColorSelection(product) {
