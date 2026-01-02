@@ -306,6 +306,11 @@
     color: var(--color-navy);
     border: 1px solid var(--color-gray);
     transition: var(--transition-fast);
+    cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
+    background: var(--color-white);
 }
 
 .size-btn:hover,

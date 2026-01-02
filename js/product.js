@@ -102,25 +102,47 @@ function initSizeSelection(product) {
     
     if (!sizeOptions || !product.sizes) return;
     
+    // Clear any existing content
+    sizeOptions.innerHTML = '';
+    
     // Render size buttons
-    sizeOptions.innerHTML = product.sizes.map((size, index) => `
-        <button type="button" class="size-btn ${index === 0 ? 'active' : ''}" data-size="${size}">
-            ${size}
-        </button>
-    `).join('');
+    product.sizes.forEach((size, index) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `size-btn ${index === 0 ? 'active' : ''}`;
+        btn.dataset.size = size;
+        btn.textContent = size;
+        btn.style.cursor = 'pointer';
+        btn.style.pointerEvents = 'auto';
+        
+        // Add click handler directly
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Remove active from all buttons
+            sizeOptions.querySelectorAll('.size-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            
+            // Add active to clicked button
+            btn.classList.add('active');
+            
+            // Update hidden input
+            if (sizeInput) {
+                sizeInput.value = size;
+            }
+            
+            console.log('Size selected:', size);
+        });
+        
+        sizeOptions.appendChild(btn);
+    });
     
     // Set default size
-    sizeInput.value = product.sizes[0];
-    
-    // Size selection
-    const sizeButtons = sizeOptions.querySelectorAll('.size-btn');
-    sizeButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            sizeButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            sizeInput.value = btn.dataset.size;
-        });
-    });
+    if (sizeInput) {
+        sizeInput.value = product.sizes[0];
+    }
 }
 
 function initColorSelection(product) {
