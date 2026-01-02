@@ -31,7 +31,14 @@ const PRODUCTS = [
         },
         sku: "SS-001",
         inStock: true,
-        featured: true
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        }
     },
     {
         id: 2,

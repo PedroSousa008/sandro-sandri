@@ -152,6 +152,34 @@ function initSizeSelection(product) {
         } else {
             console.error('Size input element not found!');
         }
+        
+        // Check inventory and update Add to Cart button
+        updateAddToCartButton(product.id, size);
+    }
+    
+    // Function to update Add to Cart button based on inventory
+    function updateAddToCartButton(productId, size) {
+        const addToCartBtn = document.querySelector('.add-to-cart-btn');
+        if (!addToCartBtn) return;
+        
+        // Check if size is in stock
+        const inStock = window.InventoryAPI && window.InventoryAPI.isInStock(productId, size);
+        
+        if (inStock) {
+            addToCartBtn.textContent = 'Add to Cart';
+            addToCartBtn.disabled = false;
+            addToCartBtn.style.background = '#1a1a2e';
+            addToCartBtn.style.color = '#ffffff';
+            addToCartBtn.style.cursor = 'pointer';
+            addToCartBtn.style.opacity = '1';
+        } else {
+            addToCartBtn.textContent = 'Sold Out';
+            addToCartBtn.disabled = true;
+            addToCartBtn.style.background = '#8a8a8a';
+            addToCartBtn.style.color = '#ffffff';
+            addToCartBtn.style.cursor = 'not-allowed';
+            addToCartBtn.style.opacity = '1';
+        }
     }
     
     // Render size buttons with simple onclick
@@ -162,6 +190,15 @@ function initSizeSelection(product) {
         btn.dataset.size = size;
         btn.textContent = size;
         
+        // Check if size is in stock
+        const inStock = window.InventoryAPI && window.InventoryAPI.isInStock(product.id, size);
+        
+        if (!inStock) {
+            btn.classList.add('sold-out');
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+        
         // Set default active state
         if (index === 0) {
             btn.classList.add('active');
@@ -171,6 +208,7 @@ function initSizeSelection(product) {
         btn.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
+            if (!inStock) return false; // Don't allow selection of sold out sizes
             console.log('Button clicked for size:', size);
             selectSize(size);
             return false;
@@ -180,6 +218,7 @@ function initSizeSelection(product) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            if (!inStock) return false; // Don't allow selection of sold out sizes
             console.log('Event listener triggered for size:', size);
             selectSize(size);
         }, false);
@@ -191,6 +230,9 @@ function initSizeSelection(product) {
     if (sizeInput) {
         sizeInput.value = product.sizes[0];
         console.log('Default size set to:', sizeInput.value);
+        
+        // Update Add to Cart button for default size
+        updateAddToCartButton(product.id, product.sizes[0]);
     }
     
     console.log('Size selection initialized. Total buttons:', sizeOptions.querySelectorAll('.size-btn').length);
@@ -330,6 +372,27 @@ function initAddToCartForm(product) {
             return;
         }
         
+        // Check inventory before adding to cart
+        if (window.InventoryAPI) {
+            const inStock = window.InventoryAPI.isInStock(product.id, size);
+            if (!inStock) {
+                showNotification('This size is sold out');
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+            
+            const availableStock = window.InventoryAPI.get(product.id, size);
+            if (quantity > availableStock) {
+                showNotification(`Only ${availableStock} available in this size`);
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+        }
+        
         // Ensure quantity is valid
         if (quantity < 1) {
             console.error('Invalid quantity:', quantity);
@@ -344,7 +407,15 @@ function initAddToCartForm(product) {
         
         // Add to cart - only once, with exact quantity
         if (window.cart) {
-            window.cart.addItem(product.id, size, color, quantity);
+            const added = window.cart.addItem(product.id, size, color, quantity);
+            if (added && window.InventoryAPI) {
+                // Decrease inventory when successfully added to cart
+                window.InventoryAPI.decrease(product.id, size, quantity);
+                // Update button state after adding
+                if (window.updateAddToCartButton) {
+                    window.updateAddToCartButton(product.id, size);
+                }
+            }
         } else {
             console.error('Cart not initialized');
         }
