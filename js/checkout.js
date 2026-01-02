@@ -148,7 +148,10 @@ window.updateCheckoutTotals = function() {
     if (subtotalEl) subtotalEl.textContent = window.ProductsAPI.formatPrice(subtotal);
     
     if (shippingEl) {
-        if (shipping === 0) {
+        if (!country) {
+            shippingEl.textContent = 'Select country';
+            shippingEl.classList.remove('free-shipping');
+        } else if (shipping === 0) {
             shippingEl.textContent = 'Free';
             shippingEl.classList.add('free-shipping');
         } else {
