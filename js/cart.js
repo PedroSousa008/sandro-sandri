@@ -262,6 +262,13 @@ class ShoppingCart {
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('quantity-btn')) {
                 const index = parseInt(e.target.dataset.index);
+                
+                // Check if item exists
+                if (!this.items[index]) {
+                    console.error('Item not found at index:', index);
+                    return;
+                }
+                
                 const currentQty = this.items[index].quantity;
                 
                 if (e.target.classList.contains('plus')) {
