@@ -287,30 +287,6 @@ class ShoppingCart {
         if (subtotalAmount) {
             subtotalAmount.textContent = window.ProductsAPI.formatPrice(this.getTotal());
         }
-        
-        // Re-bind event listeners after rendering
-        this.bindEditButtons();
-    }
-    
-    // Bind edit button event listeners
-    bindEditButtons() {
-        const editButtons = document.querySelectorAll('.cart-drawer .edit-item, .cart-page-item-buttons .edit-item');
-        editButtons.forEach(btn => {
-            // Remove existing listeners by cloning
-            const newBtn = btn.cloneNode(true);
-            btn.parentNode.replaceChild(newBtn, btn);
-            
-            // Add fresh event listener
-            newBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const index = parseInt(newBtn.dataset.index);
-                const productId = parseInt(newBtn.dataset.productId);
-                if (index >= 0 && productId) {
-                    this.openEditModal(index, productId);
-                }
-            });
-        });
     }
 
     // Render cart page
@@ -411,12 +387,21 @@ class ShoppingCart {
             }
         });
 
-        // Edit buttons
+        // Edit buttons - use event delegation for dynamically rendered buttons
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('edit-item')) {
-                const index = parseInt(e.target.dataset.index);
-                const productId = parseInt(e.target.dataset.productId);
-                this.openEditModal(index, productId);
+            // Check if clicked element or its parent is an edit-item button
+            const editButton = e.target.closest('.edit-item');
+            if (editButton) {
+                e.preventDefault();
+                e.stopPropagation();
+                const index = parseInt(editButton.dataset.index);
+                const productId = parseInt(editButton.dataset.productId);
+                console.log('Edit button clicked:', { index, productId });
+                if (!isNaN(index) && !isNaN(productId)) {
+                    this.openEditModal(index, productId);
+                } else {
+                    console.error('Invalid index or productId:', { index, productId });
+                }
             }
         });
 
