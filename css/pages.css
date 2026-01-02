@@ -2420,19 +2420,22 @@
 }
 
 .edit-item {
-    font-family: var(--font-sans);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--color-gray-dark);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
+    font-family: var(--font-sans) !important;
+    font-size: 0.625rem !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    color: var(--color-gray-dark) !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    text-decoration: none !important;
+    font-weight: inherit !important;
+    line-height: inherit !important;
 }
 
 .edit-item:hover {
-    color: var(--color-navy);
+    color: var(--color-navy) !important;
 }
 
 .checkout-item-actions {
