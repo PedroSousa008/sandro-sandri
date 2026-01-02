@@ -356,6 +356,76 @@
     text-decoration: underline;
 }
 
+/* ========================================
+   Size Guide Page
+   ======================================== */
+.size-guide-section {
+    padding: var(--space-lg) 0 var(--space-xl);
+}
+
+.size-guide-content {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.size-guide-intro {
+    text-align: center;
+    margin-bottom: var(--space-xl);
+}
+
+.size-guide-table-container {
+    overflow-x: auto;
+    margin: var(--space-xl) 0;
+}
+
+.size-guide-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-sans);
+    margin: 0 auto;
+}
+
+.size-guide-table thead {
+    background: var(--color-navy);
+    color: var(--color-white);
+}
+
+.size-guide-table th {
+    padding: var(--space-md);
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.size-guide-table td {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--color-gray);
+    color: var(--color-text);
+    font-size: 0.875rem;
+}
+
+.size-guide-table tbody tr:hover {
+    background: var(--color-gray-light);
+}
+
+.size-guide-table td:first-child {
+    font-weight: 600;
+    color: var(--color-navy);
+}
+
+@media (max-width: 768px) {
+    .size-guide-table {
+        font-size: 0.75rem;
+    }
+    
+    .size-guide-table th,
+    .size-guide-table td {
+        padding: var(--space-sm);
+    }
+}
+
 .color-options {
     display: flex;
     gap: var(--space-sm);
