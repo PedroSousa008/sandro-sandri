@@ -248,6 +248,9 @@ function initSizeSelection(product) {
         if (window.updateAddToCartButton) {
             window.updateAddToCartButton(product.id, product.sizes[0]);
         }
+        
+        // Update quantity max for default size
+        updateQuantityMax(product.id, product.sizes[0]);
     }
     
     // Define updateAddToCartButton function if not already defined
