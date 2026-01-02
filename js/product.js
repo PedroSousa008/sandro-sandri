@@ -154,7 +154,9 @@ function initSizeSelection(product) {
         }
         
         // Check inventory and update Add to Cart button
-        updateAddToCartButton(product.id, size);
+        if (window.updateAddToCartButton) {
+            window.updateAddToCartButton(product.id, size);
+        }
     }
     
     // Function to update Add to Cart button based on inventory
@@ -232,7 +234,9 @@ function initSizeSelection(product) {
         console.log('Default size set to:', sizeInput.value);
         
         // Update Add to Cart button for default size
-        updateAddToCartButton(product.id, product.sizes[0]);
+        if (window.updateAddToCartButton) {
+            window.updateAddToCartButton(product.id, product.sizes[0]);
+        }
     }
     
     console.log('Size selection initialized. Total buttons:', sizeOptions.querySelectorAll('.size-btn').length);
