@@ -6,7 +6,7 @@ const PRODUCTS = [
     {
         id: 1,
         name: "Isole Cayman",
-        price: 85,
+        price: 95,
         category: "tshirts",
         description: "In the Isole Cayman, Paradise is more than a place - it's a feeling. White sands, blue waters, and warm smiles welcome you with a cheerful \"Wha Happening?\". B O D D E N breezes carry the spirit of the sea, where diverse cultures and nautical charm meet. Explore the historic Turtle Crawls, unwind on dazzling shores. Unna will find both adventure and serenity.",
         details: [
@@ -36,7 +36,7 @@ const PRODUCTS = [
     {
         id: 2,
         name: "Isola di Necker",
-        price: 85,
+        price: 95,
         category: "tshirts",
         description: "It is the pinnacle of private island luxury - a sanctuary where pristine nature and effortless elegance converge. Encircled by the crystal-clear waters of the Caribbean, this exclusive retreat offers an unparalleled blend of seclusion, adventure, and refined indulgence. Whether you're sailing through turquoise lagoons, unwinding in opulent beachfront villas, or savoring world-class cuisine under the stars, every moment on the Island is designed to elevate senses.",
         details: [
@@ -66,7 +66,7 @@ const PRODUCTS = [
     {
         id: 3,
         name: "Monroe's Kisses",
-        price: 85,
+        price: 95,
         category: "tshirts",
         description: "Marilyn, they still speak of your kisses. Soft as cashmere and fleeting as champagne bubbles. They say your kisses carried the elegance of roses in full bloom, the decadence of midnight escapades, the allure of something just out of reach. But Marilyn, your kisses were never mere gestures. They were couture - tailored to the moment, unforgettable, and utterly, exquisitely divine. Ohhh, I could spend an eternity lost in the poetry of those kisses.",
         details: [
@@ -96,7 +96,7 @@ const PRODUCTS = [
     {
         id: 4,
         name: "Sardinia",
-        price: 85,
+        price: 95,
         category: "tshirts",
         description: "Cradled in the embrace of the Mediterranean, Sardinia enchants with its rugged landscapes and tranquil shores, where timeless beauty and ancient traditions intertwine. Its serene coastline invites reflection, while its villages whisper stories of a slower, more deliberate life. Yet, as with the sea, not every desire is met. And in its mysteries, we find the soul of a land untouched by time.",
         details: [
@@ -126,7 +126,7 @@ const PRODUCTS = [
     {
         id: 5,
         name: "Port-Coton",
-        price: 85,
+        price: 95,
         category: "tshirts",
         description: "Les Pyramides de Port-Coton, mer sauvage by Claude Monet captures the untamed drama of sea and stone with breathtaking intensity. Towering rock formations rise defiantly from crashing waves, rendered in thick, expressive brushstrokes that mirror the raw energy of the Atlantic. Monet's bold use of colour - deep blues, stormy grays, and frothy whites - creates a vivid, almost physical sensation of wind and spray. This work departs from tranquil Impressionism. 1886",
         details: [
