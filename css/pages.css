@@ -168,6 +168,7 @@
    ======================================== */
 .product-section {
     padding: var(--space-lg) 0 var(--space-xl);
+    overflow: visible; /* Ensure sticky works */
 }
 
 .product-layout {
@@ -175,6 +176,8 @@
     grid-template-columns: 1fr 1fr;
     gap: var(--space-xl);
     align-items: start;
+    position: relative; /* Create positioning context */
+    overflow: visible; /* Ensure sticky works */
 }
 
 @media (max-width: 968px) {
@@ -186,12 +189,15 @@
 
 /* Product Gallery */
 .product-gallery {
+    position: -webkit-sticky; /* Safari support */
     position: sticky;
-    top: 80px; /* Stick to top with some spacing from nav */
+    top: 80px !important; /* Stick to top with some spacing from nav */
     align-self: start;
     height: fit-content;
     max-height: calc(100vh - 100px);
     overflow-y: auto;
+    z-index: 1;
+    will-change: transform; /* Optimize for sticky */
 }
 
 .product-main-image {
