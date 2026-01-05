@@ -627,8 +627,8 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Switch to a specific image index with smooth animation
-function switchToImage(imageIndex, product, direction = 0) {
+// Switch to a specific image index
+function switchToImage(imageIndex, product) {
     if (!product || !product.images || product.images.length === 0) return;
     
     // Ensure index is within bounds
@@ -639,57 +639,7 @@ function switchToImage(imageIndex, product, direction = 0) {
     const thumbnailsContainer = document.querySelector('.product-thumbnails');
     
     if (mainImageContainer) {
-        const currentImg = mainImageContainer.querySelector('img');
-        const isMobile = window.innerWidth <= 768;
-        
-        if (isMobile && currentImg && direction !== 0) {
-            // Smooth slide animation on mobile
-            const slideDistance = direction > 0 ? '-100%' : '100%';
-            
-            // Create new image element
-            const newImg = document.createElement('img');
-            newImg.src = product.images[imageIndex];
-            newImg.alt = product.name;
-            newImg.style.position = 'absolute';
-            newImg.style.top = '0';
-            newImg.style.left = direction > 0 ? '100%' : '-100%';
-            newImg.style.width = '100%';
-            newImg.style.height = 'auto';
-            newImg.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-            newImg.style.transform = 'translateX(0)';
-            
-            mainImageContainer.style.position = 'relative';
-            mainImageContainer.style.overflow = 'hidden';
-            mainImageContainer.appendChild(newImg);
-            
-            // Animate current image out
-            currentImg.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-            currentImg.style.transform = `translateX(${slideDistance})`;
-            
-            // Animate new image in
-            requestAnimationFrame(() => {
-                newImg.style.transform = 'translateX(0)';
-            });
-            
-            // Remove old image after animation
-            setTimeout(() => {
-                if (currentImg.parentNode) {
-                    currentImg.remove();
-                }
-                // Reset new image positioning
-                newImg.style.position = 'static';
-                newImg.style.left = 'auto';
-            }, 400);
-        } else {
-            // Fade transition for desktop or no direction
-            mainImageContainer.style.opacity = '0';
-            mainImageContainer.style.transition = 'opacity 0.3s ease';
-            
-            setTimeout(() => {
-                mainImageContainer.innerHTML = `<img src="${product.images[imageIndex]}" alt="${product.name}">`;
-                mainImageContainer.style.opacity = '1';
-            }, 150);
-        }
+        mainImageContainer.innerHTML = `<img src="${product.images[imageIndex]}" alt="${product.name}">`;
     }
     
     // Update thumbnails
@@ -725,80 +675,47 @@ function initSwipeNavigation(product) {
     
     let touchStartX = 0;
     let touchStartY = 0;
-    let touchCurrentX = 0;
-    let touchCurrentY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
     let isSwiping = false;
-    let currentImage = null;
-    let swipeDirection = 0; // -1 for left, 1 for right
-    const minSwipeDistance = 30; // Minimum distance for a swipe (reduced for better responsiveness)
-    const swipeThreshold = 0.3; // Percentage of screen width to trigger swipe
+    const minSwipeDistance = 50; // Minimum distance for a swipe
     
     // Touch start
     gallery.addEventListener('touchstart', (e) => {
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
-        touchCurrentX = touchStartX;
-        touchCurrentY = touchStartY;
-        isSwiping = false;
-        currentImage = mainImageContainer.querySelector('img');
-        
-        if (currentImage) {
-            mainImageContainer.classList.add('swiping');
-        }
+        isSwiping = true;
     }, { passive: true });
     
-    // Touch move - show real-time swipe feedback
+    // Touch move - prevent default scrolling while swiping horizontally
     gallery.addEventListener('touchmove', (e) => {
-        touchCurrentX = e.changedTouches[0].screenX;
-        touchCurrentY = e.changedTouches[0].screenY;
+        if (!isSwiping) return;
         
-        const deltaX = touchCurrentX - touchStartX;
-        const deltaY = touchCurrentY - touchStartY;
-        const absDeltaX = Math.abs(deltaX);
-        const absDeltaY = Math.abs(deltaY);
+        const currentX = e.changedTouches[0].screenX;
+        const currentY = e.changedTouches[0].screenY;
+        const deltaX = Math.abs(currentX - touchStartX);
+        const deltaY = Math.abs(currentY - touchStartY);
         
-        // Determine if this is a horizontal swipe
-        if (absDeltaX > absDeltaY && absDeltaX > 10) {
-            if (!isSwiping) {
-                isSwiping = true;
-            }
-            
-            // Prevent vertical scrolling during horizontal swipe
+        // If horizontal movement is greater than vertical, prevent vertical scroll
+        if (deltaX > deltaY && deltaX > 10) {
             e.preventDefault();
-            
-            // Determine swipe direction
-            swipeDirection = deltaX > 0 ? 1 : -1;
-            
-            // Apply real-time transform for smooth visual feedback
-            if (currentImage) {
-                const screenWidth = window.innerWidth;
-                const translateX = (deltaX / screenWidth) * 100;
-                currentImage.style.transform = `translateX(${translateX}%)`;
-                currentImage.style.opacity = 1 - (Math.abs(deltaX) / screenWidth) * 0.5;
-            }
         }
     }, { passive: false });
     
     // Touch end
     gallery.addEventListener('touchend', (e) => {
-        if (!isSwiping || !currentImage) {
-            mainImageContainer.classList.remove('swiping');
-            // Reset image position if swipe was cancelled
-            if (currentImage) {
-                currentImage.style.transform = 'translateX(0)';
-                currentImage.style.opacity = '1';
-            }
-            return;
-        }
+        if (!isSwiping) return;
         
-        const deltaX = touchCurrentX - touchStartX;
-        const deltaY = touchCurrentY - touchStartY;
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
         const absDeltaX = Math.abs(deltaX);
         const absDeltaY = Math.abs(deltaY);
-        const screenWidth = window.innerWidth;
         
         // Only process swipe if horizontal movement is greater than vertical
-        if (absDeltaX > absDeltaY && (absDeltaX > minSwipeDistance || absDeltaX > screenWidth * swipeThreshold)) {
+        if (absDeltaX > absDeltaY && absDeltaX > minSwipeDistance) {
             const currentIndex = window.currentProductImageIndex[product.id] || 0;
             let newIndex = currentIndex;
             
@@ -808,7 +725,6 @@ function initSwipeNavigation(product) {
                 if (newIndex >= product.images.length) {
                     newIndex = 0; // Loop to first image
                 }
-                switchToImage(newIndex, product, -1);
             }
             // Swipe right (left to right) = previous image
             else if (deltaX > 0) {
@@ -816,32 +732,18 @@ function initSwipeNavigation(product) {
                 if (newIndex < 0) {
                     newIndex = product.images.length - 1; // Loop to last image
                 }
-                switchToImage(newIndex, product, 1);
             }
-        } else {
-            // Swipe was too small, snap back
-            if (currentImage) {
-                currentImage.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease';
-                currentImage.style.transform = 'translateX(0)';
-                currentImage.style.opacity = '1';
-                
-                setTimeout(() => {
-                    currentImage.style.transition = '';
-                }, 300);
+            
+            if (newIndex !== currentIndex) {
+                switchToImage(newIndex, product);
             }
         }
         
-        mainImageContainer.classList.remove('swiping');
         isSwiping = false;
     }, { passive: true });
     
     // Touch cancel
     gallery.addEventListener('touchcancel', () => {
-        if (currentImage) {
-            currentImage.style.transform = 'translateX(0)';
-            currentImage.style.opacity = '1';
-        }
-        mainImageContainer.classList.remove('swiping');
         isSwiping = false;
     }, { passive: true });
 }
