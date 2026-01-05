@@ -1143,13 +1143,18 @@ img {
     
     /* Keep inline layout on very small screens */
     .footer-links {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: var(--space-xs) var(--space-sm);
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
+        display: flex !important;
     }
     
     .footer-links a {
-        font-size: 0.7rem;
+        font-size: 0.7rem !important;
+        white-space: nowrap !important;
+        display: inline-block !important;
+        margin: 0 !important;
     }
 }
 
