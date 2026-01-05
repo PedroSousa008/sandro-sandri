@@ -441,6 +441,8 @@ img {
 .social-links {
     display: flex;
     gap: var(--space-md);
+    justify-content: center;
+    align-items: center;
 }
 
 .social-links a {
@@ -471,6 +473,26 @@ img {
 
 .social-links .profile-link.active {
     color: var(--color-navy);
+}
+
+/* Mobile menu footer adjustments */
+@media (max-width: 768px) {
+    .menu-footer {
+        margin-top: auto;
+        padding-top: var(--space-lg);
+        padding-bottom: 80px; /* Add bottom padding to clear browser navigation bar */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .social-links {
+        display: flex;
+        gap: var(--space-md);
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
 }
 
 /* Menu Overlay */
