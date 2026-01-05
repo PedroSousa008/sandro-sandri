@@ -135,7 +135,32 @@ function initInventoryWhenReady() {
     if (window.ProductsAPI && window.ProductsAPI.getAll) {
         const products = window.ProductsAPI.getAll();
         if (products && products.length > 0) {
-            initializeInventory();
+            const inventory = initializeInventory();
+            
+            // Verify all products have inventory - if not, reset
+            let needsReset = false;
+            products.forEach(product => {
+                if (product.inventory) {
+                    if (!inventory[product.id]) {
+                        needsReset = true;
+                    } else {
+                        // Check if any size is missing or has 0 stock when it shouldn't
+                        Object.keys(product.inventory).forEach(size => {
+                            const expectedStock = product.inventory[size];
+                            const currentStock = inventory[product.id][size];
+                            if (currentStock === undefined || currentStock === null || currentStock < 0) {
+                                needsReset = true;
+                            }
+                        });
+                    }
+                }
+            });
+            
+            if (needsReset) {
+                console.log('Inventory corrupted or missing - resetting to full stock');
+                resetInventoryToFull();
+            }
+            
             console.log('Inventory initialized:', JSON.parse(localStorage.getItem('sandroSandriInventory') || '{}'));
         } else {
             // Wait a bit and try again
