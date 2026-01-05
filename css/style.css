@@ -1113,17 +1113,27 @@ img {
     .footer-links {
         flex-direction: row;
         flex-wrap: wrap;
-        gap: var(--space-xs) var(--space-sm);
+        gap: 0;
+        align-items: center;
     }
     
     .footer-links a {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         white-space: nowrap;
+        display: inline;
+    }
+    
+    /* Add separators between links */
+    .footer-links a:not(:last-child)::after {
+        content: " / ";
+        margin: 0 0.25rem;
+        color: var(--color-text-light);
     }
     
     .footer-heading {
         width: 100%;
         margin-bottom: var(--space-xs);
+        display: block;
     }
 }
 
