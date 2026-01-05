@@ -1111,22 +1111,24 @@ img {
     
     /* Make About and Help links display inline on mobile */
     .footer-links {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        align-items: center;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
+        display: flex !important;
     }
     
     .footer-links a {
-        font-size: 0.7rem;
-        white-space: nowrap;
-        display: inline-block;
+        font-size: 0.7rem !important;
+        white-space: nowrap !important;
+        display: inline-block !important;
+        margin: 0 !important;
     }
     
     .footer-heading {
-        width: 100%;
-        margin-bottom: var(--space-xs);
-        display: block;
+        width: 100% !important;
+        margin-bottom: var(--space-xs) !important;
+        display: block !important;
     }
 }
 
