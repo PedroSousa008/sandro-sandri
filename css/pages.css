@@ -1347,7 +1347,7 @@
     /* Adjust text positioning for different sections to center perfectly */
     /* What is Sandro Sandri - text to the right */
     #story .about-content .about-text {
-        margin-left: calc(-50vw + 50% + 80px);
+        margin-left: calc(-50vw + 50% + 85px);
         padding-left: 1rem;
         padding-right: 1rem;
     }
@@ -1362,7 +1362,7 @@
     
     /* Founder - text to the right */
     #founder .about-content .about-text {
-        margin-left: calc(-50vw + 50% + 80px);
+        margin-left: calc(-50vw + 50% + 85px);
         padding-left: 1rem;
         padding-right: 1rem;
     }
