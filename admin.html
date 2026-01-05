@@ -187,6 +187,7 @@
             <button class="admin-action-btn admin-action-btn-primary" id="deploy-btn">Deploy All Changes</button>
             <button class="admin-action-btn admin-action-btn-secondary" id="preview-btn">Preview Draft</button>
             <button class="admin-action-btn admin-action-btn-secondary" id="clear-draft-btn">Clear Draft</button>
+            <button class="admin-action-btn admin-action-btn-secondary" id="reset-inventory-btn" style="background: #4caf50; color: white;">Reset Inventory to Full Stock</button>
         </div>
 
         <div class="admin-section">
@@ -290,6 +291,19 @@
                 window.AdminSystem.draftContent = {};
                 window.AdminSystem.saveDraftContent();
                 updateDashboard();
+            }
+        });
+        
+        document.getElementById('reset-inventory-btn').addEventListener('click', () => {
+            if (confirm('Reset all inventory to full stock? This will restore all sizes to their maximum quantities (XS: 10, S: 20, M: 50, L: 50, XL: 20 per model).')) {
+                if (window.InventoryAPI && window.InventoryAPI.reset) {
+                    window.InventoryAPI.reset();
+                    alert('Inventory reset successfully! All products now have full stock.');
+                    // Reload to see changes
+                    window.location.reload();
+                } else {
+                    alert('Inventory API not available. Please refresh the page.');
+                }
             }
         });
         

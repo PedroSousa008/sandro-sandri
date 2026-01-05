@@ -2,8 +2,8 @@
    Sandro Sandri - Inventory Management
    ======================================== */
 
-// Initialize inventory from products
-function initializeInventory() {
+// Reset inventory to full stock (for all products)
+function resetInventoryToFull() {
     const products = window.ProductsAPI.getAll();
     const inventory = {};
     
@@ -13,22 +13,63 @@ function initializeInventory() {
         }
     });
     
-    // Check if inventory exists in localStorage, if not, initialize it
+    localStorage.setItem('sandroSandriInventory', JSON.stringify(inventory));
+    console.log('Inventory reset to full stock:', inventory);
+    return inventory;
+}
+
+// Initialize inventory from products
+function initializeInventory() {
+    const products = window.ProductsAPI.getAll();
+    const inventory = {};
+    
+    // Build full inventory from all products
+    products.forEach(product => {
+        if (product.inventory) {
+            inventory[product.id] = { ...product.inventory };
+        }
+    });
+    
+    // Check if inventory exists in localStorage
     const savedInventory = localStorage.getItem('sandroSandriInventory');
+    
     if (!savedInventory) {
+        // First time - initialize with full stock
         localStorage.setItem('sandroSandriInventory', JSON.stringify(inventory));
         return inventory;
     }
     
-    // Merge saved inventory with product defaults (in case new products are added)
+    // Merge saved inventory with product defaults
     const saved = JSON.parse(savedInventory);
+    let needsReset = false;
+    
     products.forEach(product => {
-        if (product.inventory && !saved[product.id]) {
-            saved[product.id] = { ...product.inventory };
+        if (product.inventory) {
+            // If product doesn't exist in saved inventory, add it
+            if (!saved[product.id]) {
+                saved[product.id] = { ...product.inventory };
+                needsReset = true;
+            } else {
+                // Check if all sizes are present and have correct max values
+                Object.keys(product.inventory).forEach(size => {
+                    const maxStock = product.inventory[size];
+                    const currentStock = saved[product.id][size];
+                    
+                    // If size is missing or stock is higher than max (shouldn't happen), reset it
+                    if (currentStock === undefined || currentStock > maxStock) {
+                        saved[product.id][size] = maxStock;
+                        needsReset = true;
+                    }
+                });
+            }
         }
     });
     
-    localStorage.setItem('sandroSandriInventory', JSON.stringify(saved));
+    // If any product was missing or had issues, save the corrected inventory
+    if (needsReset) {
+        localStorage.setItem('sandroSandriInventory', JSON.stringify(saved));
+    }
+    
     return saved;
 }
 
@@ -124,6 +165,7 @@ window.InventoryAPI = {
     isInStock: isInStock,
     decrease: decreaseInventory,
     increase: increaseInventory,
-    init: initializeInventory
+    init: initializeInventory,
+    reset: resetInventoryToFull
 };
 

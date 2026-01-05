@@ -68,7 +68,14 @@ const PRODUCTS = [
         },
         sku: "SS-002",
         inStock: true,
-        featured: true
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        }
     },
     {
         id: 3,
@@ -98,7 +105,14 @@ const PRODUCTS = [
         },
         sku: "SS-003",
         inStock: true,
-        featured: true
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        }
     },
     {
         id: 4,
@@ -128,7 +142,14 @@ const PRODUCTS = [
         },
         sku: "SS-004",
         inStock: true,
-        featured: true
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        }
     },
     {
         id: 5,
@@ -158,7 +179,14 @@ const PRODUCTS = [
         },
         sku: "SS-005",
         inStock: true,
-        featured: true
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        }
     }
 ];
 
