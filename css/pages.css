@@ -209,6 +209,41 @@
     padding-top: 80px !important; /* Add padding to account for nav */
 }
 
+/* Mobile-specific sticky fixes */
+@media (max-width: 768px) {
+    .product-gallery {
+        position: -webkit-sticky !important;
+        position: sticky !important;
+        top: 0 !important;
+        padding-top: 80px !important;
+        max-height: calc(100vh - 80px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    }
+    
+    /* Ensure parent containers don't break sticky on mobile */
+    .product-section {
+        overflow: visible !important;
+        position: relative !important;
+    }
+    
+    .product-layout {
+        overflow: visible !important;
+        position: relative !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    /* Make sure gallery is first in mobile layout */
+    .product-layout .product-gallery {
+        order: -1;
+        position: -webkit-sticky !important;
+        position: sticky !important;
+        top: 0 !important;
+        width: 100% !important;
+    }
+}
+
 .product-main-image {
     margin-bottom: var(--space-md);
     background: none;
