@@ -135,9 +135,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return isSticky;
     }
     
-    // Setup based on device
+    // Setup based on device - run immediately
     if (isMobile) {
         console.log('Mobile detected - using fixed positioning for gallery');
+        
+        // Apply fixed positioning immediately
+        gallery.style.position = 'fixed';
+        gallery.style.top = navHeight + 'px';
+        gallery.style.left = '0';
+        gallery.style.right = '0';
+        gallery.style.width = '100%';
+        gallery.style.zIndex = '100';
+        gallery.style.background = '#ffffff';
+        gallery.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        
+        // Then setup properly after images load
         setupMobileFixed();
         
         // Update on resize
@@ -148,6 +160,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 location.reload(); // Reload on significant size change
             } else if (isMobile) {
                 setupMobileFixed();
+            }
+        }, { passive: true });
+        
+        // Also run on scroll to ensure it stays fixed
+        window.addEventListener('scroll', () => {
+            if (isMobile) {
+                gallery.style.position = 'fixed';
+                gallery.style.top = navHeight + 'px';
             }
         }, { passive: true });
     } else if (!checkStickySupport()) {
