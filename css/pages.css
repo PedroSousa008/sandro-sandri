@@ -499,59 +499,98 @@
 }
 
 @media (max-width: 768px) {
+    /* Prevent horizontal scrolling on size guide page */
+    body.size-guide-page,
+    .size-guide-section,
+    .size-guide-section .container,
+    .size-guide-content {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+    }
+    
+    .page-main {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }
+    
     .size-guide-table-container {
-        overflow-x: visible;
-        margin: var(--space-lg) var(--space-md);
+        overflow-x: hidden !important;
+        margin: var(--space-lg) var(--space-sm);
         padding: 0;
         display: flex;
         justify-content: center;
+        width: 100%;
+        max-width: 100%;
     }
     
     .size-guide-table {
-        width: calc(100% - 2rem);
-        max-width: calc(100% - 2rem);
-        min-width: 0;
-        font-size: 0.55rem;
+        width: calc(100% - 1rem) !important;
+        max-width: calc(100% - 1rem) !important;
+        min-width: 0 !important;
+        font-size: 0.5rem;
         display: table;
         table-layout: fixed;
         margin: 0 auto;
+        border-collapse: collapse;
     }
     
     .size-guide-table th,
     .size-guide-table td {
-        padding: 0.35rem 0.15rem;
-        font-size: 0.55rem;
+        padding: 0.3rem 0.1rem !important;
+        font-size: 0.5rem !important;
         word-wrap: break-word;
-        line-height: 1.2;
-        white-space: nowrap;
+        line-height: 1.1;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .size-guide-table th {
-        font-size: 0.5rem;
-        letter-spacing: 0.01em;
-        padding: 0.35rem 0.15rem;
+        font-size: 0.45rem !important;
+        letter-spacing: 0;
+        padding: 0.3rem 0.1rem !important;
+        white-space: normal;
     }
     
     .size-guide-table td:first-child {
-        font-size: 0.6rem;
+        font-size: 0.55rem !important;
         font-weight: 600;
     }
     
     /* Ensure all columns are visible with proper width distribution */
     .size-guide-table th:nth-child(1),
     .size-guide-table td:nth-child(1) {
-        width: 12%;
+        width: 10% !important;
+        min-width: 10% !important;
+        max-width: 10% !important;
     }
     
     .size-guide-table th:nth-child(2),
-    .size-guide-table td:nth-child(2),
+    .size-guide-table td:nth-child(2) {
+        width: 22.5% !important;
+        min-width: 22.5% !important;
+        max-width: 22.5% !important;
+    }
+    
     .size-guide-table th:nth-child(3),
-    .size-guide-table td:nth-child(3),
+    .size-guide-table td:nth-child(3) {
+        width: 22.5% !important;
+        min-width: 22.5% !important;
+        max-width: 22.5% !important;
+    }
+    
     .size-guide-table th:nth-child(4),
-    .size-guide-table td:nth-child(4),
+    .size-guide-table td:nth-child(4) {
+        width: 22.5% !important;
+        min-width: 22.5% !important;
+        max-width: 22.5% !important;
+    }
+    
     .size-guide-table th:nth-child(5),
     .size-guide-table td:nth-child(5) {
-        width: 22%;
+        width: 22.5% !important;
+        min-width: 22.5% !important;
+        max-width: 22.5% !important;
     }
 }
 
