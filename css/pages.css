@@ -1304,6 +1304,7 @@
         aspect-ratio: 4/5;
         width: 140px;
         flex-shrink: 0;
+        align-self: flex-start;
     }
     
     .about-image.founder-image {
@@ -1327,6 +1328,8 @@
         font-size: 0.875rem;
         line-height: 1.6;
         margin-bottom: var(--space-sm);
+        grid-column: 1 / -1;
+        width: 100%;
     }
     
     .about-label {
