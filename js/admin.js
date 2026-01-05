@@ -14,6 +14,9 @@ class AdminSystem {
         // Always apply content (live for users, draft for owner)
         this.applyDraftContent();
         
+        // Initialize session sync (for cross-tab communication)
+        this.initSessionSync();
+        
         // Track ALL users (both owner and regular users)
         this.trackUserSession();
         
@@ -280,9 +283,36 @@ class AdminSystem {
         // Only show to owner, but track all users
         const sessions = this.getActiveSessions();
         
+        // Clean up old sessions first
+        const now = new Date();
+        Object.keys(sessions).forEach(id => {
+            const session = sessions[id];
+            if (!session || !session.timestamp) {
+                delete sessions[id];
+                return;
+            }
+            const sessionTime = new Date(session.timestamp);
+            const secondsSinceUpdate = (now - sessionTime) / 1000;
+            if (secondsSinceUpdate > 30) {
+                delete sessions[id];
+            }
+        });
+        
         // Count active sessions (excluding owner sessions)
-        const userSessions = Object.values(sessions).filter(s => s.role !== 'OWNER');
+        const userSessions = Object.values(sessions).filter(s => {
+            return s && s.role && s.role !== 'OWNER' && s.timestamp;
+        });
         this.onlineUsers = userSessions.length;
+        
+        // Debug logging (only in console)
+        if (window.auth && window.auth.isOwner()) {
+            console.log('Online users tracking:', {
+                totalSessions: Object.keys(sessions).length,
+                ownerSessions: Object.values(sessions).filter(s => s.role === 'OWNER').length,
+                userSessions: this.onlineUsers,
+                allSessions: sessions
+            });
+        }
         
         // Update UI (only if owner is logged in)
         if (window.auth && window.auth.isOwner()) {
