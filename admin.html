@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Allura&family=Arapey:ital@0;1&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <style>
+        .admin-dashboard {
+            padding: calc(var(--nav-height) + var(--space-lg)) var(--space-md) var(--space-xl);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .admin-header {
+            margin-bottom: var(--space-xl);
+        }
+        
+        .admin-title {
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            color: var(--color-navy);
+            margin-bottom: var(--space-sm);
+        }
+        
+        .admin-subtitle {
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--color-text-light);
+        }
+        
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+        
+        .admin-stat-card {
+            background: var(--color-white);
+            padding: var(--space-md);
+            border: 1px solid var(--color-gray);
+            border-radius: 4px;
+        }
+        
+        .admin-stat-label {
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            color: var(--color-text-light);
+            margin-bottom: var(--space-xs);
+        }
+        
+        .admin-stat-value {
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            color: var(--color-navy);
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+        }
+        
+        .admin-action-btn {
+            padding: var(--space-sm) var(--space-lg);
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .admin-action-btn-primary {
+            background: var(--color-navy);
+            color: var(--color-white);
+        }
+        
+        .admin-action-btn-primary:hover {
+            background: var(--color-navy-dark);
+        }
+        
+        .admin-action-btn-secondary {
+            background: var(--color-white);
+            color: var(--color-navy);
+            border: 1px solid var(--color-navy);
+        }
+        
+        .admin-action-btn-secondary:hover {
+            background: var(--color-gray-light);
+        }
+        
+        .admin-section {
+            background: var(--color-white);
+            padding: var(--space-lg);
+            border: 1px solid var(--color-gray);
+            border-radius: 4px;
+            margin-bottom: var(--space-lg);
+        }
+        
+        .admin-section-title {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            color: var(--color-navy);
+            margin-bottom: var(--space-md);
+        }
+        
+        .admin-draft-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .admin-draft-item {
+            padding: var(--space-sm);
+            border-bottom: 1px solid var(--color-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-draft-item:last-child {
+            border-bottom: none;
+        }
+        
+        .admin-draft-info {
+            flex: 1;
+        }
+        
+        .admin-draft-key {
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-text);
+        }
+        
+        .admin-draft-preview {
+            font-family: var(--font-sans);
+            font-size: 0.75rem;
+            color: var(--color-text-light);
+            margin-top: var(--space-xs);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav scrolled">
+        <a href="index.html" class="nav-logo">Sandro Sandri</a>
+        <div class="nav-right">
+            <a href="index.html" class="nav-link">View Website</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="admin-dashboard">
+        <div class="admin-header">
+            <h1 class="admin-title">Admin Dashboard</h1>
+            <p class="admin-subtitle">Manage your website content and view analytics</p>
+        </div>
+
+        <div class="admin-stats">
+            <div class="admin-stat-card">
+                <div class="admin-stat-label">Online Users</div>
+                <div class="admin-stat-value" id="dashboard-online-count">0</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-label">Draft Changes</div>
+                <div class="admin-stat-value" id="dashboard-draft-count">0</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-label">Last Deployed</div>
+                <div class="admin-stat-value" id="dashboard-last-deploy" style="font-size: 1rem;">Never</div>
+            </div>
+        </div>
+
+        <div class="admin-actions">
+            <button class="admin-action-btn admin-action-btn-primary" id="deploy-btn">Deploy All Changes</button>
+            <button class="admin-action-btn admin-action-btn-secondary" id="preview-btn">Preview Draft</button>
+            <button class="admin-action-btn admin-action-btn-secondary" id="clear-draft-btn">Clear Draft</button>
+        </div>
+
+        <div class="admin-section">
+            <h2 class="admin-section-title">Draft Changes</h2>
+            <ul class="admin-draft-list" id="draft-list">
+                <li class="admin-draft-item">
+                    <div class="admin-draft-info">
+                        <div class="admin-draft-key">No draft changes</div>
+                        <div class="admin-draft-preview">Make edits on any page using Ctrl/Cmd + Click</div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="admin-section">
+            <h2 class="admin-section-title">Quick Links</h2>
+            <div class="admin-actions">
+                <a href="index.html" class="admin-action-btn admin-action-btn-secondary">Home Page</a>
+                <a href="collection.html" class="admin-action-btn admin-action-btn-secondary">Collection</a>
+                <a href="product.html" class="admin-action-btn admin-action-btn-secondary">Product Page</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        // Check authentication
+        if (!window.auth || !window.auth.isOwner()) {
+            window.location.href = 'login.html';
+        }
+        
+        // Initialize dashboard
+        function updateDashboard() {
+            // Update online users
+            if (window.AdminSystem) {
+                const onlineCount = window.AdminSystem.onlineUsers || 0;
+                document.getElementById('dashboard-online-count').textContent = onlineCount;
+                
+                // Update draft count
+                const draftContent = window.AdminSystem.draftContent;
+                const draftCount = draftContent.pages ? Object.keys(draftContent.pages).length : 0;
+                document.getElementById('dashboard-draft-count').textContent = draftCount;
+                
+                // Update last deploy
+                const liveContent = window.AdminSystem.liveContent;
+                if (liveContent.deployedAt) {
+                    const deployDate = new Date(liveContent.deployedAt);
+                    document.getElementById('dashboard-last-deploy').textContent = deployDate.toLocaleString();
+                }
+                
+                // Update draft list
+                updateDraftList();
+            }
+        }
+        
+        function updateDraftList() {
+            const draftList = document.getElementById('draft-list');
+            const draftContent = window.AdminSystem.draftContent;
+            
+            if (!draftContent.pages || Object.keys(draftContent.pages).length === 0) {
+                draftList.innerHTML = `
+                    <li class="admin-draft-item">
+                        <div class="admin-draft-info">
+                            <div class="admin-draft-key">No draft changes</div>
+                            <div class="admin-draft-preview">Make edits on any page using Ctrl/Cmd + Click</div>
+                        </div>
+                    </li>
+                `;
+                return;
+            }
+            
+            let html = '';
+            Object.keys(draftContent.pages).forEach(page => {
+                const pageDraft = draftContent.pages[page];
+                Object.keys(pageDraft).forEach(key => {
+                    const item = pageDraft[key];
+                    html += `
+                        <li class="admin-draft-item">
+                            <div class="admin-draft-info">
+                                <div class="admin-draft-key">${page} / ${key}</div>
+                                <div class="admin-draft-preview">${item.text || item.html || ''}</div>
+                            </div>
+                        </li>
+                    `;
+                });
+            });
+            draftList.innerHTML = html;
+        }
+        
+        // Bind buttons
+        document.getElementById('deploy-btn').addEventListener('click', () => {
+            if (window.AdminSystem) {
+                window.AdminSystem.deploy();
+                setTimeout(updateDashboard, 500);
+            }
+        });
+        
+        document.getElementById('clear-draft-btn').addEventListener('click', () => {
+            if (confirm('Clear all draft changes? This cannot be undone.')) {
+                window.AdminSystem.draftContent = {};
+                window.AdminSystem.saveDraftContent();
+                updateDashboard();
+            }
+        });
+        
+        // Update dashboard every 5 seconds
+        setInterval(updateDashboard, 5000);
+        updateDashboard();
+    </script>
+</body>
+</html>
+

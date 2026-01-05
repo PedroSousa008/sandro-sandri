@@ -38,6 +38,169 @@
     --nav-height: 80px;
 }
 
+/* ========================================
+   Admin System Styles
+   ======================================== */
+
+/* Admin Bar (Owner Only) */
+#admin-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-navy);
+    color: var(--color-white);
+    z-index: 10000;
+    padding: var(--space-xs) var(--space-md);
+    display: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+body.owner-mode #admin-bar {
+    display: block;
+}
+
+.admin-bar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: var(--container-max);
+    margin: 0 auto;
+}
+
+.admin-bar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.admin-badge {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 2px;
+}
+
+.admin-online-count {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.9);
+}
+
+.admin-bar-right {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.admin-btn {
+    padding: 0.375rem 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.1);
+    color: var(--color-white);
+    border: 1px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.admin-btn:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+}
+
+/* Adjust page padding when admin bar is visible */
+body.owner-mode .page-main {
+    padding-top: calc(var(--nav-height) + 40px);
+}
+
+body.owner-mode .main-nav {
+    top: 40px;
+}
+
+/* Draft Content Styling (Owner Only) */
+body.owner-mode .draft-content {
+    outline: 2px dashed rgba(44, 62, 92, 0.3);
+    outline-offset: 2px;
+    background: rgba(44, 62, 92, 0.05);
+    position: relative;
+}
+
+body.owner-mode .draft-content::before {
+    content: 'DRAFT';
+    position: absolute;
+    top: -8px;
+    left: 0;
+    font-family: var(--font-sans);
+    font-size: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-navy);
+    background: rgba(255,255,255,0.9);
+    padding: 0.125rem 0.25rem;
+    border-radius: 2px;
+    z-index: 1;
+}
+
+/* Editable Elements (Owner Only) */
+body.owner-mode .editable {
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+body.owner-mode .editable:hover {
+    background: rgba(44, 62, 92, 0.05);
+}
+
+/* Hide admin features from regular users */
+body.user-mode #admin-bar,
+body.user-mode .draft-content,
+body.user-mode .editable {
+    display: none !important;
+}
+
+/* Admin Notifications */
+.admin-notification {
+    position: fixed;
+    bottom: var(--space-md);
+    right: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-navy);
+    color: var(--color-white);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 10001;
+    animation: slideInUp 0.3s ease;
+}
+
+.admin-notification-success {
+    background: #4caf50;
+}
+
+.admin-notification-error {
+    background: #f44336;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* Reset */
 *, *::before, *::after {
     margin: 0;
