@@ -1118,18 +1118,27 @@ img {
     .footer-grid > .footer-links:nth-child(3) {
         flex-direction: row !important;
         flex-wrap: wrap !important;
-        gap: 0.75rem !important;
+        gap: 1rem !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
     }
     
     /* Horizontal layout for Help section (4th footer-links) */
     .footer-grid > .footer-links:nth-child(4) {
         flex-direction: row !important;
         flex-wrap: wrap !important;
-        gap: 0.75rem !important;
+        gap: 1rem !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
+    }
+    
+    /* Make heading and first link inline for About and Help */
+    .footer-grid > .footer-links:nth-child(3) .footer-heading,
+    .footer-grid > .footer-links:nth-child(4) .footer-heading {
+        width: auto !important;
+        margin-bottom: 0 !important;
+        margin-right: 1rem !important;
+        display: inline-block !important;
     }
     
     .footer-links a {
@@ -1137,12 +1146,6 @@ img {
         white-space: nowrap !important;
         display: inline-block !important;
         margin: 0 !important;
-    }
-    
-    .footer-heading {
-        width: 100% !important;
-        margin-bottom: var(--space-xs) !important;
-        display: block !important;
     }
 }
 
@@ -1164,18 +1167,27 @@ img {
     .footer-grid > .footer-links:nth-child(3) {
         flex-direction: row !important;
         flex-wrap: wrap !important;
-        gap: 0.75rem !important;
+        gap: 1rem !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
     }
     
     /* Horizontal layout for Help section (4th footer-links) */
     .footer-grid > .footer-links:nth-child(4) {
         flex-direction: row !important;
         flex-wrap: wrap !important;
-        gap: 0.75rem !important;
+        gap: 1rem !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
+    }
+    
+    /* Make heading and first link inline for About and Help */
+    .footer-grid > .footer-links:nth-child(3) .footer-heading,
+    .footer-grid > .footer-links:nth-child(4) .footer-heading {
+        width: auto !important;
+        margin-bottom: 0 !important;
+        margin-right: 1rem !important;
+        display: inline-block !important;
     }
     
     .footer-links a {
@@ -1183,12 +1195,6 @@ img {
         white-space: nowrap !important;
         display: inline-block !important;
         margin: 0 !important;
-    }
-    
-    .footer-heading {
-        width: 100% !important;
-        margin-bottom: var(--space-xs) !important;
-        display: block !important;
     }
 }
 
