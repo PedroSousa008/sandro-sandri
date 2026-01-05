@@ -1288,13 +1288,14 @@
 
 @media (max-width: 768px) {
     .about-grid {
-        grid-template-columns: 1.2fr 1fr;
-        gap: var(--space-sm);
+        grid-template-columns: 1fr auto;
+        gap: var(--space-md);
         align-items: flex-start;
     }
     
     .about-content {
-        max-width: 100%;
+        max-width: none;
+        min-width: 0;
     }
     
     .about-title {
@@ -1316,21 +1317,20 @@
     .about-image {
         max-width: 100%;
         aspect-ratio: 4/5;
-        width: 100%;
+        width: 140px;
+        flex-shrink: 0;
     }
     
     .about-image.founder-image {
         aspect-ratio: 1/1;
-        max-width: 120px;
-        width: 120px;
-        margin: 0 auto;
+        width: 140px;
+        flex-shrink: 0;
     }
     
     .about-image.craft-image {
         aspect-ratio: 3/4;
-        max-width: 120px;
-        width: 120px;
-        margin: 0 auto;
+        width: 140px;
+        flex-shrink: 0;
     }
     
     .about-img {
