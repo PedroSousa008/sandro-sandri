@@ -1109,42 +1109,25 @@ img {
         grid-column: span 2;
     }
     
-    /* Make About and Help links display inline on mobile (but not Shop) */
-    .footer-links:has(.footer-heading:contains("About")),
-    .footer-links:has(.footer-heading:contains("Help")) {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 0.5rem !important;
-        align-items: center !important;
-        display: flex !important;
-    }
-    
-    /* Target About and Help sections specifically */
-    .footer-links .footer-heading:first-child {
-        width: 100% !important;
-        margin-bottom: var(--space-xs) !important;
-        display: block !important;
-    }
-    
-    /* Horizontal layout for About section */
-    .footer-grid > .footer-links:nth-of-type(3) {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 0.5rem !important;
-        align-items: center !important;
-    }
-    
-    /* Horizontal layout for Help section */
-    .footer-grid > .footer-links:nth-of-type(4) {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 0.5rem !important;
-        align-items: center !important;
-    }
-    
-    /* Keep Shop section vertical */
-    .footer-grid > .footer-links:nth-of-type(2) {
+    /* Keep Shop section vertical (2nd footer-links) */
+    .footer-grid > .footer-links:nth-child(2) {
         flex-direction: column !important;
+    }
+    
+    /* Horizontal layout for About section (3rd footer-links) */
+    .footer-grid > .footer-links:nth-child(3) {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
+    }
+    
+    /* Horizontal layout for Help section (4th footer-links) */
+    .footer-grid > .footer-links:nth-child(4) {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
     }
     
     .footer-links a {
@@ -1152,6 +1135,12 @@ img {
         white-space: nowrap !important;
         display: inline-block !important;
         margin: 0 !important;
+    }
+    
+    .footer-heading {
+        width: 100% !important;
+        margin-bottom: var(--space-xs) !important;
+        display: block !important;
     }
 }
 
@@ -1164,20 +1153,38 @@ img {
         grid-column: span 1;
     }
     
-    /* Keep inline layout on very small screens */
-    .footer-links {
+    /* Keep Shop section vertical (2nd footer-links) */
+    .footer-grid > .footer-links:nth-child(2) {
+        flex-direction: column !important;
+    }
+    
+    /* Horizontal layout for About section (3rd footer-links) */
+    .footer-grid > .footer-links:nth-child(3) {
         flex-direction: row !important;
         flex-wrap: wrap !important;
         gap: 0.5rem !important;
         align-items: center !important;
-        display: flex !important;
+    }
+    
+    /* Horizontal layout for Help section (4th footer-links) */
+    .footer-grid > .footer-links:nth-child(4) {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
     }
     
     .footer-links a {
-        font-size: 0.7rem !important;
+        font-size: 0.85rem !important;
         white-space: nowrap !important;
         display: inline-block !important;
         margin: 0 !important;
+    }
+    
+    .footer-heading {
+        width: 100% !important;
+        margin-bottom: var(--space-xs) !important;
+        display: block !important;
     }
 }
 
