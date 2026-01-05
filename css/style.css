@@ -1117,19 +1117,21 @@ img {
     /* Horizontal layout for About section (3rd footer-links) */
     .footer-grid > .footer-links:nth-child(3) {
         flex-direction: row !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         gap: 1rem !important;
         align-items: center !important;
         justify-content: center !important;
+        overflow-x: auto !important;
     }
     
     /* Horizontal layout for Help section (4th footer-links) */
     .footer-grid > .footer-links:nth-child(4) {
         flex-direction: row !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         gap: 1rem !important;
         align-items: center !important;
         justify-content: center !important;
+        overflow-x: auto !important;
     }
     
     /* Make heading and links inline so they align vertically */
@@ -1168,19 +1170,21 @@ img {
     /* Horizontal layout for About section (3rd footer-links) */
     .footer-grid > .footer-links:nth-child(3) {
         flex-direction: row !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         gap: 1rem !important;
         align-items: center !important;
         justify-content: center !important;
+        overflow-x: auto !important;
     }
     
     /* Horizontal layout for Help section (4th footer-links) */
     .footer-grid > .footer-links:nth-child(4) {
         flex-direction: row !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         gap: 1rem !important;
         align-items: center !important;
         justify-content: center !important;
+        overflow-x: auto !important;
     }
     
     /* Make heading and links inline so they align vertically */
