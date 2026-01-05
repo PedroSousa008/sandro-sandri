@@ -82,6 +82,19 @@ function initCollection() {
                 </div>
             `);
         }
+        
+        // Center single product and view-all link
+        if (products.length === 1) {
+            productsGrid.style.display = 'flex';
+            productsGrid.style.flexDirection = 'column';
+            productsGrid.style.alignItems = 'center';
+            productsGrid.style.justifyContent = 'center';
+        } else {
+            productsGrid.style.display = '';
+            productsGrid.style.flexDirection = '';
+            productsGrid.style.alignItems = '';
+            productsGrid.style.justifyContent = '';
+        }
 
         // Animate cards
         animateCards();

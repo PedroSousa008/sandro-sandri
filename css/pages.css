@@ -153,6 +153,20 @@
     grid-column: 1 / -1;
     text-align: center;
     padding: 2rem 0;
+    width: 100%;
+}
+
+/* Center single product and view-all link */
+.products-grid:has(.product-card:only-child) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.products-grid:has(.product-card:only-child) .view-all-container {
+    margin-top: var(--space-lg);
+    text-align: center;
 }
 
 .view-all-link {
