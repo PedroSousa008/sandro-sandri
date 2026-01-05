@@ -22,6 +22,15 @@ class AuthSystem {
         } else {
             this.ensureUserMode();
         }
+        
+        // Initialize admin system for user tracking (even for non-owners)
+        // This ensures all users are tracked, not just owners
+        if (window.AdminSystem && typeof window.AdminSystem.init === 'function') {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                window.AdminSystem.init();
+            }, 100);
+        }
     }
     
     // Load user from localStorage

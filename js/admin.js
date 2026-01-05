@@ -14,20 +14,29 @@ class AdminSystem {
         // Always apply content (live for users, draft for owner)
         this.applyDraftContent();
         
+        // Track ALL users (both owner and regular users)
+        this.trackUserSession();
+        
+        // Update online users count periodically
+        this.updateOnlineUsers();
+        
+        // Set up interval to track and update (for all users)
+        if (this.userTrackingInterval) {
+            clearInterval(this.userTrackingInterval);
+        }
+        this.userTrackingInterval = setInterval(() => {
+            this.trackUserSession();
+            this.updateOnlineUsers();
+        }, 5000);
+        
         if (!window.auth || !window.auth.isOwner()) {
             // Regular users: only see live content, no admin features
             return;
         }
         
         // Owner-only features
-        // Initialize real-time user tracking
-        this.initUserTracking();
-        
         // Initialize edit mode
         this.initEditMode();
-        
-        // Update online users count
-        this.updateOnlineUsers();
     }
     
     // Load draft content from localStorage
@@ -213,34 +222,30 @@ class AdminSystem {
         }, 1500);
     }
     
-    // Initialize real-time user tracking
-    initUserTracking() {
-        // Track this owner session
-        this.trackUserSession();
-        
-        // Update online count every 5 seconds
-        this.userTrackingInterval = setInterval(() => {
-            this.updateOnlineUsers();
-        }, 5000);
-    }
-    
-    // Track user session
+    // Track user session (called for all users)
     trackUserSession() {
         const sessionId = this.getSessionId();
         const sessions = this.getActiveSessions();
         
+        // Get user role
+        const role = (window.auth && window.auth.getRole()) || 'USER';
+        
         // Add/update this session
         sessions[sessionId] = {
             timestamp: new Date().toISOString(),
-            role: window.auth.getRole()
+            role: role,
+            page: this.getCurrentPageId()
         };
         
-        // Remove old sessions (older than 30 seconds)
+        // Remove old sessions (older than 30 seconds - considered offline)
         const now = new Date();
         Object.keys(sessions).forEach(id => {
             const session = sessions[id];
             const sessionTime = new Date(session.timestamp);
-            if (now - sessionTime > 30000) {
+            const secondsSinceUpdate = (now - sessionTime) / 1000;
+            
+            // Remove sessions that haven't been updated in 30 seconds
+            if (secondsSinceUpdate > 30) {
                 delete sessions[id];
             }
         });
@@ -248,6 +253,7 @@ class AdminSystem {
         // Save sessions
         localStorage.setItem('sandroSandri_sessions', JSON.stringify(sessions));
     }
+    
     
     // Get active sessions
     getActiveSessions() {
@@ -271,21 +277,25 @@ class AdminSystem {
     
     // Update online users count
     updateOnlineUsers() {
-        if (!window.auth || !window.auth.isOwner()) {
-            return;
-        }
-        
-        this.trackUserSession();
+        // Only show to owner, but track all users
         const sessions = this.getActiveSessions();
         
-        // Count active sessions (excluding owner)
+        // Count active sessions (excluding owner sessions)
         const userSessions = Object.values(sessions).filter(s => s.role !== 'OWNER');
         this.onlineUsers = userSessions.length;
         
-        // Update UI
-        const countEl = document.getElementById('admin-online-count');
-        if (countEl) {
-            countEl.textContent = `${this.onlineUsers} user${this.onlineUsers !== 1 ? 's' : ''} online`;
+        // Update UI (only if owner is logged in)
+        if (window.auth && window.auth.isOwner()) {
+            const countEl = document.getElementById('admin-online-count');
+            if (countEl) {
+                countEl.textContent = `${this.onlineUsers} user${this.onlineUsers !== 1 ? 's' : ''} online`;
+            }
+            
+            // Also update dashboard if on admin page
+            const dashboardCount = document.getElementById('dashboard-online-count');
+            if (dashboardCount) {
+                dashboardCount.textContent = this.onlineUsers;
+            }
         }
     }
     
