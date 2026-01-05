@@ -499,14 +499,36 @@
 }
 
 @media (max-width: 768px) {
+    .size-guide-table-container {
+        overflow-x: visible;
+        margin: var(--space-lg) var(--space-sm);
+        padding: 0;
+    }
+    
     .size-guide-table {
-        min-width: 100%;
-        font-size: 0.875rem;
+        width: 100%;
+        min-width: 0;
+        font-size: 0.75rem;
+        display: table;
+        table-layout: fixed;
     }
     
     .size-guide-table th,
     .size-guide-table td {
-        padding: var(--space-md);
+        padding: var(--space-sm) 0.5rem;
+        font-size: 0.75rem;
+        word-wrap: break-word;
+    }
+    
+    .size-guide-table th {
+        font-size: 0.7rem;
+        letter-spacing: 0.03em;
+        padding: var(--space-sm) 0.5rem;
+    }
+    
+    .size-guide-table td:first-child {
+        font-size: 0.8rem;
+        font-weight: 600;
     }
 }
 
