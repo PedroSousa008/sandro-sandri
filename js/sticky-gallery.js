@@ -1,5 +1,5 @@
 /* ========================================
-   Sticky Gallery Fix for Product Page
+   Sticky Gallery Fix for Product Page (Desktop Only)
    ======================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,93 +9,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const navHeight = 80;
     let isMobile = window.innerWidth <= 768;
     
-    // On mobile, use fixed positioning
-    function setupMobileFixed() {
-        if (!isMobile) return;
+    // On mobile, ensure natural scrolling (no sticky/fixed)
+    if (isMobile) {
+        console.log('Mobile detected - using natural scrolling for gallery');
         
-        // Wait for images to load to get accurate height
-        const images = gallery.querySelectorAll('img');
-        let imagesLoaded = 0;
-        const totalImages = images.length;
+        // Remove any fixed/sticky positioning
+        gallery.style.position = 'relative';
+        gallery.style.top = 'auto';
+        gallery.style.left = 'auto';
+        gallery.style.right = 'auto';
+        gallery.style.width = 'auto';
+        gallery.style.zIndex = 'auto';
+        gallery.style.background = 'transparent';
+        gallery.style.boxShadow = 'none';
         
-        function applyFixedPosition() {
-            gallery.style.position = 'fixed';
-            gallery.style.top = navHeight + 'px';
-            gallery.style.left = '0';
-            gallery.style.right = '0';
-            gallery.style.width = '100%';
-            gallery.style.zIndex = '100';
-            gallery.style.background = '#ffffff';
-            gallery.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-            gallery.style.padding = 'var(--space-md)';
-            gallery.style.paddingTop = 'var(--space-md)';
-            gallery.style.maxHeight = 'calc(100vh - ' + navHeight + 'px)';
-            gallery.style.overflowY = 'auto';
-            gallery.style.webkitOverflowScrolling = 'touch';
-            
-            // Calculate gallery height and add spacing to content below
-            const galleryHeight = gallery.offsetHeight;
-            const section = gallery.closest('.product-section');
-            const details = document.querySelector('.product-details');
-            const layout = gallery.closest('.product-layout');
-            
-            if (section) {
-                section.style.paddingTop = (galleryHeight + navHeight + 20) + 'px';
+        // Update on resize
+        window.addEventListener('resize', () => {
+            const wasMobile = isMobile;
+            isMobile = window.innerWidth <= 768;
+            if (wasMobile !== isMobile) {
+                location.reload(); // Reload on significant size change
+            } else if (isMobile) {
+                // Ensure it stays relative on mobile
+                gallery.style.position = 'relative';
+                gallery.style.top = 'auto';
             }
-            
-            if (details) {
-                details.style.marginTop = '0';
-                details.style.paddingTop = 'var(--space-lg)';
-            }
-            
-            if (layout) {
-                layout.style.display = 'flex';
-                layout.style.flexDirection = 'column';
-            }
-        }
+        }, { passive: true });
         
-        if (totalImages === 0) {
-            // No images yet, apply immediately and update when images load
-            applyFixedPosition();
-            
-            // Watch for images being added
-            const observer = new MutationObserver(() => {
-                const newImages = gallery.querySelectorAll('img');
-                if (newImages.length > 0) {
-                    setTimeout(applyFixedPosition, 100);
-                }
-            });
-            observer.observe(gallery, { childList: true, subtree: true });
-        } else {
-            // Wait for all images to load
-            images.forEach(img => {
-                if (img.complete) {
-                    imagesLoaded++;
-                    if (imagesLoaded === totalImages) {
-                        setTimeout(applyFixedPosition, 50);
-                    }
-                } else {
-                    img.addEventListener('load', () => {
-                        imagesLoaded++;
-                        if (imagesLoaded === totalImages) {
-                            setTimeout(applyFixedPosition, 50);
-                        }
-                    });
-                }
-            });
-            
-            // Fallback: apply after 1 second even if images haven't loaded
-            setTimeout(applyFixedPosition, 1000);
-        }
+        return; // Exit early on mobile - no sticky behavior
     }
     
-    // Force sticky positioning via JavaScript if CSS fails (desktop)
+    // Desktop: Force sticky positioning via JavaScript if CSS fails
     function enforceSticky() {
-        if (isMobile) {
-            setupMobileFixed();
-            return;
-        }
-        
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const section = gallery.closest('.product-section');
         if (!section) return;
@@ -135,42 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return isSticky;
     }
     
-    // Setup based on device - run immediately
-    if (isMobile) {
-        console.log('Mobile detected - using fixed positioning for gallery');
-        
-        // Apply fixed positioning immediately
-        gallery.style.position = 'fixed';
-        gallery.style.top = navHeight + 'px';
-        gallery.style.left = '0';
-        gallery.style.right = '0';
-        gallery.style.width = '100%';
-        gallery.style.zIndex = '100';
-        gallery.style.background = '#ffffff';
-        gallery.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-        
-        // Then setup properly after images load
-        setupMobileFixed();
-        
-        // Update on resize
-        window.addEventListener('resize', () => {
-            const wasMobile = isMobile;
-            isMobile = window.innerWidth <= 768;
-            if (wasMobile !== isMobile) {
-                location.reload(); // Reload on significant size change
-            } else if (isMobile) {
-                setupMobileFixed();
-            }
-        }, { passive: true });
-        
-        // Also run on scroll to ensure it stays fixed
-        window.addEventListener('scroll', () => {
-            if (isMobile) {
-                gallery.style.position = 'fixed';
-                gallery.style.top = navHeight + 'px';
-            }
-        }, { passive: true });
-    } else if (!checkStickySupport()) {
+    // Desktop only: Use JavaScript fallback if CSS sticky doesn't work
+    if (!checkStickySupport()) {
         console.log('CSS sticky not working, using JavaScript fallback');
         
         // Use requestAnimationFrame for smooth scrolling
