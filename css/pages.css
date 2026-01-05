@@ -1347,14 +1347,14 @@
     /* Adjust text positioning for different sections to center perfectly */
     /* What is Sandro Sandri - text to the right */
     #story .about-content .about-text {
-        margin-left: calc(-50vw + 50% + 70px);
+        margin-left: calc(-50vw + 50% + 80px);
         padding-left: 1rem;
         padding-right: 1rem;
     }
     
     /* Collections - text to the left and a little below */
     #collections .about-content .about-text {
-        margin-left: calc(-50vw + 50% - 70px);
+        margin-left: calc(-50vw + 50% - 80px);
         padding-left: 1rem;
         padding-right: 1rem;
         margin-top: var(--space-sm);
@@ -1362,14 +1362,14 @@
     
     /* Founder - text to the right */
     #founder .about-content .about-text {
-        margin-left: calc(-50vw + 50% + 70px);
+        margin-left: calc(-50vw + 50% + 80px);
         padding-left: 1rem;
         padding-right: 1rem;
     }
     
     /* The Craft - text to the left */
     #thecraft .about-content .about-text {
-        margin-left: calc(-50vw + 50% - 70px);
+        margin-left: calc(-50vw + 50% - 80px);
         padding-left: 1rem;
         padding-right: 1rem;
     }
