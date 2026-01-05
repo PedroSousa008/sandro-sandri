@@ -11,13 +11,15 @@ class AdminSystem {
     }
     
     init() {
-        if (!window.auth || !window.auth.isOwner()) {
-            return; // Only initialize for owners
-        }
-        
-        // Load draft content and apply to page
+        // Always apply content (live for users, draft for owner)
         this.applyDraftContent();
         
+        if (!window.auth || !window.auth.isOwner()) {
+            // Regular users: only see live content, no admin features
+            return;
+        }
+        
+        // Owner-only features
         // Initialize real-time user tracking
         this.initUserTracking();
         
@@ -86,9 +88,12 @@ class AdminSystem {
     // Apply draft content to page (only visible to owner)
     applyDraftContent() {
         if (!window.auth || !window.auth.isOwner()) {
-            return; // Only apply draft to owner
+            // Regular users: apply live content only
+            this.applyLiveContent();
+            return;
         }
         
+        // Owner: apply draft content
         const currentPage = this.getCurrentPageId();
         const pageDraft = this.draftContent.pages?.[currentPage];
         
@@ -98,6 +103,25 @@ class AdminSystem {
                 if (pageDraft[key]) {
                     el.innerHTML = pageDraft[key].html || pageDraft[key].text;
                     el.classList.add('draft-content');
+                }
+            });
+        }
+    }
+    
+    // Apply live content to page (for regular users)
+    applyLiveContent() {
+        if (window.auth && window.auth.isOwner()) {
+            return; // Owner sees draft, not live
+        }
+        
+        const currentPage = this.getCurrentPageId();
+        const pageLive = this.liveContent.pages?.[currentPage];
+        
+        if (pageLive) {
+            document.querySelectorAll('[data-editable]').forEach(el => {
+                const key = el.dataset.editable;
+                if (pageLive[key]) {
+                    el.innerHTML = pageLive[key].html || pageLive[key].text;
                 }
             });
         }
