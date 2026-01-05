@@ -194,19 +194,30 @@
     }
 }
 
-/* Product Gallery - Sticky on desktop only */
+/* Product Gallery - Sticky on desktop only when viewport is wide enough */
 .product-gallery {
-    position: -webkit-sticky; /* Safari support */
-    position: sticky;
-    top: 0; /* Stick to top of viewport */
+    position: relative; /* Default to relative */
     align-self: start;
     height: fit-content;
-    max-height: 100vh;
-    overflow-y: auto;
-    z-index: 10;
-    will-change: transform; /* Optimize for sticky */
-    background: var(--color-white);
-    padding-top: 80px; /* Add padding to account for nav */
+    max-height: none;
+    overflow: visible;
+    z-index: auto;
+    background: transparent;
+    padding-top: 0;
+}
+
+/* Only enable sticky on larger desktop screens (min-width: 1200px) */
+@media (min-width: 1200px) {
+    .product-gallery {
+        position: -webkit-sticky; /* Safari support */
+        position: sticky;
+        top: 80px; /* Stick below navigation */
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+        z-index: 5; /* Lower z-index to prevent overlapping */
+        background: var(--color-white);
+        padding-top: 0;
+    }
 }
 
 /* Mobile-specific: Remove sticky/fixed positioning - let images scroll naturally */

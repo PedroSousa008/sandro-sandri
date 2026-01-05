@@ -1,5 +1,7 @@
 /* ========================================
-   Sticky Gallery Fix for Product Page (Desktop Only)
+   Sticky Gallery Fix for Product Page
+   - Mobile: Natural scrolling
+   - Desktop (wide screens only): Sticky positioning
    ======================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -7,11 +9,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!gallery) return;
     
     const navHeight = 80;
-    let isMobile = window.innerWidth <= 768;
+    const mobileBreakpoint = 768;
+    const desktopStickyBreakpoint = 1200; // Only enable sticky on wide screens
     
-    // On mobile, ensure natural scrolling (no sticky/fixed)
-    if (isMobile) {
-        console.log('Mobile detected - using natural scrolling for gallery');
+    function getViewportWidth() {
+        return window.innerWidth || document.documentElement.clientWidth;
+    }
+    
+    function isMobile() {
+        return getViewportWidth() <= mobileBreakpoint;
+    }
+    
+    function isWideDesktop() {
+        return getViewportWidth() >= desktopStickyBreakpoint;
+    }
+    
+    // On mobile or narrow desktop, ensure natural scrolling (no sticky/fixed)
+    if (isMobile() || !isWideDesktop()) {
+        console.log('Mobile or narrow desktop detected - using natural scrolling for gallery');
         
         // Remove any fixed/sticky positioning
         gallery.style.position = 'relative';
@@ -22,84 +37,68 @@ document.addEventListener('DOMContentLoaded', () => {
         gallery.style.zIndex = 'auto';
         gallery.style.background = 'transparent';
         gallery.style.boxShadow = 'none';
+        gallery.style.maxHeight = 'none';
+        gallery.style.overflow = 'visible';
         
         // Update on resize
         window.addEventListener('resize', () => {
-            const wasMobile = isMobile;
-            isMobile = window.innerWidth <= 768;
-            if (wasMobile !== isMobile) {
-                location.reload(); // Reload on significant size change
-            } else if (isMobile) {
-                // Ensure it stays relative on mobile
+            if (isMobile() || !isWideDesktop()) {
+                // Ensure it stays relative on mobile/narrow screens
                 gallery.style.position = 'relative';
                 gallery.style.top = 'auto';
+                gallery.style.zIndex = 'auto';
             }
         }, { passive: true });
         
-        return; // Exit early on mobile - no sticky behavior
+        return; // Exit early - no sticky behavior
     }
     
-    // Desktop: Force sticky positioning via JavaScript if CSS fails
-    function enforceSticky() {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const section = gallery.closest('.product-section');
-        if (!section) return;
-        
-        const sectionTop = section.getBoundingClientRect().top + scrollTop;
-        const sectionBottom = sectionTop + section.offsetHeight;
-        const galleryHeight = gallery.offsetHeight;
-        
-        // Check if we've scrolled past the section start
-        if (scrollTop >= sectionTop - navHeight) {
-            // Check if we haven't scrolled past the section end
-            if (scrollTop + navHeight + galleryHeight <= sectionBottom) {
-                gallery.style.position = 'fixed';
-                gallery.style.top = navHeight + 'px';
-                gallery.style.left = gallery.getBoundingClientRect().left + 'px';
-                gallery.style.width = gallery.getBoundingClientRect().width + 'px';
-                gallery.style.zIndex = '10';
-            } else {
-                // At bottom of section, stick to bottom
-                gallery.style.position = 'absolute';
-                gallery.style.top = 'auto';
-                gallery.style.bottom = '0';
-            }
-        } else {
-            // Before section, use relative positioning
+    // Wide desktop only: Let CSS handle sticky, but ensure it doesn't overlap
+    console.log('Wide desktop detected - sticky positioning enabled');
+    
+    // Ensure sticky doesn't cause overlapping issues
+    const section = gallery.closest('.product-section');
+    if (section) {
+        // Make sure the section has proper overflow handling
+        const computedStyle = window.getComputedStyle(section);
+        if (computedStyle.overflow === 'hidden') {
+            section.style.overflow = 'visible';
+        }
+    }
+    
+    // Monitor scroll to ensure gallery stays within bounds
+    let ticking = false;
+    function checkStickyBounds() {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                if (isWideDesktop() && !isMobile()) {
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const section = gallery.closest('.product-section');
+                    
+                    if (section) {
+                        const sectionRect = section.getBoundingClientRect();
+                        const galleryRect = gallery.getBoundingClientRect();
+                        
+                        // If gallery would extend beyond section, adjust
+                        if (galleryRect.bottom > sectionRect.bottom) {
+                            gallery.style.maxHeight = (sectionRect.bottom - navHeight - 20) + 'px';
+                        }
+                    }
+                }
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }
+    
+    window.addEventListener('scroll', checkStickyBounds, { passive: true });
+    window.addEventListener('resize', () => {
+        if (isMobile() || !isWideDesktop()) {
+            // Remove sticky on resize to mobile/narrow
             gallery.style.position = 'relative';
             gallery.style.top = 'auto';
-            gallery.style.left = 'auto';
-            gallery.style.width = 'auto';
+            gallery.style.zIndex = 'auto';
         }
-    }
-    
-    // Check if CSS sticky is working
-    function checkStickySupport() {
-        const computedStyle = window.getComputedStyle(gallery);
-        const isSticky = computedStyle.position === 'sticky' || computedStyle.position === '-webkit-sticky';
-        return isSticky;
-    }
-    
-    // Desktop only: Use JavaScript fallback if CSS sticky doesn't work
-    if (!checkStickySupport()) {
-        console.log('CSS sticky not working, using JavaScript fallback');
-        
-        // Use requestAnimationFrame for smooth scrolling
-        let ticking = false;
-        function onScroll() {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    enforceSticky();
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        }
-        
-        window.addEventListener('scroll', onScroll, { passive: true });
-        enforceSticky(); // Initial call
-    } else {
-        console.log('CSS sticky is working correctly');
-    }
+    }, { passive: true });
 });
 
