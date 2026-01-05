@@ -9,8 +9,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const navHeight = 80;
     let isMobile = window.innerWidth <= 768;
     
-    // Force sticky positioning via JavaScript if CSS fails (especially on mobile)
+    // On mobile, use fixed positioning
+    function setupMobileFixed() {
+        if (!isMobile) return;
+        
+        gallery.style.position = 'fixed';
+        gallery.style.top = navHeight + 'px';
+        gallery.style.left = '0';
+        gallery.style.right = '0';
+        gallery.style.width = '100%';
+        gallery.style.zIndex = '100';
+        gallery.style.background = '#ffffff';
+        gallery.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        
+        // Add padding to product section to account for fixed gallery
+        const section = gallery.closest('.product-section');
+        const details = document.querySelector('.product-details');
+        
+        if (section) {
+            const galleryHeight = gallery.offsetHeight;
+            section.style.paddingTop = (galleryHeight + navHeight) + 'px';
+        }
+        
+        if (details) {
+            const galleryHeight = gallery.offsetHeight;
+            details.style.marginTop = (galleryHeight + navHeight) + 'px';
+        }
+    }
+    
+    // Force sticky positioning via JavaScript if CSS fails (desktop)
     function enforceSticky() {
+        if (isMobile) {
+            setupMobileFixed();
+            return;
+        }
+        
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const section = gallery.closest('.product-section');
         if (!section) return;
@@ -50,9 +83,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return isSticky;
     }
     
-    // On mobile, always use JavaScript fallback for better control
-    if (isMobile || !checkStickySupport()) {
-        console.log('Using JavaScript fallback for sticky gallery (mobile or CSS sticky not supported)');
+    // Setup based on device
+    if (isMobile) {
+        console.log('Mobile detected - using fixed positioning for gallery');
+        setupMobileFixed();
+        
+        // Update on resize
+        window.addEventListener('resize', () => {
+            const wasMobile = isMobile;
+            isMobile = window.innerWidth <= 768;
+            if (wasMobile !== isMobile) {
+                location.reload(); // Reload on significant size change
+            } else if (isMobile) {
+                setupMobileFixed();
+            }
+        }, { passive: true });
+    } else if (!checkStickySupport()) {
+        console.log('CSS sticky not working, using JavaScript fallback');
         
         // Use requestAnimationFrame for smooth scrolling
         let ticking = false;
@@ -67,11 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', () => {
-            isMobile = window.innerWidth <= 768;
-            enforceSticky();
-        }, { passive: true });
-        
         enforceSticky(); // Initial call
     } else {
         console.log('CSS sticky is working correctly');
