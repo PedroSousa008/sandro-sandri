@@ -92,16 +92,19 @@ function initCollection() {
 
     function filterByCollection(products, collectionKey) {
         const collectionMap = {
-            'voglia': 'Voglia di Viaggiare',
-            'connoisseur': 'Connoisseur',
-            'italia': "L'Italia per un viaggio indimenticabile",
-            'rinascimento': 'Rinascimento Couture'
+            'voglia': 'Voglia di Viaggiare Signature',
+            'connoisseur': 'Connoisseur Signature',
+            'italia': "L'Italia per un viaggio indimenticabile Signature",
+            'rinascimento': 'Rinascimento Couture Signature'
         };
         
-        const collectionName = collectionMap[collectionKey];
-        if (!collectionName) return products;
+        const collectionTitle = collectionMap[collectionKey];
+        if (!collectionTitle) return products;
         
-        return products.filter(product => product.collection === collectionName);
+        // Filter products by collection title
+        return products.filter(product => 
+            product.collection && product.collection.title === collectionTitle
+        );
     }
 
     function sortProducts(products, sortType) {
