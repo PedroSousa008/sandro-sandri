@@ -501,33 +501,38 @@
 @media (max-width: 768px) {
     .size-guide-table-container {
         overflow-x: visible;
-        margin: var(--space-lg) var(--space-sm);
+        margin: var(--space-lg) var(--space-md);
         padding: 0;
+        display: flex;
+        justify-content: center;
     }
     
     .size-guide-table {
-        width: 100%;
+        width: calc(100% - 2rem);
+        max-width: calc(100% - 2rem);
         min-width: 0;
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         display: table;
         table-layout: fixed;
+        margin: 0 auto;
     }
     
     .size-guide-table th,
     .size-guide-table td {
-        padding: var(--space-sm) 0.5rem;
-        font-size: 0.75rem;
+        padding: 0.5rem 0.25rem;
+        font-size: 0.65rem;
         word-wrap: break-word;
+        line-height: 1.3;
     }
     
     .size-guide-table th {
-        font-size: 0.7rem;
-        letter-spacing: 0.03em;
-        padding: var(--space-sm) 0.5rem;
+        font-size: 0.6rem;
+        letter-spacing: 0.02em;
+        padding: 0.5rem 0.25rem;
     }
     
     .size-guide-table td:first-child {
-        font-size: 0.8rem;
+        font-size: 0.7rem;
         font-weight: 600;
     }
 }
