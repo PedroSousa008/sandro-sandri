@@ -1296,6 +1296,7 @@
     .about-content {
         max-width: none;
         min-width: 0;
+        width: 100%;
     }
     
     .about-title {
