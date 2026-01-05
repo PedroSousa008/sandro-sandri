@@ -1114,38 +1114,33 @@ img {
         flex-direction: column !important;
     }
     
-    /* Horizontal layout for About section (3rd footer-links) */
-    .footer-grid > .footer-links:nth-child(3) {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 1rem !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-    }
-    
-    /* Horizontal layout for Help section (4th footer-links) */
+    /* About and Help sections: column layout with heading on top */
+    .footer-grid > .footer-links:nth-child(3),
     .footer-grid > .footer-links:nth-child(4) {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 1rem !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
     }
     
-    /* Make heading and first link inline for About and Help */
+    /* Heading on its own line */
     .footer-grid > .footer-links:nth-child(3) .footer-heading,
     .footer-grid > .footer-links:nth-child(4) .footer-heading {
-        width: auto !important;
-        margin-bottom: 0 !important;
-        margin-right: 1rem !important;
-        display: inline-block !important;
+        width: 100% !important;
+        margin-bottom: var(--space-xs) !important;
+        display: block !important;
     }
     
-    .footer-links a {
+    /* Links in horizontal row with consistent spacing */
+    .footer-grid > .footer-links:nth-child(3) > a,
+    .footer-grid > .footer-links:nth-child(4) > a {
         font-size: 0.95rem !important;
         white-space: nowrap !important;
         display: inline-block !important;
-        margin: 0 !important;
+        margin-right: 1rem !important;
+    }
+    
+    .footer-grid > .footer-links:nth-child(3) > a:last-child,
+    .footer-grid > .footer-links:nth-child(4) > a:last-child {
+        margin-right: 0 !important;
     }
 }
 
@@ -1163,38 +1158,33 @@ img {
         flex-direction: column !important;
     }
     
-    /* Horizontal layout for About section (3rd footer-links) */
-    .footer-grid > .footer-links:nth-child(3) {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 1rem !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-    }
-    
-    /* Horizontal layout for Help section (4th footer-links) */
+    /* About and Help sections: column layout with heading on top */
+    .footer-grid > .footer-links:nth-child(3),
     .footer-grid > .footer-links:nth-child(4) {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 1rem !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
     }
     
-    /* Make heading and first link inline for About and Help */
+    /* Heading on its own line */
     .footer-grid > .footer-links:nth-child(3) .footer-heading,
     .footer-grid > .footer-links:nth-child(4) .footer-heading {
-        width: auto !important;
-        margin-bottom: 0 !important;
-        margin-right: 1rem !important;
-        display: inline-block !important;
+        width: 100% !important;
+        margin-bottom: var(--space-xs) !important;
+        display: block !important;
     }
     
-    .footer-links a {
+    /* Links in horizontal row with consistent spacing */
+    .footer-grid > .footer-links:nth-child(3) > a,
+    .footer-grid > .footer-links:nth-child(4) > a {
         font-size: 0.95rem !important;
         white-space: nowrap !important;
         display: inline-block !important;
-        margin: 0 !important;
+        margin-right: 1rem !important;
+    }
+    
+    .footer-grid > .footer-links:nth-child(3) > a:last-child,
+    .footer-grid > .footer-links:nth-child(4) > a:last-child {
+        margin-right: 0 !important;
     }
 }
 
