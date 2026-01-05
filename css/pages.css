@@ -1288,39 +1288,34 @@
 
 @media (max-width: 768px) {
     .about-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr auto;
         gap: var(--space-md);
-        align-items: center;
+        align-items: flex-start;
     }
     
     .about-content {
-        max-width: 100%;
+        max-width: none;
         min-width: 0;
         width: 100%;
-        grid-column: 1 / -1;
     }
     
     .about-image {
-        grid-column: 1 / -1;
-        max-width: 200px;
-        width: 100%;
+        max-width: 100%;
         aspect-ratio: 4/5;
-        margin: 0 auto;
-        justify-self: center;
+        width: 140px;
+        flex-shrink: 0;
     }
     
     .about-image.founder-image {
         aspect-ratio: 1/1;
-        max-width: 200px;
-        width: 200px;
-        margin: 0 auto;
+        width: 140px;
+        flex-shrink: 0;
     }
     
     .about-image.craft-image {
         aspect-ratio: 3/4;
-        max-width: 200px;
-        width: 200px;
-        margin: 0 auto;
+        width: 140px;
+        flex-shrink: 0;
     }
     
     .about-title {
@@ -1356,15 +1351,6 @@
     
     .about-grid.reverse > * {
         direction: ltr;
-    }
-    
-    /* Stack content first, then image */
-    .about-grid.reverse .about-content {
-        order: 1;
-    }
-    
-    .about-grid.reverse .about-image {
-        order: 2;
     }
 }
 
