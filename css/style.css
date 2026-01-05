@@ -1108,6 +1108,23 @@ img {
     .footer-brand {
         grid-column: span 2;
     }
+    
+    /* Make About and Help links display inline on mobile */
+    .footer-links {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--space-xs) var(--space-sm);
+    }
+    
+    .footer-links a {
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+    
+    .footer-heading {
+        width: 100%;
+        margin-bottom: var(--space-xs);
+    }
 }
 
 @media (max-width: 480px) {
@@ -1117,6 +1134,17 @@ img {
     
     .footer-brand {
         grid-column: span 1;
+    }
+    
+    /* Keep inline layout on very small screens */
+    .footer-links {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--space-xs) var(--space-sm);
+    }
+    
+    .footer-links a {
+        font-size: 0.7rem;
     }
 }
 
