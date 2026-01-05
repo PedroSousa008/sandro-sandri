@@ -1288,15 +1288,39 @@
 
 @media (max-width: 768px) {
     .about-grid {
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr;
         gap: var(--space-md);
-        align-items: flex-start;
+        align-items: center;
     }
     
     .about-content {
-        max-width: none;
+        max-width: 100%;
         min-width: 0;
         width: 100%;
+        grid-column: 1 / -1;
+    }
+    
+    .about-image {
+        grid-column: 1 / -1;
+        max-width: 200px;
+        width: 100%;
+        aspect-ratio: 4/5;
+        margin: 0 auto;
+        justify-self: center;
+    }
+    
+    .about-image.founder-image {
+        aspect-ratio: 1/1;
+        max-width: 200px;
+        width: 200px;
+        margin: 0 auto;
+    }
+    
+    .about-image.craft-image {
+        aspect-ratio: 3/4;
+        max-width: 200px;
+        width: 200px;
+        margin: 0 auto;
     }
     
     .about-title {
@@ -1313,25 +1337,6 @@
     .about-label {
         font-size: 0.65rem;
         margin-bottom: var(--space-xs);
-    }
-    
-    .about-image {
-        max-width: 100%;
-        aspect-ratio: 4/5;
-        width: 140px;
-        flex-shrink: 0;
-    }
-    
-    .about-image.founder-image {
-        aspect-ratio: 1/1;
-        width: 140px;
-        flex-shrink: 0;
-    }
-    
-    .about-image.craft-image {
-        aspect-ratio: 3/4;
-        width: 140px;
-        flex-shrink: 0;
     }
     
     .about-img {
@@ -1351,6 +1356,15 @@
     
     .about-grid.reverse > * {
         direction: ltr;
+    }
+    
+    /* Stack content first, then image */
+    .about-grid.reverse .about-content {
+        order: 1;
+    }
+    
+    .about-grid.reverse .about-image {
+        order: 2;
     }
 }
 
