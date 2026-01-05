@@ -1114,33 +1114,40 @@ img {
         flex-direction: column !important;
     }
     
-    /* About and Help sections: column layout with heading on top */
-    .footer-grid > .footer-links:nth-child(3),
-    .footer-grid > .footer-links:nth-child(4) {
-        flex-direction: column !important;
-        align-items: flex-start !important;
+    /* Horizontal layout for About section (3rd footer-links) */
+    .footer-grid > .footer-links:nth-child(3) {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 1rem !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
-    /* Heading on its own line */
+    /* Horizontal layout for Help section (4th footer-links) */
+    .footer-grid > .footer-links:nth-child(4) {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 1rem !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Make heading and links inline so they align vertically */
     .footer-grid > .footer-links:nth-child(3) .footer-heading,
     .footer-grid > .footer-links:nth-child(4) .footer-heading {
-        width: 100% !important;
-        margin-bottom: var(--space-xs) !important;
-        display: block !important;
+        display: inline-block !important;
+        width: auto !important;
+        margin: 0 !important;
+        margin-right: 1rem !important;
+        vertical-align: middle !important;
     }
     
-    /* Links in horizontal row with consistent spacing */
-    .footer-grid > .footer-links:nth-child(3) > a,
-    .footer-grid > .footer-links:nth-child(4) > a {
+    .footer-links a {
         font-size: 0.95rem !important;
         white-space: nowrap !important;
         display: inline-block !important;
-        margin-right: 1rem !important;
-    }
-    
-    .footer-grid > .footer-links:nth-child(3) > a:last-child,
-    .footer-grid > .footer-links:nth-child(4) > a:last-child {
-        margin-right: 0 !important;
+        margin: 0 !important;
+        vertical-align: middle !important;
     }
 }
 
@@ -1158,33 +1165,40 @@ img {
         flex-direction: column !important;
     }
     
-    /* About and Help sections: column layout with heading on top */
-    .footer-grid > .footer-links:nth-child(3),
-    .footer-grid > .footer-links:nth-child(4) {
-        flex-direction: column !important;
-        align-items: flex-start !important;
+    /* Horizontal layout for About section (3rd footer-links) */
+    .footer-grid > .footer-links:nth-child(3) {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 1rem !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
-    /* Heading on its own line */
+    /* Horizontal layout for Help section (4th footer-links) */
+    .footer-grid > .footer-links:nth-child(4) {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 1rem !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Make heading and links inline so they align vertically */
     .footer-grid > .footer-links:nth-child(3) .footer-heading,
     .footer-grid > .footer-links:nth-child(4) .footer-heading {
-        width: 100% !important;
-        margin-bottom: var(--space-xs) !important;
-        display: block !important;
+        display: inline-block !important;
+        width: auto !important;
+        margin: 0 !important;
+        margin-right: 1rem !important;
+        vertical-align: middle !important;
     }
     
-    /* Links in horizontal row with consistent spacing */
-    .footer-grid > .footer-links:nth-child(3) > a,
-    .footer-grid > .footer-links:nth-child(4) > a {
+    .footer-links a {
         font-size: 0.95rem !important;
         white-space: nowrap !important;
         display: inline-block !important;
-        margin-right: 1rem !important;
-    }
-    
-    .footer-grid > .footer-links:nth-child(3) > a:last-child,
-    .footer-grid > .footer-links:nth-child(4) > a:last-child {
-        margin-right: 0 !important;
+        margin: 0 !important;
+        vertical-align: middle !important;
     }
 }
 
