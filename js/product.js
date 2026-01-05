@@ -42,6 +42,9 @@ function initProductPage() {
     initAddToCartForm(product);
     initFavoritesButton(product);
     loadRelatedProducts(product);
+    
+    // Initialize swipe navigation on mobile
+    initSwipeNavigation(product);
 }
 
 function populateProduct(product) {
@@ -71,7 +74,7 @@ function populateProduct(product) {
     const thumbnailsContainer = document.querySelector('.product-thumbnails');
     if (thumbnailsContainer && product.images && product.images.length > 0) {
         thumbnailsContainer.innerHTML = product.images.map((img, index) => `
-            <button class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${img}">
+            <button class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${img}" data-index="${index}">
                 <img src="${img}" alt="${product.name} view ${index + 1}">
             </button>
         `).join('');
@@ -80,12 +83,17 @@ function populateProduct(product) {
         const thumbnails = thumbnailsContainer.querySelectorAll('.thumbnail');
         thumbnails.forEach(thumb => {
             thumb.addEventListener('click', () => {
-                thumbnails.forEach(t => t.classList.remove('active'));
-                thumb.classList.add('active');
-                mainImageContainer.innerHTML = `<img src="${thumb.dataset.image}" alt="${product.name}">`;
+                const imageIndex = parseInt(thumb.dataset.index);
+                switchToImage(imageIndex, product);
             });
         });
     }
+    
+    // Store current image index for swipe navigation
+    if (!window.currentProductImageIndex) {
+        window.currentProductImageIndex = {};
+    }
+    window.currentProductImageIndex[product.id] = 0;
     
     // Populate details list
     const detailsList = document.getElementById('product-details-list');
@@ -617,6 +625,134 @@ function showNotification(message) {
         toast.classList.remove('visible');
         setTimeout(() => toast.remove(), 400);
     }, 3000);
+}
+
+// Switch to a specific image index
+function switchToImage(imageIndex, product) {
+    if (!product || !product.images || product.images.length === 0) return;
+    
+    // Ensure index is within bounds
+    if (imageIndex < 0) imageIndex = 0;
+    if (imageIndex >= product.images.length) imageIndex = product.images.length - 1;
+    
+    const mainImageContainer = document.getElementById('product-image');
+    const thumbnailsContainer = document.querySelector('.product-thumbnails');
+    
+    if (mainImageContainer) {
+        // Add fade transition
+        mainImageContainer.style.opacity = '0';
+        mainImageContainer.style.transition = 'opacity 0.3s ease';
+        
+        setTimeout(() => {
+            mainImageContainer.innerHTML = `<img src="${product.images[imageIndex]}" alt="${product.name}">`;
+            mainImageContainer.style.opacity = '1';
+        }, 150);
+    }
+    
+    // Update thumbnails
+    if (thumbnailsContainer) {
+        const thumbnails = thumbnailsContainer.querySelectorAll('.thumbnail');
+        thumbnails.forEach((thumb, index) => {
+            if (index === imageIndex) {
+                thumb.classList.add('active');
+            } else {
+                thumb.classList.remove('active');
+            }
+        });
+    }
+    
+    // Update current image index
+    if (!window.currentProductImageIndex) {
+        window.currentProductImageIndex = {};
+    }
+    window.currentProductImageIndex[product.id] = imageIndex;
+}
+
+// Initialize swipe navigation on mobile
+function initSwipeNavigation(product) {
+    // Only enable on mobile devices
+    if (window.innerWidth > 768) return;
+    
+    if (!product || !product.images || product.images.length <= 1) return;
+    
+    const gallery = document.querySelector('.product-gallery');
+    const mainImageContainer = document.getElementById('product-image');
+    
+    if (!gallery || !mainImageContainer) return;
+    
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    let isSwiping = false;
+    const minSwipeDistance = 50; // Minimum distance for a swipe
+    
+    // Touch start
+    gallery.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+        isSwiping = true;
+    }, { passive: true });
+    
+    // Touch move - prevent default scrolling while swiping horizontally
+    gallery.addEventListener('touchmove', (e) => {
+        if (!isSwiping) return;
+        
+        const currentX = e.changedTouches[0].screenX;
+        const currentY = e.changedTouches[0].screenY;
+        const deltaX = Math.abs(currentX - touchStartX);
+        const deltaY = Math.abs(currentY - touchStartY);
+        
+        // If horizontal movement is greater than vertical, prevent vertical scroll
+        if (deltaX > deltaY && deltaX > 10) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    // Touch end
+    gallery.addEventListener('touchend', (e) => {
+        if (!isSwiping) return;
+        
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        const absDeltaX = Math.abs(deltaX);
+        const absDeltaY = Math.abs(deltaY);
+        
+        // Only process swipe if horizontal movement is greater than vertical
+        if (absDeltaX > absDeltaY && absDeltaX > minSwipeDistance) {
+            const currentIndex = window.currentProductImageIndex[product.id] || 0;
+            let newIndex = currentIndex;
+            
+            // Swipe left (right to left) = next image
+            if (deltaX < 0) {
+                newIndex = currentIndex + 1;
+                if (newIndex >= product.images.length) {
+                    newIndex = 0; // Loop to first image
+                }
+            }
+            // Swipe right (left to right) = previous image
+            else if (deltaX > 0) {
+                newIndex = currentIndex - 1;
+                if (newIndex < 0) {
+                    newIndex = product.images.length - 1; // Loop to last image
+                }
+            }
+            
+            if (newIndex !== currentIndex) {
+                switchToImage(newIndex, product);
+            }
+        }
+        
+        isSwiping = false;
+    }, { passive: true });
+    
+    // Touch cancel
+    gallery.addEventListener('touchcancel', () => {
+        isSwiping = false;
+    }, { passive: true });
 }
 
 function loadRelatedProducts(currentProduct) {
