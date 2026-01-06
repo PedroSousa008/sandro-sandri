@@ -114,23 +114,80 @@ function saveProfile() {
     const form = document.getElementById('profile-form-element');
     const formData = new FormData(form);
     
+    const oldProfile = loadProfile();
     const profile = {
         name: formData.get('name'),
         email: formData.get('email'),
         phone: formData.get('phone'),
         country: formData.get('country'),
+        size: formData.get('size'),
         address: formData.get('address'),
         bio: formData.get('bio'),
-        createdAt: loadProfile()?.createdAt || new Date().toISOString(),
+        createdAt: oldProfile?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
 
     localStorage.setItem('sandroSandriProfile', JSON.stringify(profile));
+    
+    // Track size selection by country if size changed
+    if (profile.size && profile.country && (!oldProfile || oldProfile.size !== profile.size || oldProfile.country !== profile.country)) {
+        trackSizeSelection(profile.country, profile.size);
+    }
+    
     showNotification('Profile saved successfully!');
     
     // Reload profile data
     loadProfileData();
     populateForm(profile);
+}
+
+// Track size selection by country
+function trackSizeSelection(country, size) {
+    const tracking = JSON.parse(localStorage.getItem('sandroSandriSizeTracking') || '{}');
+    
+    if (!tracking[country]) {
+        tracking[country] = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
+    }
+    
+    // Increment count for this size in this country
+    if (tracking[country][size] !== undefined) {
+        tracking[country][size]++;
+    }
+    
+    localStorage.setItem('sandroSandriSizeTracking', JSON.stringify(tracking));
+    
+    // Send email notification to owner
+    sendSizeSelectionEmail(country, size);
+}
+
+// Send email notification to owner when size is selected
+async function sendSizeSelectionEmail(country, size) {
+    const profile = loadProfile();
+    const countryName = document.querySelector(`#profile-country option[value="${country}"]`)?.textContent || country;
+    
+    try {
+        const response = await fetch('https://formspree.io/f/meoyldeq', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                _subject: `New Size Selection - ${size}`,
+                _replyto: profile?.email || 'noreply@sandrosandri.com',
+                message: `A customer has selected size ${size}.\n\nCustomer Details:\n- Name: ${profile?.name || 'Not provided'}\n- Email: ${profile?.email || 'Not provided'}\n- Country: ${countryName}\n- Size Selected: ${size}\n\nTimestamp: ${new Date().toLocaleString()}`,
+                customerName: profile?.name || 'Unknown',
+                customerEmail: profile?.email || 'Not provided',
+                country: countryName,
+                size: size
+            })
+        });
+        
+        if (response.ok) {
+            console.log('Size selection email sent successfully');
+        }
+    } catch (error) {
+        console.error('Error sending size selection email:', error);
+    }
 }
 
 function populateForm(profile) {
@@ -140,6 +197,7 @@ function populateForm(profile) {
     document.getElementById('profile-email').value = profile.email || '';
     document.getElementById('profile-phone').value = profile.phone || '';
     document.getElementById('profile-country').value = profile.country || '';
+    document.getElementById('profile-size').value = profile.size || '';
     document.getElementById('profile-address').value = profile.address || '';
     document.getElementById('profile-bio').value = profile.bio || '';
 }

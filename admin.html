@@ -217,6 +217,47 @@
         </div>
 
         <div class="admin-section">
+            <h2 class="admin-section-title">Size Selection Statistics</h2>
+            <div id="size-stats-table-container" style="overflow-x: auto; margin-bottom: var(--space-lg);">
+                <table id="size-stats-table" style="width: 100%; border-collapse: collapse; margin-top: var(--space-md);">
+                    <thead>
+                        <tr style="background: var(--color-gray-light);">
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">Size</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">Total Customers</th>
+                        </tr>
+                    </thead>
+                    <tbody id="size-stats-tbody">
+                        <tr>
+                            <td colspan="2" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">No size selections tracked yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3 class="admin-section-title" style="font-size: 1.25rem; margin-top: var(--space-lg);">Size Selection by Country</h3>
+            <div id="size-tracking-table-container" style="overflow-x: auto;">
+                <table id="size-tracking-table" style="width: 100%; border-collapse: collapse; margin-top: var(--space-md);">
+                    <thead>
+                        <tr style="background: var(--color-gray-light);">
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">Country</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">XS</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">S</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">M</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">L</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">XL</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="size-tracking-tbody">
+                        <tr>
+                            <td colspan="7" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">No size selections tracked yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
             <h2 class="admin-section-title">Quick Links</h2>
             <div class="admin-actions">
                 <a href="index.html" class="admin-action-btn admin-action-btn-secondary">Home Page</a>
@@ -321,9 +362,99 @@
             }
         });
         
+        // Update size tracking tables
+        function updateSizeTracking() {
+            const tracking = JSON.parse(localStorage.getItem('sandroSandriSizeTracking') || '{}');
+            
+            // Calculate total by size
+            const sizeTotals = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
+            Object.keys(tracking).forEach(country => {
+                const countryData = tracking[country];
+                Object.keys(sizeTotals).forEach(size => {
+                    sizeTotals[size] += countryData[size] || 0;
+                });
+            });
+            
+            // Update size statistics table
+            const statsTbody = document.getElementById('size-stats-tbody');
+            const totalCustomers = Object.values(sizeTotals).reduce((sum, val) => sum + val, 0);
+            
+            if (totalCustomers === 0) {
+                statsTbody.innerHTML = `
+                    <tr>
+                        <td colspan="2" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">No size selections tracked yet</td>
+                    </tr>
+                `;
+            } else {
+                statsTbody.innerHTML = `
+                    <tr style="background: var(--color-white);">
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-family: var(--font-sans); font-weight: 600;">XS</td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${sizeTotals.XS}</td>
+                    </tr>
+                    <tr style="background: var(--color-gray-light);">
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-family: var(--font-sans); font-weight: 600;">S</td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${sizeTotals.S}</td>
+                    </tr>
+                    <tr style="background: var(--color-white);">
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-family: var(--font-sans); font-weight: 600;">M</td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${sizeTotals.M}</td>
+                    </tr>
+                    <tr style="background: var(--color-gray-light);">
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-family: var(--font-sans); font-weight: 600;">L</td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${sizeTotals.L}</td>
+                    </tr>
+                    <tr style="background: var(--color-white);">
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-family: var(--font-sans); font-weight: 600;">XL</td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${sizeTotals.XL}</td>
+                    </tr>
+                `;
+            }
+            
+            // Update country breakdown table
+            const trackingTbody = document.getElementById('size-tracking-tbody');
+            const countries = Object.keys(tracking).sort();
+            
+            if (countries.length === 0) {
+                trackingTbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">No size selections tracked yet</td>
+                    </tr>
+                `;
+            } else {
+                let html = '';
+                countries.forEach(country => {
+                    const countryData = tracking[country];
+                    const total = (countryData.XS || 0) + (countryData.S || 0) + (countryData.M || 0) + (countryData.L || 0) + (countryData.XL || 0);
+                    
+                    // Get country name from profile page select options
+                    const countrySelect = document.createElement('select');
+                    countrySelect.innerHTML = document.querySelector('#profile-country')?.innerHTML || '';
+                    const countryOption = countrySelect.querySelector(`option[value="${country}"]`);
+                    const countryName = countryOption ? countryOption.textContent : country;
+                    
+                    html += `
+                        <tr>
+                            <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-family: var(--font-sans);">${countryName}</td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${countryData.XS || 0}</td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${countryData.S || 0}</td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${countryData.M || 0}</td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${countryData.L || 0}</td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans);">${countryData.XL || 0}</td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-family: var(--font-sans); font-weight: 600;">${total}</td>
+                        </tr>
+                    `;
+                });
+                trackingTbody.innerHTML = html;
+            }
+        }
+        
         // Update dashboard every 5 seconds
-        setInterval(updateDashboard, 5000);
+        setInterval(() => {
+            updateDashboard();
+            updateSizeTracking();
+        }, 5000);
         updateDashboard();
+        updateSizeTracking();
     </script>
 </body>
 </html>
