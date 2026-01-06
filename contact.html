@@ -191,7 +191,7 @@
                 </div>
                 
                 <div class="faq-accordion">
-                    <div class="faq-item">
+                    <div class="faq-item" id="shipping-policy">
                         <button class="faq-question">
                             <span>What is your shipping policy?</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -276,7 +276,7 @@
                 <div class="footer-links">
                     <h4 class="footer-heading">Help</h4>
                     <a href="contact.html">Contact Us</a>
-                    <a href="shipping.html">Shipping</a>
+                    <a href="contact.html#shipping-policy">Shipping</a>
                     <a href="contact.html#faq">FAQ</a>
                 </div>
             </div>
@@ -347,6 +347,21 @@
                 }
             });
         });
+        
+        // Auto-open shipping policy FAQ if hash is present
+        if (window.location.hash === '#shipping-policy' || window.location.hash === '#faq') {
+            const shippingPolicyItem = document.getElementById('shipping-policy');
+            if (shippingPolicyItem) {
+                // Close all FAQ items first
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+                // Open shipping policy
+                shippingPolicyItem.classList.add('open');
+                // Scroll to the FAQ section
+                setTimeout(() => {
+                    shippingPolicyItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
 
         // Contact Form - Submit to Formspree
         document.getElementById('contact-form')?.addEventListener('submit', async (e) => {
