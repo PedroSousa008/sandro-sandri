@@ -254,28 +254,48 @@ class AdminSystem {
         // Get user role
         const role = (window.auth && window.auth.getRole()) || 'USER';
         
-        // Add/update this session
+        // Determine if user is on checkout (active purchase intent)
+        const isOnCheckout = window.location.pathname.includes('checkout') || 
+                             window.location.pathname.includes('cart');
+        const isOnProduct = window.location.pathname.includes('product.html');
+        const isOnCollection = window.location.pathname.includes('collection.html');
+        
+        // Add/update this session with more detailed info
         sessions[sessionId] = {
+            id: sessionId,
             timestamp: new Date().toISOString(),
             role: role,
-            page: this.getCurrentPageId()
+            page: window.location.pathname,
+            pageName: this.getPageName(),
+            isOnCheckout: isOnCheckout,
+            isOnProduct: isOnProduct,
+            isOnCollection: isOnCollection,
+            isActive: true,
+            userAgent: navigator.userAgent.substring(0, 50)
         };
-        
-        // Remove old sessions (older than 30 seconds - considered offline)
-        const now = new Date();
-        Object.keys(sessions).forEach(id => {
-            const session = sessions[id];
-            const sessionTime = new Date(session.timestamp);
-            const secondsSinceUpdate = (now - sessionTime) / 1000;
-            
-            // Remove sessions that haven't been updated in 30 seconds
-            if (secondsSinceUpdate > 30) {
-                delete sessions[id];
-            }
-        });
         
         // Save sessions
         localStorage.setItem('sandroSandri_sessions', JSON.stringify(sessions));
+        
+        // Sync across tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sandroSandri_sessions') {
+                this.updateOnlineUsers();
+            }
+        });
+    }
+    
+    getPageName() {
+        const path = window.location.pathname;
+        if (path.includes('checkout')) return 'Checkout';
+        if (path.includes('cart')) return 'Cart';
+        if (path.includes('product')) return 'Product';
+        if (path.includes('collection')) return 'Collection';
+        if (path.includes('profile')) return 'Profile';
+        if (path.includes('about')) return 'About';
+        if (path.includes('contact')) return 'Contact';
+        if (path.includes('membership')) return 'Membership';
+        return 'Home';
     }
     
     
@@ -314,10 +334,16 @@ class AdminSystem {
             }
             const sessionTime = new Date(session.timestamp);
             const secondsSinceUpdate = (now - sessionTime) / 1000;
-            if (secondsSinceUpdate > 30) {
+            
+            // Remove sessions older than 60 seconds (user left or inactive)
+            // Extended timeout for better tracking
+            if (secondsSinceUpdate > 60) {
                 delete sessions[id];
             }
         });
+        
+        // Save cleaned sessions
+        localStorage.setItem('sandroSandri_sessions', JSON.stringify(sessions));
         
         // Count active sessions (excluding owner sessions)
         const userSessions = Object.values(sessions).filter(s => {
@@ -325,12 +351,17 @@ class AdminSystem {
         });
         this.onlineUsers = userSessions.length;
         
+        // Count users on checkout (active purchase intent)
+        const checkoutUsers = userSessions.filter(s => s.isOnCheckout).length;
+        
         // Debug logging (only in console)
         if (window.auth && window.auth.isOwner()) {
             console.log('Online users tracking:', {
                 totalSessions: Object.keys(sessions).length,
                 ownerSessions: Object.values(sessions).filter(s => s.role === 'OWNER').length,
                 userSessions: this.onlineUsers,
+                checkoutUsers: checkoutUsers,
+                activePages: userSessions.map(s => s.pageName),
                 allSessions: sessions
             });
         }
@@ -339,13 +370,23 @@ class AdminSystem {
         if (window.auth && window.auth.isOwner()) {
             const countEl = document.getElementById('admin-online-count');
             if (countEl) {
-                countEl.textContent = `${this.onlineUsers} user${this.onlineUsers !== 1 ? 's' : ''} online`;
+                let countText = `${this.onlineUsers} user${this.onlineUsers !== 1 ? 's' : ''} online`;
+                if (checkoutUsers > 0) {
+                    countText += ` (${checkoutUsers} on checkout)`;
+                }
+                countEl.textContent = countText;
             }
             
             // Also update dashboard if on admin page
             const dashboardCount = document.getElementById('dashboard-online-count');
             if (dashboardCount) {
                 dashboardCount.textContent = this.onlineUsers;
+            }
+            
+            // Update checkout count if element exists
+            const checkoutCount = document.getElementById('dashboard-checkout-count');
+            if (checkoutCount) {
+                checkoutCount.textContent = checkoutUsers;
             }
         }
     }
