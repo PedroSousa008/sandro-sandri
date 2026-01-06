@@ -1086,6 +1086,19 @@
     display: grid;
     grid-template-columns: 1fr 400px;
     gap: var(--space-xl);
+    overflow: visible !important; /* Ensure sticky works */
+    position: relative !important; /* Ensure sticky works */
+}
+
+/* Ensure parent containers allow sticky positioning */
+.cart-content {
+    overflow: visible !important; /* Ensure sticky works */
+    position: relative !important;
+}
+
+.checkout-form-container {
+    overflow: visible !important; /* Ensure sticky works */
+    position: relative !important;
 }
 
 @media (max-width: 968px) {
@@ -1144,12 +1157,47 @@
     border-color: var(--color-navy);
 }
 
+/* Checkout Summary - Sticky on desktop only when viewport is wide enough */
 .checkout-summary {
     background: var(--color-cream);
     padding: var(--space-md);
     height: fit-content;
-    position: sticky;
-    top: calc(var(--nav-height) + var(--space-md));
+    position: relative; /* Default to relative */
+    align-self: start;
+}
+
+/* Only enable sticky on larger desktop screens (min-width: 1200px) */
+@media (min-width: 1200px) {
+    .checkout-summary {
+        position: -webkit-sticky; /* Safari support */
+        position: sticky !important;
+        top: 80px !important; /* Stick below navigation */
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+        z-index: 5; /* Lower z-index to prevent overlapping */
+        background: var(--color-white);
+        padding-top: var(--space-md);
+    }
+}
+
+/* Mobile and narrow desktop: Remove sticky/fixed positioning - let summary scroll naturally */
+@media (max-width: 1199px) {
+    .checkout-summary {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: var(--space-md) !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: var(--color-cream) !important;
+        z-index: auto !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        transform: none !important;
+    }
 }
 
 .checkout-items {
