@@ -39,6 +39,10 @@ const FREE_SHIPPING_THRESHOLD = 100; // €100
 
 document.addEventListener('DOMContentLoaded', () => {
     initCheckout();
+    // Track that user is on checkout page
+    if (window.AdminSystem) {
+        window.AdminSystem.trackUserSession();
+    }
 });
 
 function initCheckout() {

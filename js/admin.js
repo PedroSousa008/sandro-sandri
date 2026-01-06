@@ -24,13 +24,34 @@ class AdminSystem {
         this.updateOnlineUsers();
         
         // Set up interval to track and update (for all users)
+        // More frequent updates for better accuracy
         if (this.userTrackingInterval) {
             clearInterval(this.userTrackingInterval);
         }
         this.userTrackingInterval = setInterval(() => {
             this.trackUserSession();
             this.updateOnlineUsers();
-        }, 5000);
+        }, 3000); // Update every 3 seconds for better accuracy
+        
+        // Also track on page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                this.trackUserSession();
+                this.updateOnlineUsers();
+            }
+        });
+        
+        // Track on page unload (user leaving)
+        window.addEventListener('beforeunload', () => {
+            // Mark session as inactive but don't delete immediately
+            const sessionId = this.getSessionId();
+            const sessions = this.getActiveSessions();
+            if (sessions[sessionId]) {
+                sessions[sessionId].isActive = false;
+                sessions[sessionId].lastSeen = new Date().toISOString();
+                localStorage.setItem('sandroSandri_sessions', JSON.stringify(sessions));
+            }
+        });
         
         if (!window.auth || !window.auth.isOwner()) {
             // Regular users: only see live content, no admin features
