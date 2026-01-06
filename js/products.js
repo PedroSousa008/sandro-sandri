@@ -27,7 +27,7 @@ const PRODUCTS = [
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
-            description: "For those who see travel as a philosophy, a journey of discovery and beauty (there are 2 t-shirts)."
+            description: "For those who see travel as a philosophy, a journey of discovery and beauty."
         },
         sku: "SS-001",
         inStock: true,
@@ -64,7 +64,7 @@ const PRODUCTS = [
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
-            description: "For those who see travel as a philosophy, a journey of discovery and beauty (there are 2 t-shirts)."
+            description: "For those who see travel as a philosophy, a journey of discovery and beauty."
         },
         sku: "SS-002",
         inStock: true,
