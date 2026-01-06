@@ -27,7 +27,7 @@ const PRODUCTS = [
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
-            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+            description: "For those who see travel as a philosophy, a journey of discovery and beauty (there are 2 t-shirts)."
         },
         sku: "SS-001",
         inStock: true,
@@ -64,7 +64,7 @@ const PRODUCTS = [
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
-            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+            description: "For those who see travel as a philosophy, a journey of discovery and beauty (there are 2 t-shirts)."
         },
         sku: "SS-002",
         inStock: true,
@@ -138,7 +138,7 @@ const PRODUCTS = [
         ],
         collection: {
             title: "L'Italia per un viaggio indimenticabile Signature",
-            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+            description: "The spirit of Italian charm, evoking the allure of an unfurgettable escape."
         },
         sku: "SS-004",
         inStock: true,
@@ -175,7 +175,7 @@ const PRODUCTS = [
         ],
         collection: {
             title: "Rinascimento Couture Signature",
-            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
+            description: "A tribute for artistic rebirth, blending heritage with modern refinement."
         },
         sku: "SS-005",
         inStock: true,
