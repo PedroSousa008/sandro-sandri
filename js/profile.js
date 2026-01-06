@@ -190,12 +190,24 @@ function trackSizeSelection(country, size) {
     }
     
     localStorage.setItem('sandroSandriSizeTracking', JSON.stringify(tracking));
+    console.log('Size tracking saved to localStorage:', tracking);
     
-    // Trigger storage event to notify other tabs (including admin dashboard)
-    window.dispatchEvent(new StorageEvent('storage', {
-        key: 'sandroSandriSizeTracking',
-        newValue: JSON.stringify(tracking)
-    }));
+    // Trigger custom event for same-tab updates (storage events only work cross-tab)
+    window.dispatchEvent(new CustomEvent('sizeTrackingUpdated'));
+    
+    // Also trigger storage event for cross-tab updates
+    // Note: StorageEvent can only be created but won't fire in same tab
+    // So we use CustomEvent for same-tab and storage event listener will catch cross-tab
+    try {
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: 'sandroSandriSizeTracking',
+            newValue: JSON.stringify(tracking),
+            oldValue: localStorage.getItem('sandroSandriSizeTracking')
+        }));
+    } catch (e) {
+        // StorageEvent might not work in all browsers for same-tab, that's fine
+        console.log('StorageEvent dispatch:', e);
+    }
     
     // Send email notification to owner
     sendSizeSelectionEmail(country, size);

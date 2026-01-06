@@ -443,7 +443,11 @@
         
         // Update size tracking tables
         function updateSizeTracking() {
-            const tracking = JSON.parse(localStorage.getItem('sandroSandriSizeTracking') || '{}');
+            try {
+                const trackingData = localStorage.getItem('sandroSandriSizeTracking');
+                console.log('Admin: Reading size tracking data:', trackingData);
+                const tracking = trackingData ? JSON.parse(trackingData) : {};
+                console.log('Admin: Parsed tracking data:', tracking);
             
             // Calculate total by size
             const sizeTotals = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
@@ -522,6 +526,9 @@
                 });
                 trackingTbody.innerHTML = html;
             }
+            } catch (error) {
+                console.error('Error updating size tracking:', error);
+            }
         }
         
         // Update dashboard every 2 seconds for real-time updates
@@ -532,19 +539,31 @@
         updateDashboard();
         updateSizeTracking();
         
-        // Also listen for storage events to update immediately when size is selected
+        // Listen for storage events to update immediately when size is selected (cross-tab)
         window.addEventListener('storage', (e) => {
             if (e.key === 'sandroSandriSizeTracking') {
+                console.log('Admin: Storage event detected, updating size tracking');
                 updateSizeTracking();
             }
         });
         
-        // Also listen for custom storage events (for same-tab updates)
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'sandroSandriSizeTracking') {
+        // Also listen for custom events (for same-tab updates)
+        // Since storage events only fire in other tabs, we need a custom event for same-tab updates
+        window.addEventListener('sizeTrackingUpdated', () => {
+            console.log('Admin: Custom event detected, updating size tracking');
+            updateSizeTracking();
+        });
+        
+        // Poll localStorage periodically as a fallback
+        let lastTrackingData = null;
+        setInterval(() => {
+            const currentData = localStorage.getItem('sandroSandriSizeTracking');
+            if (currentData !== lastTrackingData) {
+                console.log('Admin: Tracking data changed, updating');
+                lastTrackingData = currentData;
                 updateSizeTracking();
             }
-        });
+        }, 1000);
     </script>
 </body>
 </html>
