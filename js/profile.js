@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initProfile() {
+    // Initialize size tracking listeners
+    initSizeTracking();
     initTabs();
     loadProfileData();
     initPersonalForm();
@@ -133,6 +135,37 @@ function saveProfile() {
     if (profile.size && profile.country && (!oldProfile || oldProfile.size !== profile.size || oldProfile.country !== profile.country)) {
         trackSizeSelection(profile.country, profile.size);
     }
+}
+
+// Track size selection immediately when size dropdown changes
+function initSizeTracking() {
+    const sizeSelect = document.getElementById('profile-size');
+    const countrySelect = document.getElementById('profile-country');
+    
+    if (sizeSelect && countrySelect) {
+        sizeSelect.addEventListener('change', () => {
+            const size = sizeSelect.value;
+            const country = countrySelect.value;
+            
+            // Only track if both size and country are selected
+            if (size && country) {
+                console.log('Size selection detected:', { size, country });
+                trackSizeSelection(country, size);
+            }
+        });
+        
+        // Also track when country changes if size is already selected
+        countrySelect.addEventListener('change', () => {
+            const size = sizeSelect.value;
+            const country = countrySelect.value;
+            
+            // Only track if both size and country are selected
+            if (size && country) {
+                console.log('Country changed with size selected:', { size, country });
+                trackSizeSelection(country, size);
+            }
+        });
+    }
     
     showNotification('Profile saved successfully!');
     
@@ -143,6 +176,7 @@ function saveProfile() {
 
 // Track size selection by country
 function trackSizeSelection(country, size) {
+    console.log('trackSizeSelection called:', { country, size });
     const tracking = JSON.parse(localStorage.getItem('sandroSandriSizeTracking') || '{}');
     
     if (!tracking[country]) {
@@ -152,9 +186,16 @@ function trackSizeSelection(country, size) {
     // Increment count for this size in this country
     if (tracking[country][size] !== undefined) {
         tracking[country][size]++;
+        console.log('Size tracking updated:', tracking);
     }
     
     localStorage.setItem('sandroSandriSizeTracking', JSON.stringify(tracking));
+    
+    // Trigger storage event to notify other tabs (including admin dashboard)
+    window.dispatchEvent(new StorageEvent('storage', {
+        key: 'sandroSandriSizeTracking',
+        newValue: JSON.stringify(tracking)
+    }));
     
     // Send email notification to owner
     sendSizeSelectionEmail(country, size);

@@ -524,13 +524,27 @@
             }
         }
         
-        // Update dashboard every 5 seconds
+        // Update dashboard every 2 seconds for real-time updates
         setInterval(() => {
             updateDashboard();
             updateSizeTracking();
-        }, 5000);
+        }, 2000);
         updateDashboard();
         updateSizeTracking();
+        
+        // Also listen for storage events to update immediately when size is selected
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sandroSandriSizeTracking') {
+                updateSizeTracking();
+            }
+        });
+        
+        // Also listen for custom storage events (for same-tab updates)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sandroSandriSizeTracking') {
+                updateSizeTracking();
+            }
+        });
     </script>
 </body>
 </html>
