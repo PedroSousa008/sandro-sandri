@@ -245,24 +245,53 @@ function initNewsletter() {
 
         if (!email) return;
 
-        // Simulate submission
+        // Update button state
+        const originalText = button.textContent;
         button.textContent = 'Subscribing...';
         button.disabled = true;
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+            // Send email to Formspree
+            const response = await fetch('https://formspree.io/f/meoyldeq', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    _subject: 'New Newsletter Subscription - Join the Few',
+                    _replyto: email,
+                    message: `A new subscriber has joined the newsletter.\n\nEmail: ${email}\n\nTimestamp: ${new Date().toLocaleString()}`,
+                    email: email,
+                    source: 'Newsletter Subscription'
+                })
+            });
 
-        // Success state
-        button.textContent = 'Subscribed!';
-        input.value = '';
+            if (response.ok) {
+                // Success state
+                button.textContent = 'Subscribed!';
+                input.value = '';
 
-        setTimeout(() => {
-            button.textContent = 'Subscribe';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }, 3000);
+
+                // Show notification
+                showNotification('Thank you for subscribing!');
+            } else {
+                throw new Error('Submission failed');
+            }
+        } catch (error) {
+            console.error('Error submitting newsletter subscription:', error);
+            button.textContent = 'Error - Try Again';
             button.disabled = false;
-        }, 3000);
-
-        // Show notification
-        showNotification('Thank you for subscribing!');
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 3000);
+            
+            showNotification('Something went wrong. Please try again.');
+        }
     });
 }
 
