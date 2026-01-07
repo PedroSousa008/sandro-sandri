@@ -16,21 +16,9 @@ function initProfile() {
     loadFavorites();
     initSettings();
     
-    // Refresh stats when switching to overview tab (if it still exists)
     // Note: Overview tab is now "The Atlas of Memories"
-    const overviewTab = document.querySelector('[data-tab="overview"]');
-    if (overviewTab) {
-        overviewTab.addEventListener('click', () => {
-            // Initialize Atlas of Memories when tab is clicked
-            setTimeout(() => {
-                if (window.AtlasOfMemories && !window.atlasInstance) {
-                    window.atlasInstance = new window.AtlasOfMemories();
-                } else if (window.atlasInstance) {
-                    window.atlasInstance.init();
-                }
-            }, 100);
-        });
-    }
+    // Atlas initialization is handled by atlas-of-memories.js via MutationObserver
+    // No need to add click listener here to avoid conflicts
     
     // Refresh stats when page becomes visible (user navigates back)
     // Note: Don't call loadProfileData() as overview tab no longer has those elements

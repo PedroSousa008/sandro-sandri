@@ -297,30 +297,49 @@ if (document.readyState === 'loading') {
 }
 
 // Also initialize when tab is switched to overview (in case it's not active on load)
-// Use event delegation to avoid interfering with profile.js tab switching
-document.addEventListener('click', (e) => {
-    const tab = e.target.closest('.profile-tab');
-    if (tab && tab.dataset.tab === 'overview') {
-        // Wait for tab switching to complete
-        setTimeout(() => {
-            const overviewTab = document.getElementById('overview-tab');
-            if (overviewTab && overviewTab.classList.contains('active')) {
-                if (!window.atlasInstance) {
-                    try {
-                        window.atlasInstance = new AtlasOfMemories();
-                    } catch (error) {
-                        console.error('Error initializing Atlas of Memories:', error);
-                    }
-                } else {
-                    // Re-initialize to reload data
-                    try {
-                        window.atlasInstance.init();
-                    } catch (error) {
-                        console.error('Error re-initializing Atlas of Memories:', error);
-                    }
+// Use MutationObserver to watch for tab changes instead of click events
+// This avoids interfering with profile.js tab navigation
+function watchForOverviewTab() {
+    const overviewTabContent = document.getElementById('overview-tab');
+    if (!overviewTabContent) return;
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const isActive = overviewTabContent.classList.contains('active');
+                if (isActive) {
+                    // Tab just became active, initialize Atlas
+                    setTimeout(() => {
+                        if (!window.atlasInstance) {
+                            try {
+                                window.atlasInstance = new AtlasOfMemories();
+                            } catch (error) {
+                                console.error('Error initializing Atlas of Memories:', error);
+                            }
+                        } else {
+                            // Re-initialize to reload data
+                            try {
+                                window.atlasInstance.init();
+                            } catch (error) {
+                                console.error('Error re-initializing Atlas of Memories:', error);
+                            }
+                        }
+                    }, 50);
                 }
             }
-        }, 100);
-    }
-}, true); // Use capture phase to run before profile.js handlers
+        });
+    });
+
+    observer.observe(overviewTabContent, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+}
+
+// Initialize observer when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', watchForOverviewTab);
+} else {
+    watchForOverviewTab();
+}
 
