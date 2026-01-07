@@ -76,6 +76,7 @@ class AtlasOfMemoriesStandalone {
             this.initDateInputs();
             this.initCaptionInputs();
             this.initImageRemoval();
+            this.initSaveButtons();
         }).catch(err => {
             console.error('Error loading memories:', err);
             // Still initialize listeners even if load fails
@@ -411,6 +412,7 @@ class AtlasOfMemoriesStandalone {
                 <div class="destination-field">
                     <input type="text" id="${destination}-caption" class="destination-caption-input" placeholder="A quiet moment worth remembering" maxlength="80" data-destination="${destination}">
                 </div>
+                <button type="button" class="destination-save-btn" data-destination="${destination}">Save</button>
             </div>
         `;
 
@@ -699,48 +701,103 @@ class AtlasOfMemoriesStandalone {
         if (removeBtn) removeBtn.style.display = 'none';
         if (input) input.value = '';
 
+        // Remove image immediately and save
         await this.saveMemory(destination, { image: null });
+        
+        // Force immediate sync to server
+        if (window.userSync && window.userSync.userEmail) {
+            await window.userSync.forceSync();
+        } else {
+            await this.forceSync();
+        }
+        
         this.showNotification('Image removed');
-        await this.forceSync();
     }
 
     initDateInputs() {
+        // Date inputs no longer auto-save - they wait for Save button
+        // Just remove any auto-save behavior
         document.querySelectorAll('.destination-date-input').forEach(input => {
-            input.addEventListener('change', async (e) => {
-                const destination = input.dataset.destination;
-                const dateValue = e.target.value;
-                
-                if (dateValue) {
-                    await this.saveMemory(destination, { date: dateValue });
-                    this.showNotification('Date saved');
-                    await this.forceSync();
-                } else {
-                    await this.saveMemory(destination, { date: null });
-                    await this.forceSync();
-                }
-            });
+            // No event listener - data is saved when Save button is clicked
         });
     }
 
     initCaptionInputs() {
+        // Caption inputs no longer auto-save - they wait for Save button
+        // Just remove any auto-save behavior
         document.querySelectorAll('.destination-caption-input').forEach(input => {
-            // Save on blur (when user finishes typing)
-            input.addEventListener('blur', async (e) => {
-                const destination = input.dataset.destination;
-                const caption = e.target.value.trim();
-                
-                await this.saveMemory(destination, { caption: caption || null });
-                if (caption) {
-                    this.showNotification('Caption saved');
-                }
-                await this.forceSync();
-            });
+            // No event listener - data is saved when Save button is clicked
+        });
+    }
 
-            // Character counter (optional, subtle)
-            input.addEventListener('input', (e) => {
-                const length = e.target.value.length;
-                const maxLength = 80;
-                // Could add a subtle character counter here if needed
+    initSaveButtons() {
+        document.querySelectorAll('.destination-save-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const destination = button.dataset.destination;
+                if (!destination) return;
+
+                // Disable button while saving
+                button.disabled = true;
+                button.textContent = 'Saving...';
+
+                try {
+                    // Get all current data for this destination
+                    const card = document.querySelector(`[data-destination="${destination}"]`);
+                    if (!card) return;
+
+                    // Get image (if uploaded)
+                    const imagePreview = card.querySelector('.destination-image-preview');
+                    const imageDataUrl = imagePreview && imagePreview.style.display !== 'none' 
+                        ? imagePreview.src 
+                        : null;
+
+                    // Get date
+                    const dateInput = document.getElementById(`${destination}-date`);
+                    const dateValue = dateInput ? dateInput.value : null;
+
+                    // Get caption
+                    const captionInput = document.getElementById(`${destination}-caption`);
+                    const captionValue = captionInput ? captionInput.value.trim() : null;
+
+                    // Prepare data to save
+                    const dataToSave = {};
+                    if (imageDataUrl) {
+                        dataToSave.image = imageDataUrl;
+                    }
+                    if (dateValue) {
+                        dataToSave.date = dateValue;
+                    }
+                    if (captionValue) {
+                        dataToSave.caption = captionValue;
+                    }
+
+                    console.log('💾 Saving destination:', destination, 'Data:', Object.keys(dataToSave));
+
+                    // Save to memory
+                    await this.saveMemory(destination, dataToSave);
+
+                    // Force immediate sync to server
+                    if (window.userSync && window.userSync.userEmail) {
+                        await window.userSync.forceSync();
+                    } else {
+                        await this.forceSync();
+                    }
+
+                    // Show success notification
+                    this.showNotification('Saved successfully');
+
+                    // Re-enable button
+                    button.disabled = false;
+                    button.textContent = 'Save';
+
+                } catch (error) {
+                    console.error('Error saving destination:', error);
+                    this.showNotification('Error saving. Please try again.');
+                    
+                    // Re-enable button
+                    button.disabled = false;
+                    button.textContent = 'Save';
+                }
             });
         });
     }
