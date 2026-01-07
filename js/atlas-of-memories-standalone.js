@@ -639,13 +639,60 @@ class AtlasOfMemoriesStandalone {
     }
 
     handleImageUpload(destination, file) {
+        // Compress image before converting to base64
         const reader = new FileReader();
         
         reader.onload = (e) => {
-            const imageDataUrl = e.target.result;
-            // Just show the image preview - don't save yet
-            this.setDestinationImage(destination, imageDataUrl);
-            this.showNotification('Image ready - click Save to save');
+            const img = new Image();
+            img.onload = () => {
+                // Create canvas to compress image
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1200;
+                const MAX_HEIGHT = 1200;
+                const QUALITY = 0.8; // 80% quality
+                
+                let width = img.width;
+                let height = img.height;
+                
+                // Calculate new dimensions
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height = (height * MAX_WIDTH) / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width = (width * MAX_HEIGHT) / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to base64 with compression
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', QUALITY);
+                
+                console.log('📸 Image compressed:', {
+                    original: Math.round(file.size / 1024) + 'KB',
+                    compressed: Math.round(compressedDataUrl.length / 1024) + 'KB',
+                    reduction: Math.round((1 - compressedDataUrl.length / file.size) * 100) + '%'
+                });
+                
+                // Show the compressed image preview
+                this.setDestinationImage(destination, compressedDataUrl);
+                this.showNotification('Image ready - click Save to save');
+            };
+            
+            img.onerror = () => {
+                alert('Error processing image file');
+            };
+            
+            img.src = e.target.result;
         };
 
         reader.onerror = () => {
@@ -822,10 +869,20 @@ class AtlasOfMemoriesStandalone {
                         caption: captionValue || null
                     };
 
+                    const imageSizeKB = imageDataUrl ? Math.round(imageDataUrl.length / 1024) : 0;
                     console.log('💾 Saving destination:', destination);
-                    console.log('   Image:', imageDataUrl ? 'Yes (' + Math.round(imageDataUrl.length / 1024) + 'KB)' : 'No');
+                    console.log('   Image:', imageDataUrl ? `Yes (${imageSizeKB}KB)` : 'No');
                     console.log('   Date:', dateValue || 'None');
                     console.log('   Caption:', captionValue || 'None');
+                    
+                    // Check if image is too large (Vercel limit is ~4.5MB)
+                    if (imageSizeKB > 3500) {
+                        console.error('❌ Image too large:', imageSizeKB, 'KB (max ~3500KB)');
+                        this.showNotification('Image too large. Please use a smaller image.');
+                        button.disabled = false;
+                        button.textContent = 'Save';
+                        return;
+                    }
 
                     // Prepare data to save - images are too large for localStorage
                     const saved = localStorage.getItem(this.storageKey);
@@ -865,14 +922,21 @@ class AtlasOfMemoriesStandalone {
                     // Now sync to server using direct API call (more reliable)
                     // Server gets the FULL data including images
                     console.log('🔄 Saving to server (with images)...');
+                    console.log('   Total payload size:', Math.round(JSON.stringify(memories).length / 1024), 'KB');
+                    
                     const syncSuccess = await this.saveToServerDirectly(memories, this.chapters);
                     
                     if (syncSuccess) {
-                        console.log('✅ Saved to server successfully');
+                        console.log('✅ Saved to server successfully - data persisted!');
                         this.showNotification('Saved successfully');
+                        
+                        // After successful save, reload from server to verify
+                        setTimeout(() => {
+                            this.loadMemories(true);
+                        }, 1000);
                     } else {
                         console.error('❌ Failed to save to server');
-                        this.showNotification('Saved locally, but sync failed. Please try again.');
+                        this.showNotification('Failed to save. Image may be too large. Please try a smaller image.');
                     }
 
                     // Re-enable button
@@ -898,15 +962,24 @@ class AtlasOfMemoriesStandalone {
         }
 
         try {
-            console.log('🔄 Syncing to server directly...');
-            console.log('   Memories to save:', Object.keys(memories).length);
-            console.log('   Total data size:', JSON.stringify(memories).length, 'bytes');
-            
             const payload = {
                 email: this.userEmail,
                 memories: memories,
                 chapters: chapters
             };
+            
+            const payloadSize = JSON.stringify(payload).length;
+            const payloadSizeKB = Math.round(payloadSize / 1024);
+            
+            console.log('🔄 Syncing to server directly...');
+            console.log('   Memories to save:', Object.keys(memories).length);
+            console.log('   Total payload size:', payloadSizeKB, 'KB');
+            
+            // Check payload size before sending
+            if (payloadSizeKB > 4000) {
+                console.error('❌ Payload too large:', payloadSizeKB, 'KB (max ~4000KB)');
+                return false;
+            }
             
             const response = await fetch('/api/atlas/save', {
                 method: 'POST',
@@ -931,6 +1004,11 @@ class AtlasOfMemoriesStandalone {
             } else {
                 const errorText = await response.text();
                 console.error('❌ Server save failed:', response.status, errorText);
+                
+                if (response.status === 413) {
+                    console.error('❌ Payload too large! Image needs to be smaller.');
+                }
+                
                 return false;
             }
         } catch (error) {
