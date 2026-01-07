@@ -128,17 +128,38 @@ class UserSync {
                             localStorage.setItem('sandroSandriCart', serverCartStr);
                             dataUpdated = true;
                             
-                            // Trigger cart update
+                            // Trigger cart update - try multiple ways
                             if (window.cart) {
                                 window.cart.items = result.data.cart;
-                                window.cart.updateCartUI();
+                                if (window.cart.updateCartUI) {
+                                    window.cart.updateCartUI();
+                                }
                             }
-                            if (window.ShoppingCart && window.ShoppingCart.instance) {
-                                window.ShoppingCart.instance.items = result.data.cart;
-                                window.ShoppingCart.instance.updateCartUI();
+                            if (window.ShoppingCart) {
+                                if (window.ShoppingCart.instance) {
+                                    window.ShoppingCart.instance.items = result.data.cart;
+                                    if (window.ShoppingCart.instance.updateCartUI) {
+                                        window.ShoppingCart.instance.updateCartUI();
+                                    }
+                                }
+                                // Also try to find existing instance
+                                const cartElements = document.querySelectorAll('.cart-count, .cart-icon');
+                                if (cartElements.length > 0 && window.ShoppingCart) {
+                                    // Re-initialize if needed
+                                    const existingCart = document.querySelector('.cart-items');
+                                    if (existingCart) {
+                                        // Cart drawer exists, update it
+                                        window.dispatchEvent(new CustomEvent('cartUpdated'));
+                                    }
+                                }
                             }
                             // Dispatch event for other components
                             window.dispatchEvent(new CustomEvent('cartSynced', { detail: result.data.cart }));
+                            window.dispatchEvent(new StorageEvent('storage', {
+                                key: 'sandroSandriCart',
+                                newValue: serverCartStr,
+                                oldValue: currentCartStr
+                            }));
                         }
                     }
 

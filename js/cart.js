@@ -14,7 +14,24 @@ class ShoppingCart {
         
         // Listen for cart sync events
         window.addEventListener('cartSynced', (e) => {
+            console.log('Cart synced event received:', e.detail);
             this.items = e.detail || [];
+            this.updateCartUI();
+        });
+        
+        // Listen for storage events (cross-tab sync)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sandroSandriCart') {
+                console.log('Cart storage event received');
+                this.items = e.newValue ? JSON.parse(e.newValue) : [];
+                this.updateCartUI();
+            }
+        });
+        
+        // Listen for custom cart updated event
+        window.addEventListener('cartUpdated', () => {
+            console.log('Cart updated event received');
+            this.items = this.loadCart();
             this.updateCartUI();
         });
     }
