@@ -14,7 +14,25 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // Add timeout protection
+    const timeout = setTimeout(() => {
+        console.error('❌ Request timeout - payload may be too large');
+    }, 25000); // 25 second timeout
+
     try {
+        // Check request body size
+        const bodySize = JSON.stringify(req.body).length;
+        const bodySizeKB = Math.round(bodySize / 1024);
+        console.log('📦 Request body size:', bodySizeKB, 'KB');
+        
+        if (bodySizeKB > 3000) {
+            console.error('❌ Request body too large:', bodySizeKB, 'KB (max ~3000KB)');
+            return res.status(413).json({ 
+                error: 'Payload too large',
+                message: `Request body is ${bodySizeKB}KB, maximum is ~3000KB. Please reduce image size.`
+            });
+        }
+
         const { email, memories, chapters } = req.body;
 
         if (!email) {
@@ -94,15 +112,23 @@ module.exports = async (req, res) => {
             console.error('   Check Vercel environment variables for KV_REST_API_URL and KV_REST_API_TOKEN');
         }
 
+        clearTimeout(timeout);
         res.status(200).json({ 
             success: true, 
             message: 'Atlas data saved successfully' 
         });
     } catch (error) {
-        console.error('Error saving atlas data:', error);
+        clearTimeout(timeout);
+        console.error('❌ Error saving atlas data:', error);
+        console.error('   Error stack:', error.stack);
+        console.error('   Error name:', error.name);
+        
+        // Return more detailed error for debugging
         res.status(500).json({ 
             error: 'Failed to save atlas data',
-            message: error.message 
+            message: error.message,
+            type: error.name,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };

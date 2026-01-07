@@ -57,10 +57,14 @@ module.exports = async (req, res) => {
             data: userData
         });
     } catch (error) {
-        console.error('Error loading atlas data:', error);
+        console.error('❌ Error loading atlas data:', error);
+        console.error('   Error stack:', error.stack);
+        console.error('   Error name:', error.name);
+        
         res.status(500).json({ 
             error: 'Failed to load atlas data',
-            message: error.message 
+            message: error.message,
+            type: error.name
         });
     }
 };
