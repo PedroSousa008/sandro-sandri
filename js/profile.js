@@ -32,26 +32,32 @@ function initProfile() {
 // Tab Navigation
 function initTabs() {
     const tabs = document.querySelectorAll('.profile-tab');
-    const tabContents = document.querySelectorAll('.profile-tab-content');
-
+    
     if (tabs.length === 0) {
         console.warn('No profile tabs found');
         return;
     }
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function(e) {
+    // Remove any existing listeners by using a single delegated listener
+    const tabsContainer = document.querySelector('.profile-tabs');
+    if (tabsContainer) {
+        // Remove old listeners by cloning
+        const newContainer = tabsContainer.cloneNode(true);
+        tabsContainer.parentNode.replaceChild(newContainer, tabsContainer);
+        
+        // Add single delegated listener
+        newContainer.addEventListener('click', function(e) {
+            const tab = e.target.closest('.profile-tab');
+            if (!tab) return;
+            
             e.preventDefault();
             e.stopPropagation();
             
-            const targetTab = this.dataset.tab;
+            const targetTab = tab.dataset.tab;
             
             if (!targetTab) {
-                console.error('Tab has no data-tab attribute');
                 return;
             }
-
-            console.log('Switching to tab:', targetTab);
 
             // Remove active from all tabs
             document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
@@ -59,23 +65,16 @@ function initTabs() {
             // Hide all tab contents
             document.querySelectorAll('.profile-tab-content').forEach(tc => {
                 tc.classList.remove('active');
-                tc.style.display = 'none';
             });
 
             // Add active to clicked tab
-            this.classList.add('active');
+            tab.classList.add('active');
             
             // Show corresponding content
             const targetContent = document.getElementById(`${targetTab}-tab`);
-            console.log('Looking for content with ID:', `${targetTab}-tab`);
-            console.log('Found element:', targetContent);
             
             if (targetContent) {
                 targetContent.classList.add('active');
-                targetContent.style.display = 'block';
-                console.log('Tab content displayed');
-            } else {
-                console.error('Tab content not found for:', targetTab);
             }
             
             // Refresh data when switching tabs
@@ -90,7 +89,50 @@ function initTabs() {
                 loadFavorites();
             }
         });
-    });
+    } else {
+        // Fallback: attach to individual tabs
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const targetTab = this.dataset.tab;
+                
+                if (!targetTab) {
+                    return;
+                }
+
+                // Remove active from all tabs
+                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+                
+                // Hide all tab contents
+                document.querySelectorAll('.profile-tab-content').forEach(tc => {
+                    tc.classList.remove('active');
+                });
+
+                // Add active to clicked tab
+                this.classList.add('active');
+                
+                // Show corresponding content
+                const targetContent = document.getElementById(`${targetTab}-tab`);
+                
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+                
+                // Refresh data when switching tabs
+                if (targetTab === 'overview') {
+                    if (window.AtlasOfMemories && !window.atlasInitialized) {
+                        window.atlasInitialized = true;
+                    }
+                } else if (targetTab === 'orders') {
+                    loadOrders();
+                } else if (targetTab === 'favorites') {
+                    loadFavorites();
+                }
+            });
+        });
+    }
 }
 
 // Load and display profile data
