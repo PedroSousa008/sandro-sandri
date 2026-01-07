@@ -46,8 +46,15 @@ function initTabs() {
             if (!targetTab) return;
 
             // Remove active from all tabs and contents
-            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.profile-tab-content').forEach(tc => tc.classList.remove('active'));
+            const allTabs = document.querySelectorAll('.profile-tab');
+            const allContents = document.querySelectorAll('.profile-tab-content');
+            
+            allTabs.forEach(t => t.classList.remove('active'));
+            allContents.forEach(tc => {
+                tc.classList.remove('active');
+                // Force hide with inline style as backup
+                tc.style.setProperty('display', 'none', 'important');
+            });
 
             // Add active to clicked tab
             this.classList.add('active');
@@ -56,6 +63,8 @@ function initTabs() {
             const targetContent = document.getElementById(`${targetTab}-tab`);
             if (targetContent) {
                 targetContent.classList.add('active');
+                // Force show with inline style as backup
+                targetContent.style.setProperty('display', 'block', 'important');
             }
             
             // Refresh data when switching tabs
