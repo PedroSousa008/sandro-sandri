@@ -588,13 +588,11 @@ class AtlasOfMemoriesStandalone {
     handleImageUpload(destination, file) {
         const reader = new FileReader();
         
-        reader.onload = async (e) => {
+        reader.onload = (e) => {
             const imageDataUrl = e.target.result;
+            // Just show the image preview - don't save yet
             this.setDestinationImage(destination, imageDataUrl);
-            await this.saveMemory(destination, { image: imageDataUrl });
-            this.showNotification('Image saved');
-            // Force immediate sync for images
-            await this.forceSync();
+            this.showNotification('Image ready - click Save to save');
         };
 
         reader.onerror = () => {
