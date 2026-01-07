@@ -218,15 +218,28 @@ class AtlasOfMemoriesStandalone {
                     // Log which destinations have images
                     Object.keys(apiMemories).forEach(key => {
                         const memory = apiMemories[key];
+                        const hasImage = !!(memory.image && memory.image.length > 0 && memory.image !== 'null');
                         console.log(`  📍 ${key}:`, {
-                            hasImage: !!memory.image,
+                            hasImage: hasImage,
+                            imageSize: hasImage ? Math.round(memory.image.length / 1024) + 'KB' : 'none',
                             hasDate: !!memory.date,
                             hasCaption: !!memory.caption
                         });
                     });
                     
                     // ALWAYS use server data - it's the source of truth
-                    const memories = { ...apiMemories };
+                    // But preserve any images that exist in server data
+                    const memories = {};
+                    Object.keys(apiMemories).forEach(key => {
+                        memories[key] = { ...apiMemories[key] };
+                        // Ensure image is preserved if it exists
+                        if (memories[key].image && memories[key].image.length > 0 && memories[key].image !== 'null') {
+                            // Image is valid, keep it
+                        } else {
+                            // No valid image, set to null
+                            memories[key].image = null;
+                        }
+                    });
                     this.chapters = { ...this.chapters, ...apiChapters };
                     
                     console.log('💾 Saving to localStorage (metadata only):', Object.keys(memories).length, 'destinations');
@@ -329,23 +342,27 @@ class AtlasOfMemoriesStandalone {
                     });
                     
                     // Load image - CRITICAL: Always check and set image
-                    if (memory.image && memory.image.length > 0) {
-                        console.log(`    ✅ Setting image for ${destination} (${memory.image.substring(0, 50)}...)`);
+                    if (memory.image && memory.image.length > 0 && memory.image !== 'null') {
+                        console.log(`    ✅ Setting image for ${destination}`);
+                        console.log(`       Image size: ${Math.round(memory.image.length / 1024)}KB`);
                         this.setDestinationImage(destination, memory.image);
                     } else {
-                        console.log(`    ❌ No image for ${destination}`);
-                        // Clear image if it was removed
+                        console.log(`    ❌ No image for ${destination} in server data`);
+                        // Only clear if we're sure there's no image (don't clear if we have a preview)
                         const card = document.querySelector(`[data-destination="${destination}"]`);
                         if (card) {
-                            const placeholder = card.querySelector('.destination-image-placeholder');
                             const preview = card.querySelector('.destination-image-preview');
-                            const removeBtn = card.querySelector('.destination-image-remove');
-                            if (placeholder) placeholder.style.display = 'flex';
-                            if (preview) {
-                                preview.src = '';
-                                preview.style.display = 'none';
+                            // If preview exists and has a src, keep it (might be unsaved local change)
+                            if (!preview || !preview.src || preview.style.display === 'none') {
+                                const placeholder = card.querySelector('.destination-image-placeholder');
+                                const removeBtn = card.querySelector('.destination-image-remove');
+                                if (placeholder) placeholder.style.display = 'flex';
+                                if (preview) {
+                                    preview.src = '';
+                                    preview.style.display = 'none';
+                                }
+                                if (removeBtn) removeBtn.style.display = 'none';
                             }
-                            if (removeBtn) removeBtn.style.display = 'none';
                         }
                     }
 
