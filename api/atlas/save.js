@@ -1,0 +1,43 @@
+const db = require('../../lib/db');
+
+module.exports = async (req, res) => {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const { email, memories, chapters } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Ensure database is initialized
+        await db.initDb();
+
+        // Load existing atlas data
+        const atlasData = await db.getAtlasData();
+
+        // Update or create user's atlas data
+        atlasData[email] = {
+            memories: memories || {},
+            chapters: chapters || {},
+            updatedAt: new Date().toISOString()
+        };
+
+        // Save to database
+        await db.saveAtlasData(atlasData);
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Atlas data saved successfully' 
+        });
+    } catch (error) {
+        console.error('Error saving atlas data:', error);
+        res.status(500).json({ 
+            error: 'Failed to save atlas data',
+            message: error.message 
+        });
+    }
+};
+

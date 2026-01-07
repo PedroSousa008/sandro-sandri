@@ -12,6 +12,9 @@ class AtlasOfMemoriesStandalone {
                 launched: true
             }
         };
+        this.userEmail = null;
+        this.syncInProgress = false;
+        this.pendingSync = false;
         this.init();
     }
 
@@ -22,10 +25,17 @@ class AtlasOfMemoriesStandalone {
             return;
         }
 
+        // Get user email
+        this.userEmail = this.getUserEmail();
+        if (!this.userEmail) {
+            this.showLoginPrompt();
+            return;
+        }
+
         // Show content, hide login prompt
         this.showContent();
 
-        // Load saved memories
+        // Load saved memories from API (with localStorage fallback)
         this.loadMemories();
 
         // Initialize event listeners
@@ -38,6 +48,23 @@ class AtlasOfMemoriesStandalone {
         window.launchAtlasChapter = (chapterNum, destinations) => {
             this.launchChapter(chapterNum, destinations);
         };
+    }
+
+    getUserEmail() {
+        if (window.AuthSystem && window.AuthSystem.currentUser) {
+            return window.AuthSystem.currentUser.email;
+        }
+        // Fallback: check localStorage
+        const userData = localStorage.getItem('sandroSandri_user');
+        if (userData) {
+            try {
+                const user = JSON.parse(userData);
+                return user.email;
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     isUserLoggedIn() {
@@ -64,7 +91,31 @@ class AtlasOfMemoriesStandalone {
         if (content) content.style.display = 'block';
     }
 
-    loadMemories() {
+    async loadMemories() {
+        // First, try to load from API
+        try {
+            const response = await fetch(`/api/atlas/load?email=${encodeURIComponent(this.userEmail)}`);
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.data) {
+                    // Use data from API
+                    const memories = result.data.memories || {};
+                    this.chapters = result.data.chapters || this.chapters;
+                    
+                    // Save to localStorage as cache
+                    localStorage.setItem(this.storageKey, JSON.stringify(memories));
+                    localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+                    
+                    // Render and populate
+                    this.renderAndPopulate(memories);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading from API, using localStorage:', error);
+        }
+        
+        // Fallback to localStorage
         const saved = localStorage.getItem(this.storageKey);
         const memories = saved ? JSON.parse(saved) : {};
         
@@ -74,6 +125,11 @@ class AtlasOfMemoriesStandalone {
             this.chapters = JSON.parse(savedChapters);
         }
 
+        // Render and populate
+        this.renderAndPopulate(memories);
+    }
+
+    renderAndPopulate(memories) {
         // Render all launched chapters
         this.renderChapters();
 
@@ -221,9 +277,11 @@ class AtlasOfMemoriesStandalone {
 
     saveChapters() {
         localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+        // Sync to API
+        this.syncToAPI();
     }
 
-    saveMemory(destination, data) {
+    async saveMemory(destination, data) {
         const saved = localStorage.getItem(this.storageKey);
         const memories = saved ? JSON.parse(saved) : {};
         
@@ -233,7 +291,63 @@ class AtlasOfMemoriesStandalone {
             updatedAt: new Date().toISOString()
         };
 
+        // Save to localStorage immediately (for fast UI updates)
         localStorage.setItem(this.storageKey, JSON.stringify(memories));
+
+        // Sync to API (debounced)
+        this.syncToAPI();
+    }
+
+    async syncToAPI() {
+        // Debounce: wait 500ms before syncing to avoid too many API calls
+        if (this.syncTimeout) {
+            clearTimeout(this.syncTimeout);
+        }
+
+        this.syncTimeout = setTimeout(async () => {
+            if (this.syncInProgress) {
+                this.pendingSync = true;
+                return;
+            }
+
+            this.syncInProgress = true;
+            this.pendingSync = false;
+
+            try {
+                const memories = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
+                const chapters = JSON.parse(localStorage.getItem(this.chaptersKey) || JSON.stringify(this.chapters));
+
+                const response = await fetch('/api/atlas/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: this.userEmail,
+                        memories: memories,
+                        chapters: typeof chapters === 'string' ? JSON.parse(chapters) : chapters
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log('Atlas data synced to server');
+                    }
+                } else {
+                    console.error('Failed to sync atlas data to server');
+                }
+            } catch (error) {
+                console.error('Error syncing atlas data:', error);
+            } finally {
+                this.syncInProgress = false;
+                
+                // If there was a pending sync, do it now
+                if (this.pendingSync) {
+                    this.syncToAPI();
+                }
+            }
+        }, 500);
     }
 
     initImageUploads() {
