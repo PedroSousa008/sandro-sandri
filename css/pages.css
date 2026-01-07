@@ -2109,9 +2109,18 @@
 
 .atlas-destinations {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--space-xl);
     margin-top: var(--space-xl);
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.destination-card[data-destination="sardinia"] {
+    grid-column: 1 / -1;
+    justify-self: center;
+    max-width: 400px;
 }
 
 .destination-card {
@@ -2306,8 +2315,12 @@
 /* Responsive */
 @media (max-width: 768px) {
     .atlas-destinations {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: var(--space-sm);
+    }
+
+    .destination-card[data-destination="sardinia"] {
+        max-width: 100%;
     }
 
     .atlas-title {
