@@ -25,6 +25,15 @@ function initProfile() {
         }
     });
     
+    // Listen for favorites sync events
+    window.addEventListener('favoritesSynced', (e) => {
+        console.log('❤️ Favorites synced event received on profile page, reloading favorites...');
+        const syncedFavorites = e.detail || [];
+        console.log('   Synced favorites:', syncedFavorites);
+        loadFavorites(); // Reload favorites when sync happens
+        loadProfileData(); // Update stats
+    });
+    
     // Refresh stats when switching to overview tab
     const overviewTab = document.querySelector('[data-tab="overview"]');
     if (overviewTab) {

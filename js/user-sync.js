@@ -44,13 +44,13 @@ class UserSync {
             }
         });
 
-        // Periodic sync every 5 seconds (more frequent for better sync)
+        // Periodic sync every 3 seconds (very frequent for instant sync)
         setInterval(() => {
             this.updateUserEmail(); // Refresh email in case it changed
             if (this.userEmail && !document.hidden && !this.syncInProgress) {
                 this.loadAllData();
             }
-        }, 5000); // Reduced from 10 seconds to 5 seconds
+        }, 3000); // Reduced to 3 seconds for faster sync
 
         // Sync when page becomes visible
         document.addEventListener('visibilitychange', () => {
@@ -202,8 +202,9 @@ class UserSync {
                     console.log('   Server:', serverNormalized.length, 'items:', serverNormalized);
                     console.log('   Match:', currentStr === serverStr);
                     
-                    // ALWAYS use server data as source of truth (even if arrays match, ensure we have the latest)
-                    if (currentStr !== serverStr || serverNormalized.length > 0) {
+                    // ALWAYS use server data as source of truth
+                    // Update if different OR if server has favorites (even if local is empty)
+                    if (currentStr !== serverStr) {
                         console.log('❤️ Syncing favorites from server (updating local)...');
                         localStorage.setItem('sandroSandriFavorites', JSON.stringify(serverNormalized));
                         dataUpdated = true;
