@@ -112,15 +112,23 @@ class AtlasOfMemoriesStandalone {
     }
 
     async loadMemories() {
+        console.log('Loading memories for email:', this.userEmail);
+        
         // First, try to load from API
         try {
             const response = await fetch(`/api/atlas/load?email=${encodeURIComponent(this.userEmail)}`);
+            console.log('API load response status:', response.status);
+            
             if (response.ok) {
                 const result = await response.json();
+                console.log('API load result:', result);
+                
                 if (result.success && result.data) {
                     // Use data from API
                     const memories = result.data.memories || {};
                     this.chapters = result.data.chapters || this.chapters;
+                    
+                    console.log('Loaded memories from API:', Object.keys(memories).length, 'destinations');
                     
                     // Save to localStorage as cache
                     localStorage.setItem(this.storageKey, JSON.stringify(memories));
@@ -130,6 +138,9 @@ class AtlasOfMemoriesStandalone {
                     this.renderAndPopulate(memories);
                     return;
                 }
+            } else {
+                const errorText = await response.text();
+                console.error('API load failed:', response.status, errorText);
             }
         } catch (error) {
             console.error('Error loading from API, using localStorage:', error);
@@ -138,6 +149,7 @@ class AtlasOfMemoriesStandalone {
         // Fallback to localStorage
         const saved = localStorage.getItem(this.storageKey);
         const memories = saved ? JSON.parse(saved) : {};
+        console.log('Loaded memories from localStorage:', Object.keys(memories).length, 'destinations');
         
         // Load chapter configuration
         const savedChapters = localStorage.getItem(this.chaptersKey);
@@ -319,6 +331,11 @@ class AtlasOfMemoriesStandalone {
     }
 
     async syncToAPI() {
+        if (!this.userEmail) {
+            console.error('Cannot sync: no user email');
+            return;
+        }
+
         // Debounce: wait 500ms before syncing to avoid too many API calls
         if (this.syncTimeout) {
             clearTimeout(this.syncTimeout);
@@ -335,7 +352,10 @@ class AtlasOfMemoriesStandalone {
 
             try {
                 const memories = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
-                const chapters = JSON.parse(localStorage.getItem(this.chaptersKey) || JSON.stringify(this.chapters));
+                const chaptersData = localStorage.getItem(this.chaptersKey);
+                const chapters = chaptersData ? JSON.parse(chaptersData) : this.chapters;
+
+                console.log('Syncing to API - Email:', this.userEmail, 'Memories:', Object.keys(memories).length);
 
                 const response = await fetch('/api/atlas/save', {
                     method: 'POST',
@@ -345,17 +365,22 @@ class AtlasOfMemoriesStandalone {
                     body: JSON.stringify({
                         email: this.userEmail,
                         memories: memories,
-                        chapters: typeof chapters === 'string' ? JSON.parse(chapters) : chapters
+                        chapters: chapters
                     })
                 });
+
+                console.log('Sync response status:', response.status);
 
                 if (response.ok) {
                     const result = await response.json();
                     if (result.success) {
-                        console.log('Atlas data synced to server');
+                        console.log('Atlas data synced to server successfully');
+                    } else {
+                        console.error('Sync failed:', result);
                     }
                 } else {
-                    console.error('Failed to sync atlas data to server');
+                    const errorText = await response.text();
+                    console.error('Failed to sync atlas data to server:', response.status, errorText);
                 }
             } catch (error) {
                 console.error('Error syncing atlas data:', error);
@@ -416,11 +441,13 @@ class AtlasOfMemoriesStandalone {
     handleImageUpload(destination, file) {
         const reader = new FileReader();
         
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             const imageDataUrl = e.target.result;
             this.setDestinationImage(destination, imageDataUrl);
-            this.saveMemory(destination, { image: imageDataUrl });
+            await this.saveMemory(destination, { image: imageDataUrl });
             this.showNotification('Image saved');
+            // Force immediate sync for images
+            await this.forceSync();
         };
 
         reader.onerror = () => {
@@ -428,6 +455,59 @@ class AtlasOfMemoriesStandalone {
         };
 
         reader.readAsDataURL(file);
+    }
+
+    async forceSync() {
+        // Clear any pending debounce
+        if (this.syncTimeout) {
+            clearTimeout(this.syncTimeout);
+        }
+
+        if (this.syncInProgress) {
+            this.pendingSync = true;
+            return;
+        }
+
+        this.syncInProgress = true;
+        this.pendingSync = false;
+
+        try {
+            const memories = JSON.parse(localStorage.getItem(this.storageKey) || '{}');
+            const chaptersData = localStorage.getItem(this.chaptersKey);
+            const chapters = chaptersData ? JSON.parse(chaptersData) : this.chapters;
+
+            console.log('Force syncing to API - Email:', this.userEmail);
+
+            const response = await fetch('/api/atlas/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: this.userEmail,
+                    memories: memories,
+                    chapters: chapters
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    console.log('Force sync successful');
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('Force sync failed:', response.status, errorText);
+            }
+        } catch (error) {
+            console.error('Error in force sync:', error);
+        } finally {
+            this.syncInProgress = false;
+            
+            if (this.pendingSync) {
+                this.forceSync();
+            }
+        }
     }
 
     setDestinationImage(destination, imageDataUrl) {
@@ -457,7 +537,7 @@ class AtlasOfMemoriesStandalone {
         });
     }
 
-    removeDestinationImage(destination) {
+    async removeDestinationImage(destination) {
         const card = document.querySelector(`[data-destination="${destination}"]`);
         if (!card) return;
 
@@ -474,21 +554,24 @@ class AtlasOfMemoriesStandalone {
         if (removeBtn) removeBtn.style.display = 'none';
         if (input) input.value = '';
 
-        this.saveMemory(destination, { image: null });
+        await this.saveMemory(destination, { image: null });
         this.showNotification('Image removed');
+        await this.forceSync();
     }
 
     initDateInputs() {
         document.querySelectorAll('.destination-date-input').forEach(input => {
-            input.addEventListener('change', (e) => {
+            input.addEventListener('change', async (e) => {
                 const destination = input.dataset.destination;
                 const dateValue = e.target.value;
                 
                 if (dateValue) {
-                    this.saveMemory(destination, { date: dateValue });
+                    await this.saveMemory(destination, { date: dateValue });
                     this.showNotification('Date saved');
+                    await this.forceSync();
                 } else {
-                    this.saveMemory(destination, { date: null });
+                    await this.saveMemory(destination, { date: null });
+                    await this.forceSync();
                 }
             });
         });
@@ -497,14 +580,15 @@ class AtlasOfMemoriesStandalone {
     initCaptionInputs() {
         document.querySelectorAll('.destination-caption-input').forEach(input => {
             // Save on blur (when user finishes typing)
-            input.addEventListener('blur', (e) => {
+            input.addEventListener('blur', async (e) => {
                 const destination = input.dataset.destination;
                 const caption = e.target.value.trim();
                 
-                this.saveMemory(destination, { caption: caption || null });
+                await this.saveMemory(destination, { caption: caption || null });
                 if (caption) {
                     this.showNotification('Caption saved');
                 }
+                await this.forceSync();
             });
 
             // Character counter (optional, subtle)
