@@ -399,6 +399,8 @@ class UserSync {
         try {
             const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
             const profile = localStorage.getItem('sandroSandriProfile');
+            const favorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
+            const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
             const atlasMemories = localStorage.getItem('sandroSandri_atlasMemories');
             const atlasChapters = localStorage.getItem('sandroSandri_atlasChapters');
 
@@ -406,6 +408,8 @@ class UserSync {
                 email: this.userEmail,
                 cart: cart,
                 profile: profile ? JSON.parse(profile) : null,
+                favorites: favorites, // CRITICAL: Always include favorites
+                orders: orders, // CRITICAL: Always include orders
                 atlas: {
                     memories: atlasMemories ? JSON.parse(atlasMemories) : {},
                     chapters: atlasChapters ? JSON.parse(atlasChapters) : {}
@@ -414,6 +418,8 @@ class UserSync {
 
             console.log('🚀 Force syncing all user data for:', this.userEmail);
             console.log('📦 Cart items:', cart.length);
+            console.log('❤️ Favorites:', favorites.length, 'items:', favorites);
+            console.log('📦 Orders:', orders.length);
             console.log('🗺️ Atlas memories:', Object.keys(payload.atlas.memories).length);
             
             const response = await fetch('/api/user/sync', {
