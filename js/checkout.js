@@ -198,43 +198,70 @@ function initCheckoutForm() {
         const submitBtn = form.querySelector('.place-order-btn');
         const originalText = submitBtn.textContent;
 
-        // Simulate processing
+        // Get form data
+        const formData = new FormData(form);
+        const customerInfo = {
+            email: formData.get('email'),
+            phone: formData.get('phone'),
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            address: formData.get('address'),
+            apartment: formData.get('apartment'),
+            city: formData.get('city'),
+            postalCode: formData.get('postalCode'),
+            country: formData.get('country')
+        };
+
+        // Get cart
+        const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
+        
+        if (cart.length === 0) {
+            alert('Your cart is empty');
+            return;
+        }
+
+        // Validate required fields
+        if (!customerInfo.email || !customerInfo.firstName || !customerInfo.lastName || 
+            !customerInfo.address || !customerInfo.city || !customerInfo.postalCode || !customerInfo.country) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        // Update button state
         submitBtn.textContent = 'Processing...';
         submitBtn.disabled = true;
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+            // Create Stripe checkout session
+            const response = await fetch('/api/checkout/create-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cart: cart,
+                    customerInfo: customerInfo
+                })
+            });
 
-        // Save order before clearing cart
-        if (window.saveOrder) {
-            const cartItems = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
-            window.saveOrder(cartItems);
-        }
+            const data = await response.json();
 
-        // Clear cart
-        localStorage.removeItem('sandroSandriCart');
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to create checkout session');
+            }
 
-        // Show success message
-        document.querySelector('.checkout-layout').innerHTML = `
-            <div class="order-success" style="grid-column: span 2; text-align: center; padding: var(--space-xl) 0;">
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" stroke-width="1" style="margin-bottom: var(--space-md);">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M8 12l3 3 5-5"/>
-                </svg>
-                <h2 style="font-family: var(--font-serif); font-size: 2rem; color: var(--color-navy); margin-bottom: var(--space-md);">
-                    Thank you for your order
-                </h2>
-                <p style="font-family: var(--font-serif); color: var(--color-text-light); margin-bottom: var(--space-lg); max-width: 500px; margin-left: auto; margin-right: auto;">
-                    Your order has been placed successfully. You will receive a confirmation email shortly with your order details and tracking information.
-                </p>
-                <a href="collection.html" class="cta-button">Continue Shopping</a>
-            </div>
-        `;
+            // Redirect to Stripe Checkout
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error('No checkout URL received');
+            }
 
-        // Update cart count in nav
-        const cartCount = document.querySelector('.cart-count');
-        if (cartCount) {
-            cartCount.textContent = '0';
-            cartCount.classList.remove('visible');
+        } catch (error) {
+            console.error('Checkout error:', error);
+            alert(error.message || 'An error occurred. Please try again.');
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
         }
     });
 

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Allura&family=Arapey:ital@0;1&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav scrolled">
+        <a href="index.html" class="nav-logo">Sandro Sandri</a>
+        <div class="nav-right">
+            <a href="collection.html" class="nav-link">Collection</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="page-main">
+        <section class="page-header">
+            <h1 class="page-title">Order Confirmation</h1>
+        </section>
+
+        <section class="cart-content">
+            <div class="container">
+                <div class="order-success" style="max-width: 600px; margin: 0 auto; text-align: center; padding: var(--space-xl) 0;">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" stroke-width="1" style="margin-bottom: var(--space-md);">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M8 12l3 3 5-5"/>
+                    </svg>
+                    <h2 style="font-family: var(--font-serif); font-size: 2rem; color: var(--color-navy); margin-bottom: var(--space-md);">
+                        Thank you for your order
+                    </h2>
+                    <p style="font-family: var(--font-serif); color: var(--color-text-light); margin-bottom: var(--space-lg);">
+                        Your order has been placed successfully. You will receive a confirmation email shortly with your order details and tracking information.
+                    </p>
+                    <div style="margin-top: var(--space-lg);">
+                        <a href="collection.html" class="cta-button">Continue Shopping</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p class="copyright">© 2024 Sandro Sandri. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/products.js"></script>
+    <script>
+        // Get session ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        
+        if (sessionId) {
+            // Optionally fetch order details from backend
+            console.log('Order session ID:', sessionId);
+        }
+    </script>
+</body>
+</html>
+
