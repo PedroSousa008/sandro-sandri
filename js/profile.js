@@ -165,6 +165,12 @@ function saveProfile() {
     if (profile.size && profile.country && (!oldProfile || oldProfile.size !== profile.size || oldProfile.country !== profile.country)) {
         trackSizeSelection(profile.country, profile.size);
     }
+    
+    showNotification('Profile saved successfully!');
+    
+    // Reload profile data
+    loadProfileData();
+    populateForm(profile);
 }
 
 // Track size selection immediately when size dropdown changes
@@ -196,12 +202,6 @@ function initSizeTracking() {
             }
         });
     }
-    
-    showNotification('Profile saved successfully!');
-    
-    // Reload profile data
-    loadProfileData();
-    populateForm(profile);
 }
 
 // Track size selection by country
