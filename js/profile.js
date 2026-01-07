@@ -34,24 +34,38 @@ function initTabs() {
     const tabs = document.querySelectorAll('.profile-tab');
     const tabContents = document.querySelectorAll('.profile-tab-content');
 
+    if (tabs.length === 0) {
+        console.warn('No profile tabs found');
+        return;
+    }
+
     tabs.forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+        // Remove any existing listeners by cloning
+        const newTab = tab.cloneNode(true);
+        tab.parentNode.replaceChild(newTab, tab);
+        
+        newTab.addEventListener('click', function(e) {
+            const targetTab = this.dataset.tab;
             
-            const targetTab = tab.dataset.tab;
-            
-            if (!targetTab) return;
+            if (!targetTab) {
+                console.warn('Tab has no data-tab attribute');
+                return;
+            }
+
+            console.log('Tab clicked:', targetTab);
 
             // Remove active from all tabs and contents
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.profile-tab-content').forEach(tc => tc.classList.remove('active'));
 
             // Add active to clicked tab and corresponding content
-            tab.classList.add('active');
+            this.classList.add('active');
             const targetContent = document.getElementById(`${targetTab}-tab`);
             if (targetContent) {
                 targetContent.classList.add('active');
+                console.log('Tab content activated:', targetTab);
+            } else {
+                console.error('Tab content not found:', `${targetTab}-tab`);
             }
             
             // Refresh data when switching tabs
@@ -59,16 +73,13 @@ function initTabs() {
                 // Initialize Atlas of Memories if not already initialized
                 if (window.AtlasOfMemories && !window.atlasInitialized) {
                     window.atlasInitialized = true;
-                    // Atlas will initialize itself on DOMContentLoaded
                 }
             } else if (targetTab === 'orders') {
                 loadOrders();
             } else if (targetTab === 'favorites') {
                 loadFavorites();
             }
-            
-            return false;
-        });
+        }, true); // Use capture phase
     });
 }
 
