@@ -229,11 +229,30 @@ class AtlasOfMemoriesStandalone {
                     const memories = { ...apiMemories };
                     this.chapters = { ...this.chapters, ...apiChapters };
                     
-                    console.log('💾 Saving to localStorage:', Object.keys(memories).length, 'destinations');
+                    console.log('💾 Saving to localStorage (metadata only):', Object.keys(memories).length, 'destinations');
                     
-                    // Save to localStorage as cache
-                    localStorage.setItem(this.storageKey, JSON.stringify(memories));
-                    localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+                    // Save to localStorage WITHOUT images (images are too large for localStorage)
+                    // Only save metadata to localStorage, images stay on server
+                    const memoriesForLocalStorage = {};
+                    Object.keys(memories).forEach(key => {
+                        memoriesForLocalStorage[key] = {
+                            date: memories[key].date || null,
+                            caption: memories[key].caption || null,
+                            updatedAt: memories[key].updatedAt || null
+                            // Image is NOT stored in localStorage
+                        };
+                    });
+                    
+                    try {
+                        localStorage.setItem(this.storageKey, JSON.stringify(memoriesForLocalStorage));
+                        localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+                    } catch (error) {
+                        if (error.name === 'QuotaExceededError') {
+                            console.warn('⚠️ localStorage quota exceeded, skipping local save');
+                        } else {
+                            console.error('Error saving to localStorage:', error);
+                        }
+                    }
                     
                     // Render and populate
                     console.log('🎨 Rendering memories...');
@@ -251,10 +270,31 @@ class AtlasOfMemoriesStandalone {
             console.error('Error loading from API, using localStorage:', error);
         }
         
-        // Fallback to localStorage
+        // Fallback: Try to load from localStorage (metadata only)
+        // But we MUST load images from server, so try API again
+        console.log('⚠️ API load failed, retrying...');
+        try {
+            const retryResponse = await fetch(`/api/atlas/load?email=${encodeURIComponent(this.userEmail)}`);
+            if (retryResponse.ok) {
+                const retryResult = await retryResponse.json();
+                if (retryResult.success && retryResult.data) {
+                    const apiMemories = retryResult.data.memories || {};
+                    const apiChapters = retryResult.data.chapters || {};
+                    const memories = { ...apiMemories };
+                    this.chapters = { ...this.chapters, ...apiChapters };
+                    this.renderAndPopulate(memories);
+                    this.syncInProgress = false;
+                    return;
+                }
+            }
+        } catch (retryError) {
+            console.error('Retry also failed:', retryError);
+        }
+        
+        // Last resort: Load metadata from localStorage (no images)
         const saved = localStorage.getItem(this.storageKey);
-        const memories = saved ? JSON.parse(saved) : {};
-        console.log('Loaded memories from localStorage:', Object.keys(memories).length, 'destinations');
+        const memoriesMetadata = saved ? JSON.parse(saved) : {};
+        console.log('⚠️ Using localStorage metadata only (no images):', Object.keys(memoriesMetadata).length, 'destinations');
         
         // Load chapter configuration
         const savedChapters = localStorage.getItem(this.chaptersKey);
@@ -262,14 +302,8 @@ class AtlasOfMemoriesStandalone {
             this.chapters = JSON.parse(savedChapters);
         }
 
-        // If we have local data, sync it to API
-        if (hasLocalData) {
-            console.log('Syncing local data to API...');
-            await this.forceSync();
-        }
-
-        // Render and populate
-        this.renderAndPopulate(memories);
+        // Render with metadata only (images will be missing, but that's okay)
+        this.renderAndPopulate(memoriesMetadata);
     }
 
     renderAndPopulate(memories) {
@@ -789,26 +823,48 @@ class AtlasOfMemoriesStandalone {
                     };
 
                     console.log('💾 Saving destination:', destination);
-                    console.log('   Image:', imageDataUrl ? 'Yes' : 'No');
+                    console.log('   Image:', imageDataUrl ? 'Yes (' + Math.round(imageDataUrl.length / 1024) + 'KB)' : 'No');
                     console.log('   Date:', dateValue || 'None');
                     console.log('   Caption:', captionValue || 'None');
 
-                    // Save to localStorage first
+                    // Prepare data to save - images are too large for localStorage
                     const saved = localStorage.getItem(this.storageKey);
                     const memories = saved ? JSON.parse(saved) : {};
+                    
+                    // Update memory with new data
                     memories[destination] = {
                         ...memories[destination],
                         ...dataToSave,
                         updatedAt: new Date().toISOString()
                     };
-                    localStorage.setItem(this.storageKey, JSON.stringify(memories));
 
-                    // Save chapters too
-                    localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
-
-                    console.log('✅ Saved to localStorage');
+                    // Save to localStorage WITHOUT images (images are too large)
+                    // Only save metadata (date, caption) to localStorage
+                    const memoriesForLocalStorage = {};
+                    Object.keys(memories).forEach(key => {
+                        memoriesForLocalStorage[key] = {
+                            date: memories[key].date || null,
+                            caption: memories[key].caption || null,
+                            updatedAt: memories[key].updatedAt || null
+                            // Image is NOT stored in localStorage - only on server
+                        };
+                    });
+                    
+                    try {
+                        localStorage.setItem(this.storageKey, JSON.stringify(memoriesForLocalStorage));
+                        localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+                        console.log('✅ Saved metadata to localStorage (images excluded)');
+                    } catch (error) {
+                        if (error.name === 'QuotaExceededError') {
+                            console.warn('⚠️ localStorage quota exceeded, skipping local save');
+                        } else {
+                            console.error('Error saving to localStorage:', error);
+                        }
+                    }
 
                     // Now sync to server using direct API call (more reliable)
+                    // Server gets the FULL data including images
+                    console.log('🔄 Saving to server (with images)...');
                     const syncSuccess = await this.saveToServerDirectly(memories, this.chapters);
                     
                     if (syncSuccess) {
@@ -843,22 +899,30 @@ class AtlasOfMemoriesStandalone {
 
         try {
             console.log('🔄 Syncing to server directly...');
+            console.log('   Memories to save:', Object.keys(memories).length);
+            console.log('   Total data size:', JSON.stringify(memories).length, 'bytes');
+            
+            const payload = {
+                email: this.userEmail,
+                memories: memories,
+                chapters: chapters
+            };
+            
             const response = await fetch('/api/atlas/save', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    email: this.userEmail,
-                    memories: memories,
-                    chapters: chapters
-                })
+                body: JSON.stringify(payload)
             });
+
+            console.log('📡 Server response status:', response.status);
 
             if (response.ok) {
                 const result = await response.json();
+                console.log('📦 Server response:', result);
                 if (result.success) {
-                    console.log('✅ Server save successful');
+                    console.log('✅ Server save successful - data persisted!');
                     return true;
                 } else {
                     console.error('❌ Server returned error:', result);

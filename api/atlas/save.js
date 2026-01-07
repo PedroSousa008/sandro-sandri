@@ -21,15 +21,27 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        console.log('Saving atlas data for email:', email);
-        console.log('Memories count:', Object.keys(memories || {}).length);
-        console.log('Chapters:', Object.keys(chapters || {}).length);
+        console.log('💾 Saving atlas data for email:', email);
+        console.log('   Memories count:', Object.keys(memories || {}).length);
+        console.log('   Chapters:', Object.keys(chapters || {}).length);
+        
+        // Log memory details
+        Object.keys(memories || {}).forEach(key => {
+            const memory = memories[key];
+            console.log(`   📍 ${key}:`, {
+                hasImage: !!memory.image,
+                imageSize: memory.image ? Math.round(memory.image.length / 1024) + 'KB' : 'none',
+                hasDate: !!memory.date,
+                hasCaption: !!memory.caption
+            });
+        });
 
         // Ensure database is initialized
         await db.initDb();
 
         // Load existing atlas data
         const atlasData = await db.getAtlasData();
+        console.log('   Existing users in database:', Object.keys(atlasData).length);
 
         // Update or create user's atlas data
         atlasData[email] = {
@@ -40,8 +52,12 @@ module.exports = async (req, res) => {
 
         // Save to database
         await db.saveAtlasData(atlasData);
+        console.log('✅ Atlas data saved to database successfully');
 
-        console.log('Atlas data saved successfully for', email);
+        // Verify it was saved
+        const verifyData = await db.getAtlasData();
+        const savedMemories = verifyData[email]?.memories || {};
+        console.log('✅ Verification: Saved memories count:', Object.keys(savedMemories).length);
 
         res.status(200).json({ 
             success: true, 
