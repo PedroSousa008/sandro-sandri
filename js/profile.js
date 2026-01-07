@@ -514,18 +514,19 @@ function initSettings() {
         const notifyOrders = document.getElementById('notify-orders');
         const notifyCollections = document.getElementById('notify-collections');
         const notifyExclusive = document.getElementById('notify-exclusive');
-        const privacyProfile = document.getElementById('privacy-profile');
         
         if (notifyOrders) notifyOrders.checked = settings.notifyOrders !== false;
         if (notifyCollections) notifyCollections.checked = settings.notifyCollections !== false;
         if (notifyExclusive) notifyExclusive.checked = settings.notifyExclusive || false;
-        if (privacyProfile) privacyProfile.checked = settings.privacyProfile || false;
     }
 
     // Save settings on change
     document.querySelectorAll('#settings-tab input[type="checkbox"]').forEach(checkbox => {
         checkbox.addEventListener('change', saveSettings);
     });
+    
+    // Initialize password change form
+    initPasswordChangeForm();
 
     // Export data
     const exportBtn = document.getElementById('export-data-btn');
