@@ -459,6 +459,10 @@ window.addToFavorites = function(productId) {
     if (!favorites.includes(productId)) {
         favorites.push(productId);
         localStorage.setItem('sandroSandriFavorites', JSON.stringify(favorites));
+        // Trigger sync to server
+        if (window.userSync && window.userSync.userEmail) {
+            window.userSync.syncAllData();
+        }
         showNotification('Added to favorites');
         return true;
     }

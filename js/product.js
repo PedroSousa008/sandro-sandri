@@ -571,6 +571,10 @@ function initFavoritesButton(product) {
         if (!favorites.includes(product.id)) {
             favorites.push(product.id);
             localStorage.setItem('sandroSandriFavorites', JSON.stringify(favorites));
+            // Trigger sync to server
+            if (window.userSync && window.userSync.userEmail) {
+                window.userSync.syncAllData();
+            }
             return true;
         }
         return false;
@@ -580,6 +584,10 @@ function initFavoritesButton(product) {
         const favorites = getFavorites();
         const updated = favorites.filter(id => id !== product.id);
         localStorage.setItem('sandroSandriFavorites', JSON.stringify(updated));
+        // Trigger sync to server
+        if (window.userSync && window.userSync.userEmail) {
+            window.userSync.syncAllData();
+        }
     };
 
     // Check if product is already favorited

@@ -30,6 +30,8 @@ module.exports = async (req, res) => {
             const user = userData[email] || {
                 cart: [],
                 profile: null,
+                favorites: [],
+                orders: [],
                 updatedAt: null
             };
 
@@ -40,12 +42,17 @@ module.exports = async (req, res) => {
             };
 
             console.log('Returning user data for', email);
+            console.log('   Cart items:', user.cart?.length || 0);
+            console.log('   Favorites:', user.favorites?.length || 0);
+            console.log('   Orders:', user.orders?.length || 0);
 
             res.status(200).json({
                 success: true,
                 data: {
                     cart: user.cart || [],
                     profile: user.profile || null,
+                    favorites: user.favorites || [],
+                    orders: user.orders || [],
                     atlas: atlas
                 }
             });
@@ -59,7 +66,7 @@ module.exports = async (req, res) => {
     } else if (req.method === 'POST') {
         // Save user data
         try {
-            const { email, cart, profile, atlas } = req.body;
+            const { email, cart, profile, favorites, orders, atlas } = req.body;
 
             if (!email) {
                 return res.status(400).json({ error: 'Email is required' });
@@ -68,6 +75,8 @@ module.exports = async (req, res) => {
             console.log('Saving user data for email:', email);
             console.log('Cart items:', cart?.length || 0);
             console.log('Profile:', profile ? 'present' : 'null');
+            console.log('Favorites:', favorites?.length || 0);
+            console.log('Orders:', orders?.length || 0);
             console.log('Atlas memories:', Object.keys(atlas?.memories || {}).length);
 
             await db.initDb();
@@ -76,10 +85,21 @@ module.exports = async (req, res) => {
             const userData = await db.getUserData();
             const atlasData = await db.getAtlasData();
 
-            // Update user data
+            // Merge with existing data to preserve all fields
+            const existingUser = userData[email] || {
+                cart: [],
+                profile: null,
+                favorites: [],
+                orders: [],
+                updatedAt: null
+            };
+
+            // Update user data (merge to preserve existing data if not provided)
             userData[email] = {
-                cart: cart || [],
-                profile: profile || null,
+                cart: cart !== undefined ? cart : existingUser.cart,
+                profile: profile !== undefined ? profile : existingUser.profile,
+                favorites: favorites !== undefined ? favorites : existingUser.favorites,
+                orders: orders !== undefined ? orders : existingUser.orders,
                 updatedAt: new Date().toISOString()
             };
 

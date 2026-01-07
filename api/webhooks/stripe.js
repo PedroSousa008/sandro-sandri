@@ -99,6 +99,24 @@ async function handleCheckoutCompleted(session) {
         createdAt: new Date().toISOString()
     });
     
+    // Also save to user's order history for cross-device sync
+    try {
+        const userData = await db.getUserData();
+        if (!userData[customerEmail]) {
+            userData[customerEmail] = { cart: [], profile: null, favorites: [], orders: [], updatedAt: null };
+        }
+        if (!userData[customerEmail].orders) {
+            userData[customerEmail].orders = [];
+        }
+        userData[customerEmail].orders.push(order);
+        userData[customerEmail].updatedAt = new Date().toISOString();
+        await db.saveUserData(userData);
+        console.log(`Order ${order.id} added to user's order history for sync`);
+    } catch (error) {
+        console.error('Error saving order to user data:', error);
+        // Don't fail the webhook if this fails
+    }
+    
     // TODO: Send order confirmation email
     console.log(`Order ${order.id} created successfully`);
     
