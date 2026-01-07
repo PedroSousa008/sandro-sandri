@@ -39,18 +39,12 @@ function initTabs() {
         return;
     }
 
-    // Remove all existing event listeners by replacing with new elements
     tabs.forEach(tab => {
-        const newTab = tab.cloneNode(true);
-        tab.parentNode.replaceChild(newTab, tab);
-    });
-
-    // Get fresh references after cloning
-    const freshTabs = document.querySelectorAll('.profile-tab');
-    
-    freshTabs.forEach(tab => {
+        // Use once option to prevent duplicate listeners, but we'll handle it differently
         tab.addEventListener('click', function(e) {
-            // Don't prevent default or stop propagation - let it work naturally
+            e.preventDefault();
+            e.stopPropagation();
+            
             const targetTab = this.dataset.tab;
             
             if (!targetTab) {
@@ -59,13 +53,17 @@ function initTabs() {
 
             // Remove active from all tabs and contents
             document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.profile-tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.profile-tab-content').forEach(tc => {
+                tc.classList.remove('active');
+                tc.style.display = 'none'; // Explicitly hide
+            });
 
             // Add active to clicked tab and corresponding content
             this.classList.add('active');
             const targetContent = document.getElementById(`${targetTab}-tab`);
             if (targetContent) {
                 targetContent.classList.add('active');
+                targetContent.style.display = 'block'; // Explicitly show
             }
             
             // Refresh data when switching tabs
@@ -79,7 +77,7 @@ function initTabs() {
             } else if (targetTab === 'favorites') {
                 loadFavorites();
             }
-        });
+        }, false);
     });
 }
 
