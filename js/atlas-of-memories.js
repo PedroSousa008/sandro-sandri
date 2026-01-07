@@ -272,9 +272,29 @@ class AtlasOfMemories {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Only initialize if we're on the profile page and overview tab is active
+    // Only initialize if we're on the profile page and overview tab exists
     if (document.getElementById('overview-tab')) {
-        window.AtlasOfMemories = new AtlasOfMemories();
+        // Wait a bit for auth.js to initialize if needed
+        setTimeout(() => {
+            if (!window.AtlasOfMemories || !window.atlasInstance) {
+                window.atlasInstance = new AtlasOfMemories();
+                window.AtlasOfMemories = AtlasOfMemories; // Also expose the class
+            }
+        }, 100);
+    }
+});
+
+// Also initialize when tab is switched to overview (in case it's not active on load)
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.classList.contains('profile-tab') && e.target.dataset.tab === 'overview') {
+        setTimeout(() => {
+            if (!window.atlasInstance) {
+                window.atlasInstance = new AtlasOfMemories();
+            } else {
+                // Re-initialize to reload data
+                window.atlasInstance.init();
+            }
+        }, 100);
     }
 });
 

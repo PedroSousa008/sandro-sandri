@@ -16,11 +16,19 @@ function initProfile() {
     loadFavorites();
     initSettings();
     
-    // Refresh stats when switching to overview tab
+    // Refresh stats when switching to overview tab (if it still exists)
+    // Note: Overview tab is now "The Atlas of Memories"
     const overviewTab = document.querySelector('[data-tab="overview"]');
     if (overviewTab) {
         overviewTab.addEventListener('click', () => {
-            loadProfileData();
+            // Initialize Atlas of Memories when tab is clicked
+            setTimeout(() => {
+                if (window.AtlasOfMemories && !window.atlasInstance) {
+                    window.atlasInstance = new window.AtlasOfMemories();
+                } else if (window.atlasInstance) {
+                    window.atlasInstance.init();
+                }
+            }, 100);
         });
     }
     
