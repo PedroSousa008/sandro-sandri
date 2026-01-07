@@ -54,14 +54,16 @@ class AtlasOfMemoriesStandalone {
 
     continueInit() {
 
-        // Listen for atlas sync events
+        // Listen for atlas sync events from userSync
         window.addEventListener('atlasSynced', (e) => {
+            console.log('Atlas synced event received from userSync');
             const atlasData = e.detail;
             if (atlasData) {
                 const memories = atlasData.memories || {};
                 this.chapters = atlasData.chapters || this.chapters;
                 localStorage.setItem(this.storageKey, JSON.stringify(memories));
                 localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+                console.log('Rendering synced memories:', Object.keys(memories).length, 'destinations');
                 this.renderAndPopulate(memories);
             }
         });
@@ -92,17 +94,32 @@ class AtlasOfMemoriesStandalone {
         // Sync when page becomes visible (user switches back to tab)
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && this.userEmail) {
-                // Reload from API when page becomes visible
-                this.loadMemories();
+                console.log('Page visible, loading memories from server...');
+                // Force load from API when page becomes visible
+                this.loadMemories(true);
             }
         });
 
-        // Periodic sync every 30 seconds (in case user has page open on multiple devices)
+        // Periodic sync every 10 seconds (more frequent for better sync)
         setInterval(() => {
             if (!document.hidden && this.userEmail && !this.syncInProgress) {
-                this.loadMemories();
+                console.log('Periodic sync: loading memories from server...');
+                this.loadMemories(true);
             }
-        }, 30000);
+        }, 10000);
+        
+        // Also listen for userSync load events
+        window.addEventListener('atlasSynced', (e) => {
+            console.log('Atlas synced event received');
+            const atlasData = e.detail;
+            if (atlasData) {
+                const memories = atlasData.memories || {};
+                this.chapters = atlasData.chapters || this.chapters;
+                localStorage.setItem(this.storageKey, JSON.stringify(memories));
+                localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+                this.renderAndPopulate(memories);
+            }
+        });
     }
 
     getUserEmail() {
@@ -167,8 +184,14 @@ class AtlasOfMemoriesStandalone {
         if (content) content.style.display = 'block';
     }
 
-    async loadMemories() {
-        console.log('Loading memories for email:', this.userEmail);
+    async loadMemories(forceFromServer = false) {
+        if (this.syncInProgress && !forceFromServer) {
+            console.log('Load already in progress, skipping');
+            return;
+        }
+        
+        this.syncInProgress = true;
+        console.log('Loading memories for email:', this.userEmail, '(Force from server:', forceFromServer, ')');
         
         // Check localStorage first to see if there's local data
         const localMemories = localStorage.getItem(this.storageKey);
@@ -182,7 +205,7 @@ class AtlasOfMemoriesStandalone {
             
             if (response.ok) {
                 const result = await response.json();
-                console.log('API load result:', result);
+                console.log('API load result - memories count:', Object.keys(result.data?.memories || {}).length);
                 
                 if (result.success && result.data) {
                     const apiMemories = result.data.memories || {};
@@ -191,22 +214,32 @@ class AtlasOfMemoriesStandalone {
                     // If we have local data but API is empty, sync local to API
                     if (hasLocalData && Object.keys(apiMemories).length === 0) {
                         console.log('Local data exists but API is empty, syncing local to API...');
-                        await this.forceSync();
+                        if (window.userSync && window.userSync.userEmail) {
+                            await window.userSync.forceSync();
+                        } else {
+                            await this.forceSync();
+                        }
                         // After sync, use local data
                         const memories = JSON.parse(localMemories);
                         this.chapters = localChapters ? JSON.parse(localChapters) : this.chapters;
                         localStorage.setItem(this.storageKey, JSON.stringify(memories));
                         localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
                         this.renderAndPopulate(memories);
+                        this.syncInProgress = false;
                         return;
                     }
                     
-                    // Use data from API (merge with local if API has less data)
+                    // Use data from API (API takes precedence, especially for images)
                     const localMemoriesObj = localMemories ? JSON.parse(localMemories) : {};
-                    const memories = { ...localMemoriesObj, ...apiMemories }; // API takes precedence
+                    // For images, always prefer API data
+                    const memories = { ...localMemoriesObj };
+                    Object.keys(apiMemories).forEach(key => {
+                        memories[key] = apiMemories[key]; // API data overwrites local
+                    });
                     this.chapters = { ...this.chapters, ...apiChapters };
                     
                     console.log('Loaded memories from API:', Object.keys(memories).length, 'destinations');
+                    console.log('Memory keys:', Object.keys(memories));
                     
                     // Save to localStorage as cache
                     localStorage.setItem(this.storageKey, JSON.stringify(memories));
@@ -214,6 +247,7 @@ class AtlasOfMemoriesStandalone {
                     
                     // Render and populate
                     this.renderAndPopulate(memories);
+                    this.syncInProgress = false;
                     return;
                 }
             } else {
@@ -415,12 +449,13 @@ class AtlasOfMemoriesStandalone {
         // Save to localStorage immediately (for fast UI updates)
         localStorage.setItem(this.storageKey, JSON.stringify(memories));
 
-        // Sync to server via unified sync
-        if (window.userSync) {
-            window.userSync.forceSync();
+        // Sync to server via unified sync - force immediate sync for images
+        if (window.userSync && window.userSync.userEmail) {
+            console.log('Syncing memory to server via userSync:', destination);
+            await window.userSync.forceSync();
         } else {
             // Fallback to old method
-            this.syncToAPI();
+            await this.syncToAPI();
         }
     }
 
