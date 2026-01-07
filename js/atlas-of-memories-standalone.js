@@ -35,6 +35,18 @@ class AtlasOfMemoriesStandalone {
         // Show content, hide login prompt
         this.showContent();
 
+        // Listen for atlas sync events
+        window.addEventListener('atlasSynced', (e) => {
+            const atlasData = e.detail;
+            if (atlasData) {
+                const memories = atlasData.memories || {};
+                this.chapters = atlasData.chapters || this.chapters;
+                localStorage.setItem(this.storageKey, JSON.stringify(memories));
+                localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+                this.renderAndPopulate(memories);
+            }
+        });
+
         // Load saved memories from API (with localStorage fallback)
         // Wait for load to complete before initializing listeners
         this.loadMemories().then(() => {
@@ -338,8 +350,13 @@ class AtlasOfMemoriesStandalone {
 
     saveChapters() {
         localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
-        // Sync to API
-        this.syncToAPI();
+        // Sync to server via unified sync
+        if (window.userSync) {
+            window.userSync.forceSync();
+        } else {
+            // Fallback to old method
+            this.syncToAPI();
+        }
     }
 
     async saveMemory(destination, data) {
@@ -355,8 +372,13 @@ class AtlasOfMemoriesStandalone {
         // Save to localStorage immediately (for fast UI updates)
         localStorage.setItem(this.storageKey, JSON.stringify(memories));
 
-        // Sync to API (debounced)
-        this.syncToAPI();
+        // Sync to server via unified sync
+        if (window.userSync) {
+            window.userSync.forceSync();
+        } else {
+            // Fallback to old method
+            this.syncToAPI();
+        }
     }
 
     async syncToAPI() {

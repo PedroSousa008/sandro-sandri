@@ -16,6 +16,15 @@ function initProfile() {
     loadFavorites();
     initSettings();
     
+    // Listen for profile sync events
+    window.addEventListener('profileSynced', (e) => {
+        const profile = e.detail;
+        if (profile) {
+            populateForm(profile);
+            loadProfileData();
+        }
+    });
+    
     // Refresh stats when switching to overview tab
     const overviewTab = document.querySelector('[data-tab="overview"]');
     if (overviewTab) {
@@ -142,6 +151,11 @@ function saveProfile() {
     // Track size selection by country if size changed
     if (profile.size && profile.country && (!oldProfile || oldProfile.size !== profile.size || oldProfile.country !== profile.country)) {
         trackSizeSelection(profile.country, profile.size);
+    }
+    
+    // Sync to server
+    if (window.userSync) {
+        window.userSync.forceSync();
     }
     
     showNotification('Profile saved successfully!');

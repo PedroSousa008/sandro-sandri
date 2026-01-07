@@ -11,9 +11,15 @@ class ShoppingCart {
     init() {
         this.updateCartUI();
         this.bindEvents();
+        
+        // Listen for cart sync events
+        window.addEventListener('cartSynced', (e) => {
+            this.items = e.detail || [];
+            this.updateCartUI();
+        });
     }
 
-    // Load cart from localStorage
+    // Load cart from localStorage (API sync happens via user-sync.js)
     loadCart() {
         const savedCart = localStorage.getItem('sandroSandriCart');
         return savedCart ? JSON.parse(savedCart) : [];
@@ -22,6 +28,10 @@ class ShoppingCart {
     // Save cart to localStorage
     saveCart() {
         localStorage.setItem('sandroSandriCart', JSON.stringify(this.items));
+        // Sync to server
+        if (window.userSync) {
+            window.userSync.syncAllData();
+        }
     }
 
     // Add item to cart
@@ -618,6 +628,8 @@ class ShoppingCart {
 // Initialize cart when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.cart = new ShoppingCart();
+    window.ShoppingCart = ShoppingCart;
+    window.ShoppingCart.instance = window.cart;
 });
 
 

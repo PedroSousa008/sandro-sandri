@@ -75,6 +75,15 @@ class AuthSystem {
             };
             this.saveUser(user);
             this.setupOwnerMode();
+            
+            // Trigger user sync after login
+            if (window.userSync) {
+                setTimeout(() => {
+                    window.userSync.updateUserEmail();
+                    window.userSync.loadAllData();
+                }, 500);
+            }
+            
             return { success: true, role: this.ROLES.OWNER };
         } else {
             // Regular user (no special privileges)
@@ -85,6 +94,15 @@ class AuthSystem {
             };
             this.saveUser(user);
             this.ensureUserMode();
+            
+            // Trigger user sync after login
+            if (window.userSync) {
+                setTimeout(() => {
+                    window.userSync.updateUserEmail();
+                    window.userSync.loadAllData();
+                }, 500);
+            }
+            
             return { success: true, role: this.ROLES.USER };
         }
     }
