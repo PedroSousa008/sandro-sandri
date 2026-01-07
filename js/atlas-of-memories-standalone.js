@@ -191,64 +191,46 @@ class AtlasOfMemoriesStandalone {
         }
         
         this.syncInProgress = true;
-        console.log('Loading memories for email:', this.userEmail, '(Force from server:', forceFromServer, ')');
+        console.log('🔄 Loading memories for email:', this.userEmail, '(Force from server:', forceFromServer, ')');
         
-        // Check localStorage first to see if there's local data
-        const localMemories = localStorage.getItem(this.storageKey);
-        const localChapters = localStorage.getItem(this.chaptersKey);
-        const hasLocalData = localMemories && JSON.parse(localMemories) && Object.keys(JSON.parse(localMemories)).length > 0;
-        
-        // First, try to load from API
+        // ALWAYS load from server first - server is the source of truth
         try {
             const response = await fetch(`/api/atlas/load?email=${encodeURIComponent(this.userEmail)}`);
-            console.log('API load response status:', response.status);
+            console.log('📡 API load response status:', response.status);
             
             if (response.ok) {
                 const result = await response.json();
-                console.log('API load result - memories count:', Object.keys(result.data?.memories || {}).length);
+                console.log('📦 API load result - success:', result.success, 'memories count:', Object.keys(result.data?.memories || {}).length);
                 
                 if (result.success && result.data) {
                     const apiMemories = result.data.memories || {};
                     const apiChapters = result.data.chapters || {};
                     
-                    // If we have local data but API is empty, sync local to API
-                    if (hasLocalData && Object.keys(apiMemories).length === 0) {
-                        console.log('Local data exists but API is empty, syncing local to API...');
-                        if (window.userSync && window.userSync.userEmail) {
-                            await window.userSync.forceSync();
-                        } else {
-                            await this.forceSync();
-                        }
-                        // After sync, use local data
-                        const memories = JSON.parse(localMemories);
-                        this.chapters = localChapters ? JSON.parse(localChapters) : this.chapters;
-                        localStorage.setItem(this.storageKey, JSON.stringify(memories));
-                        localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
-                        this.renderAndPopulate(memories);
-                        this.syncInProgress = false;
-                        return;
-                    }
-                    
-                    // Use data from API (API takes precedence, especially for images)
-                    const localMemoriesObj = localMemories ? JSON.parse(localMemories) : {};
-                    // For images, always prefer API data
-                    const memories = { ...localMemoriesObj };
+                    console.log('📸 Memory destinations:', Object.keys(apiMemories));
+                    // Log which destinations have images
                     Object.keys(apiMemories).forEach(key => {
-                        memories[key] = apiMemories[key]; // API data overwrites local
+                        if (apiMemories[key].image) {
+                            console.log('  ✅', key, 'has image');
+                        }
                     });
+                    
+                    // ALWAYS use server data - it's the source of truth
+                    const memories = { ...apiMemories };
                     this.chapters = { ...this.chapters, ...apiChapters };
                     
-                    console.log('Loaded memories from API:', Object.keys(memories).length, 'destinations');
-                    console.log('Memory keys:', Object.keys(memories));
+                    console.log('💾 Saving to localStorage:', Object.keys(memories).length, 'destinations');
                     
                     // Save to localStorage as cache
                     localStorage.setItem(this.storageKey, JSON.stringify(memories));
                     localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
                     
                     // Render and populate
+                    console.log('🎨 Rendering memories...');
                     this.renderAndPopulate(memories);
                     this.syncInProgress = false;
                     return;
+                } else {
+                    console.warn('⚠️ API returned success but no data');
                 }
             } else {
                 const errorText = await response.text();
@@ -280,6 +262,8 @@ class AtlasOfMemoriesStandalone {
     }
 
     renderAndPopulate(memories) {
+        console.log('🎨 renderAndPopulate called with', Object.keys(memories).length, 'memories');
+        
         // Render all launched chapters
         this.renderChapters();
 
@@ -290,9 +274,24 @@ class AtlasOfMemoriesStandalone {
                 chapter.destinations.forEach(destination => {
                     const memory = memories[destination] || {};
                     
-                    // Load image
+                    console.log('  📍 Processing destination:', destination, 'has image:', !!memory.image);
+                    
+                    // Load image - CRITICAL: Always check and set image
                     if (memory.image) {
+                        console.log('    ✅ Setting image for', destination);
                         this.setDestinationImage(destination, memory.image);
+                    } else {
+                        console.log('    ❌ No image for', destination);
+                        // Clear image if it was removed
+                        const card = document.querySelector(`[data-destination="${destination}"]`);
+                        if (card) {
+                            const placeholder = card.querySelector('.destination-image-placeholder');
+                            const preview = card.querySelector('.destination-image-preview');
+                            const removeBtn = card.querySelector('.destination-image-remove');
+                            if (placeholder) placeholder.style.display = 'block';
+                            if (preview) preview.style.display = 'none';
+                            if (removeBtn) removeBtn.style.display = 'none';
+                        }
                     }
 
                     // Load date
@@ -313,6 +312,8 @@ class AtlasOfMemoriesStandalone {
                 });
             }
         });
+        
+        console.log('✅ renderAndPopulate completed');
     }
 
     renderChapters() {
@@ -449,12 +450,20 @@ class AtlasOfMemoriesStandalone {
         // Save to localStorage immediately (for fast UI updates)
         localStorage.setItem(this.storageKey, JSON.stringify(memories));
 
-        // Sync to server via unified sync - force immediate sync for images
+        // Sync to server IMMEDIATELY - don't wait, but ensure it happens
+        console.log('Saving memory for:', destination, 'Data keys:', Object.keys(data));
+        
         if (window.userSync && window.userSync.userEmail) {
             console.log('Syncing memory to server via userSync:', destination);
-            await window.userSync.forceSync();
+            // Use forceSync to ensure immediate save
+            window.userSync.forceSync().catch(err => {
+                console.error('Error syncing via userSync, trying direct API:', err);
+                // Fallback to direct API if userSync fails
+                this.syncToAPI();
+            });
         } else {
-            // Fallback to old method
+            // Fallback to direct API method
+            console.log('Using direct API sync (userSync not available)');
             await this.syncToAPI();
         }
     }
