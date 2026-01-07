@@ -2301,6 +2301,50 @@
     border-color: var(--color-navy);
 }
 
+/* Atlas Login Prompt */
+.atlas-login-prompt {
+    text-align: center;
+    padding: var(--space-xxl) var(--space-md);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.atlas-login-prompt .atlas-title {
+    margin-bottom: var(--space-md);
+}
+
+.atlas-login-prompt .atlas-subtitle {
+    margin-bottom: var(--space-xl);
+}
+
+/* Atlas Section */
+.atlas-section {
+    padding: var(--space-xl) 0;
+    background: var(--color-white);
+}
+
+/* Atlas Toast Notification */
+.atlas-toast {
+    position: fixed;
+    bottom: var(--space-lg);
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--color-navy);
+    color: var(--color-white);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: 4px;
+    font-family: var(--font-serif);
+    font-size: 0.875rem;
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.atlas-toast.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
 .destination-caption-input::placeholder {
     color: var(--color-text-light);
     font-style: italic;
