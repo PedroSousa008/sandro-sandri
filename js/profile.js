@@ -35,8 +35,13 @@ function initTabs() {
     const tabContents = document.querySelectorAll('.profile-tab-content');
 
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const targetTab = tab.dataset.tab;
+            
+            if (!targetTab) return;
 
             // Remove active from all tabs and contents
             tabs.forEach(t => t.classList.remove('active'));
@@ -44,7 +49,10 @@ function initTabs() {
 
             // Add active to clicked tab and corresponding content
             tab.classList.add('active');
-            document.getElementById(`${targetTab}-tab`).classList.add('active');
+            const targetContent = document.getElementById(`${targetTab}-tab`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
             
             // Refresh data when switching tabs
             if (targetTab === 'overview') {
@@ -58,6 +66,8 @@ function initTabs() {
             } else if (targetTab === 'favorites') {
                 loadFavorites();
             }
+            
+            return false;
         });
     });
 }
