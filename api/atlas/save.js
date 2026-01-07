@@ -61,10 +61,27 @@ module.exports = async (req, res) => {
         const atlasData = await db.getAtlasData();
         console.log('   Existing users in database:', Object.keys(atlasData).length);
 
-        // Update or create user's atlas data
+        // CRITICAL: Merge with existing memories instead of replacing
+        // This ensures saving one destination doesn't delete others
+        const existingUserData = atlasData[email] || { memories: {}, chapters: {} };
+        const existingMemories = existingUserData.memories || {};
+        
+        console.log('   Existing memories for this user:', Object.keys(existingMemories).length);
+        console.log('   New memories being saved:', Object.keys(memories || {}).length);
+        
+        // Merge: Combine existing memories with new ones (new ones take precedence)
+        const mergedMemories = {
+            ...existingMemories,  // Keep all existing destinations
+            ...(memories || {})    // Update/add new destinations
+        };
+        
+        console.log('   Merged memories total:', Object.keys(mergedMemories).length);
+        console.log('   Merged destination keys:', Object.keys(mergedMemories));
+
+        // Update or create user's atlas data with merged memories
         atlasData[email] = {
-            memories: memories || {},
-            chapters: chapters || {},
+            memories: mergedMemories,
+            chapters: chapters || existingUserData.chapters || {},
             updatedAt: new Date().toISOString()
         };
 

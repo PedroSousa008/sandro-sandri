@@ -932,16 +932,42 @@ class AtlasOfMemoriesStandalone {
                         return;
                     }
 
-                    // Prepare data to save - images are too large for localStorage
-                    const saved = localStorage.getItem(this.storageKey);
-                    const memories = saved ? JSON.parse(saved) : {};
+                    // CRITICAL: Load existing memories from server first to preserve all destinations
+                    console.log('📥 Loading existing memories from server to preserve all destinations...');
+                    let existingMemories = {};
+                    try {
+                        const loadResponse = await fetch(`/api/atlas/load?email=${encodeURIComponent(this.userEmail)}`);
+                        if (loadResponse.ok) {
+                            const loadResult = await loadResponse.json();
+                            if (loadResult.success && loadResult.data && loadResult.data.memories) {
+                                existingMemories = loadResult.data.memories || {};
+                                console.log('✅ Loaded existing memories:', Object.keys(existingMemories).length, 'destinations');
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Could not load existing memories, will use localStorage as fallback:', error);
+                        // Fallback to localStorage
+                        const saved = localStorage.getItem(this.storageKey);
+                        if (saved) {
+                            const savedMemories = JSON.parse(saved);
+                            // Note: localStorage only has metadata, not images
+                            Object.keys(savedMemories).forEach(key => {
+                                existingMemories[key] = { ...savedMemories[key] };
+                            });
+                        }
+                    }
                     
-                    // Update memory with new data
+                    // Merge: Update only this destination, keep all others
+                    const memories = { ...existingMemories };
                     memories[destination] = {
-                        ...memories[destination],
-                        ...dataToSave,
+                        ...memories[destination], // Preserve existing data for this destination
+                        ...dataToSave,            // Update with new data
                         updatedAt: new Date().toISOString()
                     };
+                    
+                    console.log('💾 Saving memories:', Object.keys(memories).length, 'destinations total');
+                    console.log('   Updated destination:', destination);
+                    console.log('   Preserved destinations:', Object.keys(memories).filter(k => k !== destination));
 
                     // Save to localStorage WITHOUT images (images are too large)
                     // Only save metadata (date, caption) to localStorage
