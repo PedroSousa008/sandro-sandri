@@ -2,9 +2,15 @@
    Sandro Sandri - Profile Page
    ======================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize immediately if DOM is ready, otherwise wait
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initProfile();
+    });
+} else {
+    // DOM is already ready
     initProfile();
-});
+}
 
 function initProfile() {
     // Initialize size tracking listeners
@@ -31,72 +37,62 @@ function initProfile() {
 
 // Tab Navigation - Simple and reliable
 function initTabs() {
-    // Wait a bit to ensure DOM is ready
-    setTimeout(() => {
-        const tabs = document.querySelectorAll('.profile-tab');
-        
-        if (tabs.length === 0) {
-            console.error('No tabs found');
-            return;
-        }
+    const tabs = document.querySelectorAll('.profile-tab');
+    
+    if (tabs.length === 0) {
+        console.error('No tabs found');
+        return;
+    }
 
-        tabs.forEach(tab => {
-            // Remove any existing listeners
-            const newTab = tab.cloneNode(true);
-            tab.parentNode.replaceChild(newTab, tab);
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             
-            newTab.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const tabName = this.getAttribute('data-tab');
-                if (!tabName) {
-                    console.error('Tab has no data-tab attribute');
-                    return;
-                }
+            const tabName = this.getAttribute('data-tab');
+            if (!tabName) {
+                console.error('Tab has no data-tab attribute');
+                return;
+            }
 
-                console.log('Clicking tab:', tabName);
-
-                // Hide all tab contents
-                const allContents = document.querySelectorAll('.profile-tab-content');
-                allContents.forEach(content => {
-                    content.classList.remove('active');
-                    content.style.display = 'none';
-                });
-
-                // Remove active from all tabs
-                document.querySelectorAll('.profile-tab').forEach(t => {
-                    t.classList.remove('active');
-                });
-
-                // Activate clicked tab
-                this.classList.add('active');
-
-                // Show the corresponding content
-                const contentId = tabName + '-tab';
-                const content = document.getElementById(contentId);
-                
-                if (content) {
-                    content.classList.add('active');
-                    content.style.display = 'block';
-                    console.log('Showing content for:', contentId);
-                } else {
-                    console.error('Content not found:', contentId);
-                }
-                
-                // Refresh data when switching tabs
-                if (tabName === 'overview') {
-                    if (window.AtlasOfMemories && !window.atlasInitialized) {
-                        window.atlasInitialized = true;
-                    }
-                } else if (tabName === 'orders') {
-                    loadOrders();
-                } else if (tabName === 'favorites') {
-                    loadFavorites();
-                }
+            // Hide all tab contents
+            const allContents = document.querySelectorAll('.profile-tab-content');
+            allContents.forEach(content => {
+                content.classList.remove('active');
+                content.style.display = 'none';
             });
+
+            // Remove active from all tabs
+            document.querySelectorAll('.profile-tab').forEach(t => {
+                t.classList.remove('active');
+            });
+
+            // Activate clicked tab
+            this.classList.add('active');
+
+            // Show the corresponding content
+            const contentId = tabName + '-tab';
+            const content = document.getElementById(contentId);
+            
+            if (content) {
+                content.classList.add('active');
+                content.style.display = 'block';
+            } else {
+                console.error('Content not found:', contentId);
+            }
+            
+            // Refresh data when switching tabs
+            if (tabName === 'overview') {
+                if (window.AtlasOfMemories && !window.atlasInitialized) {
+                    window.atlasInitialized = true;
+                }
+            } else if (tabName === 'orders') {
+                loadOrders();
+            } else if (tabName === 'favorites') {
+                loadFavorites();
+            }
         });
-    }, 100);
+    });
 }
 
 // Load and display profile data
