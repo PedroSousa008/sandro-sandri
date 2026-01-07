@@ -1874,7 +1874,7 @@
    Profile Page
    ======================================== */
 .profile-section {
-    padding: var(--space-xl) 0;
+    padding: var(--space-sm) 0 var(--space-xl) 0;
     background: var(--color-white);
 }
 
