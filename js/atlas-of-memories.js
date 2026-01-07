@@ -297,24 +297,30 @@ if (document.readyState === 'loading') {
 }
 
 // Also initialize when tab is switched to overview (in case it's not active on load)
+// Use event delegation to avoid interfering with profile.js tab switching
 document.addEventListener('click', (e) => {
-    if (e.target && e.target.classList.contains('profile-tab') && e.target.dataset.tab === 'overview') {
+    const tab = e.target.closest('.profile-tab');
+    if (tab && tab.dataset.tab === 'overview') {
+        // Wait for tab switching to complete
         setTimeout(() => {
-            if (!window.atlasInstance) {
-                try {
-                    window.atlasInstance = new AtlasOfMemories();
-                } catch (error) {
-                    console.error('Error initializing Atlas of Memories:', error);
-                }
-            } else {
-                // Re-initialize to reload data
-                try {
-                    window.atlasInstance.init();
-                } catch (error) {
-                    console.error('Error re-initializing Atlas of Memories:', error);
+            const overviewTab = document.getElementById('overview-tab');
+            if (overviewTab && overviewTab.classList.contains('active')) {
+                if (!window.atlasInstance) {
+                    try {
+                        window.atlasInstance = new AtlasOfMemories();
+                    } catch (error) {
+                        console.error('Error initializing Atlas of Memories:', error);
+                    }
+                } else {
+                    // Re-initialize to reload data
+                    try {
+                        window.atlasInstance.init();
+                    } catch (error) {
+                        console.error('Error re-initializing Atlas of Memories:', error);
+                    }
                 }
             }
-        }, 200);
+        }, 100);
     }
-});
+}, true); // Use capture phase to run before profile.js handlers
 

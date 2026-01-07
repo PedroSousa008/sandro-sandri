@@ -2117,10 +2117,15 @@
     margin-right: auto;
 }
 
+.destination-card {
+    width: 100%;
+    min-width: 0; /* Prevent overflow */
+}
+
 .destination-card[data-destination="sardinia"] {
     grid-column: 1 / -1;
     justify-self: center;
-    max-width: 400px;
+    max-width: calc(50% - var(--space-xl) / 2); /* Same width as one of the top cards */
 }
 
 .destination-card {
@@ -2320,7 +2325,7 @@
     }
 
     .destination-card[data-destination="sardinia"] {
-        max-width: 100%;
+        max-width: calc(50% - var(--space-sm) / 2); /* Same width as one of the top cards on mobile */
     }
 
     .atlas-title {
