@@ -270,31 +270,51 @@ class AtlasOfMemories {
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize Atlas of Memories
+function initAtlasOfMemories() {
     // Only initialize if we're on the profile page and overview tab exists
     if (document.getElementById('overview-tab')) {
         // Wait a bit for auth.js to initialize if needed
         setTimeout(() => {
-            if (!window.AtlasOfMemories || !window.atlasInstance) {
-                window.atlasInstance = new AtlasOfMemories();
-                window.AtlasOfMemories = AtlasOfMemories; // Also expose the class
+            if (!window.atlasInstance) {
+                try {
+                    window.atlasInstance = new AtlasOfMemories();
+                    window.AtlasOfMemories = AtlasOfMemories; // Also expose the class
+                } catch (error) {
+                    console.error('Error initializing Atlas of Memories:', error);
+                }
             }
-        }, 100);
+        }, 200);
     }
-});
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAtlasOfMemories);
+} else {
+    // DOM is already ready
+    initAtlasOfMemories();
+}
 
 // Also initialize when tab is switched to overview (in case it's not active on load)
 document.addEventListener('click', (e) => {
     if (e.target && e.target.classList.contains('profile-tab') && e.target.dataset.tab === 'overview') {
         setTimeout(() => {
             if (!window.atlasInstance) {
-                window.atlasInstance = new AtlasOfMemories();
+                try {
+                    window.atlasInstance = new AtlasOfMemories();
+                } catch (error) {
+                    console.error('Error initializing Atlas of Memories:', error);
+                }
             } else {
                 // Re-initialize to reload data
-                window.atlasInstance.init();
+                try {
+                    window.atlasInstance.init();
+                } catch (error) {
+                    console.error('Error re-initializing Atlas of Memories:', error);
+                }
             }
-        }, 100);
+        }, 200);
     }
 });
 
