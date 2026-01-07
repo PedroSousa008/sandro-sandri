@@ -571,9 +571,12 @@ function initFavoritesButton(product) {
         if (!favorites.includes(product.id)) {
             favorites.push(product.id);
             localStorage.setItem('sandroSandriFavorites', JSON.stringify(favorites));
-            // Trigger sync to server
+            // Trigger immediate sync to server (no debounce)
             if (window.userSync && window.userSync.userEmail) {
-                window.userSync.syncAllData();
+                console.log('❤️ Favorite added, syncing to server immediately...');
+                window.userSync.forceSync(); // Use forceSync for immediate sync
+            } else {
+                console.warn('⚠️ UserSync not available, favorite saved locally only');
             }
             return true;
         }
@@ -584,9 +587,12 @@ function initFavoritesButton(product) {
         const favorites = getFavorites();
         const updated = favorites.filter(id => id !== product.id);
         localStorage.setItem('sandroSandriFavorites', JSON.stringify(updated));
-        // Trigger sync to server
+        // Trigger immediate sync to server (no debounce)
         if (window.userSync && window.userSync.userEmail) {
-            window.userSync.syncAllData();
+            console.log('❤️ Favorite removed, syncing to server immediately...');
+            window.userSync.forceSync(); // Use forceSync for immediate sync
+        } else {
+            console.warn('⚠️ UserSync not available, favorite removed locally only');
         }
     };
 

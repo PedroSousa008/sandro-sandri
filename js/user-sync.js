@@ -44,13 +44,13 @@ class UserSync {
             }
         });
 
-        // Periodic sync every 10 seconds
+        // Periodic sync every 5 seconds (more frequent for better sync)
         setInterval(() => {
             this.updateUserEmail(); // Refresh email in case it changed
             if (this.userEmail && !document.hidden && !this.syncInProgress) {
                 this.loadAllData();
             }
-        }, 10000);
+        }, 5000); // Reduced from 10 seconds to 5 seconds
 
         // Sync when page becomes visible
         document.addEventListener('visibilitychange', () => {
@@ -185,41 +185,61 @@ class UserSync {
                         }
                     }
 
-                    // Sync favorites
+                    // Sync favorites - CRITICAL: Always sync favorites
                     if (result.data.favorites && Array.isArray(result.data.favorites)) {
                         const currentFavorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
-                        const currentFavoritesStr = JSON.stringify(currentFavorites);
-                        const serverFavoritesStr = JSON.stringify(result.data.favorites);
+                        const currentFavoritesStr = JSON.stringify(currentFavorites.sort());
+                        const serverFavoritesStr = JSON.stringify(result.data.favorites.sort());
                         
                         if (serverFavoritesStr !== currentFavoritesStr) {
-                            console.log('❤️ Syncing favorites:', result.data.favorites.length, 'items');
-                            localStorage.setItem('sandroSandriFavorites', serverFavoritesStr);
+                            console.log('❤️ Syncing favorites from server:');
+                            console.log('   Current:', currentFavorites.length, 'items');
+                            console.log('   Server:', result.data.favorites.length, 'items');
+                            console.log('   Server favorites:', result.data.favorites);
+                            localStorage.setItem('sandroSandriFavorites', JSON.stringify(result.data.favorites));
                             dataUpdated = true;
                             
                             // Update UI if favorites page is open
                             if (window.loadFavorites) {
                                 window.loadFavorites();
                             }
-                            // Update favorite buttons on product pages
-                            if (window.updateFavoriteButtons) {
-                                window.updateFavoriteButtons();
-                            }
+                            // Update favorite buttons on product pages - update all favorite buttons
+                            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                                const productId = parseInt(btn.closest('[data-product-id]')?.dataset.productId || btn.dataset.productId);
+                                if (productId && result.data.favorites.includes(productId)) {
+                                    btn.classList.add('active');
+                                } else {
+                                    btn.classList.remove('active');
+                                }
+                            });
                             // Update profile stats
                             if (window.loadProfileData) {
                                 window.loadProfileData();
                             }
                             window.dispatchEvent(new CustomEvent('favoritesSynced', { detail: result.data.favorites }));
+                        } else {
+                            console.log('❤️ Favorites already in sync');
+                        }
+                    } else if (result.data.favorites === null || result.data.favorites === undefined) {
+                        // Server returned no favorites, but we might have some locally
+                        const currentFavorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
+                        if (currentFavorites.length > 0) {
+                            console.log('⚠️ Server has no favorites, but local has', currentFavorites.length, '- will sync local to server');
+                            // Trigger sync to push local favorites to server
+                            setTimeout(() => this.syncAllData(), 1000);
                         }
                     }
 
-                    // Sync orders
+                    // Sync orders - CRITICAL: Always sync orders
                     if (result.data.orders && Array.isArray(result.data.orders)) {
                         const currentOrders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
                         const currentOrdersStr = JSON.stringify(currentOrders);
                         const serverOrdersStr = JSON.stringify(result.data.orders);
                         
                         if (serverOrdersStr !== currentOrdersStr) {
-                            console.log('📦 Syncing orders:', result.data.orders.length, 'orders');
+                            console.log('📦 Syncing orders from server:');
+                            console.log('   Current:', currentOrders.length, 'orders');
+                            console.log('   Server:', result.data.orders.length, 'orders');
                             localStorage.setItem('sandroSandriOrders', serverOrdersStr);
                             dataUpdated = true;
                             
@@ -232,6 +252,8 @@ class UserSync {
                                 window.loadProfileData();
                             }
                             window.dispatchEvent(new CustomEvent('ordersSynced', { detail: result.data.orders }));
+                        } else {
+                            console.log('📦 Orders already in sync');
                         }
                     }
 

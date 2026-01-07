@@ -443,9 +443,10 @@ function removeFavorite(productId) {
     localStorage.setItem('sandroSandriFavorites', JSON.stringify(updated));
     loadFavorites();
     loadProfileData(); // Update stats
-    // Trigger sync to server
+    // Trigger immediate sync to server
     if (window.userSync && window.userSync.userEmail) {
-        window.userSync.syncAllData();
+        console.log('❤️ Favorite removed, syncing to server immediately...');
+        window.userSync.forceSync(); // Use forceSync for immediate sync
     }
     showNotification('Removed from favorites');
 }
@@ -463,9 +464,10 @@ window.addToFavorites = function(productId) {
     if (!favorites.includes(productId)) {
         favorites.push(productId);
         localStorage.setItem('sandroSandriFavorites', JSON.stringify(favorites));
-        // Trigger sync to server
+        // Trigger immediate sync to server
         if (window.userSync && window.userSync.userEmail) {
-            window.userSync.syncAllData();
+            console.log('❤️ Favorite added, syncing to server immediately...');
+            window.userSync.forceSync(); // Use forceSync for immediate sync
         }
         showNotification('Added to favorites');
         return true;
