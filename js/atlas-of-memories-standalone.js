@@ -36,13 +36,14 @@ class AtlasOfMemoriesStandalone {
         this.showContent();
 
         // Load saved memories from API (with localStorage fallback)
-        this.loadMemories();
-
-        // Initialize event listeners
-        this.initImageUploads();
-        this.initDateInputs();
-        this.initCaptionInputs();
-        this.initImageRemoval();
+        // Wait for load to complete before initializing listeners
+        this.loadMemories().then(() => {
+            // Initialize event listeners after data is loaded
+            this.initImageUploads();
+            this.initDateInputs();
+            this.initCaptionInputs();
+            this.initImageRemoval();
+        });
         
         // Expose launchChapter method globally for admin use
         window.launchAtlasChapter = (chapterNum, destinations) => {
