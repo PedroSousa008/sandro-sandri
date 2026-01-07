@@ -550,8 +550,7 @@ function loadSettings() {
     return saved ? JSON.parse(saved) : {
         notifyOrders: true,
         notifyCollections: true,
-        notifyExclusive: false,
-        privacyProfile: false
+        notifyExclusive: false
     };
 }
 
