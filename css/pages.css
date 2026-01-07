@@ -2565,7 +2565,7 @@
     font-size: 1.5rem;
     font-weight: 400;
     color: var(--color-navy);
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-sm);
 }
 
 /* Orders */
