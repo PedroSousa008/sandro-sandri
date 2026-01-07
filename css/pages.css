@@ -1948,7 +1948,7 @@
 
 .profile-form-container {
     background: var(--color-white);
-    padding: var(--space-xl) var(--space-md);
+    padding: var(--space-sm) var(--space-md);
 }
 
 .profile-form {
@@ -1957,7 +1957,7 @@
 }
 
 .form-group {
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-sm);
 }
 
 .form-group label {
@@ -1974,7 +1974,7 @@
 .form-group input,
 .form-group textarea {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.625rem 0.75rem;
     font-family: var(--font-serif);
     font-size: 1rem;
     color: var(--color-text);
@@ -1992,13 +1992,13 @@
 
 .form-group textarea {
     resize: vertical;
-    min-height: 100px;
+    min-height: 80px;
 }
 
 .form-actions {
     display: flex;
     gap: var(--space-sm);
-    margin-top: var(--space-lg);
+    margin-top: var(--space-md);
 }
 
 .secondary-button {
@@ -2537,8 +2537,8 @@
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-md);
-    margin-bottom: var(--space-md);
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
 }
 
 .form-group select {
