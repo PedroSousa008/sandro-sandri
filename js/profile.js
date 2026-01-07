@@ -51,7 +51,11 @@ function initTabs() {
             
             // Refresh data when switching tabs
             if (targetTab === 'overview') {
-                loadProfileData();
+                // Initialize Atlas of Memories if not already initialized
+                if (window.AtlasOfMemories && !window.atlasInitialized) {
+                    window.atlasInitialized = true;
+                    // Atlas will initialize itself on DOMContentLoaded
+                }
             } else if (targetTab === 'orders') {
                 loadOrders();
             } else if (targetTab === 'favorites') {

@@ -106,48 +106,95 @@
         <section class="profile-section">
             <div class="container">
                 <div class="profile-tabs">
-                    <button class="profile-tab active" data-tab="overview">Overview</button>
+                    <button class="profile-tab active" data-tab="overview">The Atlas of Memories</button>
                     <button class="profile-tab" data-tab="personal">Personal Info</button>
                     <button class="profile-tab" data-tab="orders">Orders</button>
                     <button class="profile-tab" data-tab="favorites">Favorites</button>
                     <button class="profile-tab" data-tab="settings">Settings</button>
                 </div>
 
-                <!-- Overview Tab -->
+                <!-- The Atlas of Memories Tab -->
                 <div class="profile-tab-content active" id="overview-tab">
-                    <div class="profile-overview">
-                        <div class="profile-header-card">
-                            <div class="profile-avatar">
-                                <div class="avatar-placeholder" id="avatar-placeholder">
-                                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                        <circle cx="12" cy="7" r="4"/>
-                                    </svg>
-                                </div>
-                                <img id="avatar-image" src="" alt="Profile" style="display: none;">
-                            </div>
-                            <div class="profile-header-info">
-                                <h2 class="profile-name" id="overview-name">Guest User</h2>
-                                <p class="profile-email" id="overview-email"></p>
-                                <div class="membership-badge" id="membership-badge" style="display: none;">
-                                    <span class="membership-label">Membership:</span>
-                                    <span class="membership-tier" id="membership-tier"></span>
-                                </div>
-                            </div>
+                    <div class="atlas-of-memories">
+                        <div class="atlas-header">
+                            <h2 class="atlas-title">The Atlas of Memories</h2>
+                            <p class="atlas-subtitle">Moments that shaped your journey</p>
                         </div>
 
-                        <div class="profile-stats">
-                            <div class="stat-card">
-                                <div class="stat-number" id="orders-count">0</div>
-                                <div class="stat-label">Orders</div>
+                        <div class="atlas-destinations">
+                            <div class="destination-card" data-destination="isole-cayman">
+                                <div class="destination-image-upload">
+                                    <input type="file" class="destination-image-input" accept="image/*" data-destination="isole-cayman">
+                                    <div class="destination-image-placeholder">
+                                        <p class="placeholder-text">This destination will wait for you.</p>
+                                    </div>
+                                    <img class="destination-image-preview" src="" alt="Isole Cayman" style="display: none;">
+                                    <button class="destination-image-remove" style="display: none;" aria-label="Remove image">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M18 6L6 18M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <h3 class="destination-name">Isole Cayman</h3>
+                                <div class="destination-form">
+                                    <div class="destination-field">
+                                        <label for="isole-cayman-date" class="destination-label">Date of visit</label>
+                                        <input type="month" id="isole-cayman-date" class="destination-date-input" data-destination="isole-cayman">
+                                    </div>
+                                    <div class="destination-field">
+                                        <input type="text" id="isole-cayman-caption" class="destination-caption-input" placeholder="A quiet moment worth remembering" maxlength="80" data-destination="isole-cayman">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="stat-card">
-                                <div class="stat-number" id="favorites-count">0</div>
-                                <div class="stat-label">Favorites</div>
+
+                            <div class="destination-card" data-destination="isola-di-necker">
+                                <div class="destination-image-upload">
+                                    <input type="file" class="destination-image-input" accept="image/*" data-destination="isola-di-necker">
+                                    <div class="destination-image-placeholder">
+                                        <p class="placeholder-text">This destination will wait for you.</p>
+                                    </div>
+                                    <img class="destination-image-preview" src="" alt="Isola di Necker" style="display: none;">
+                                    <button class="destination-image-remove" style="display: none;" aria-label="Remove image">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M18 6L6 18M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <h3 class="destination-name">Isola di Necker</h3>
+                                <div class="destination-form">
+                                    <div class="destination-field">
+                                        <label for="isola-di-necker-date" class="destination-label">Date of visit</label>
+                                        <input type="month" id="isola-di-necker-date" class="destination-date-input" data-destination="isola-di-necker">
+                                    </div>
+                                    <div class="destination-field">
+                                        <input type="text" id="isola-di-necker-caption" class="destination-caption-input" placeholder="A quiet moment worth remembering" maxlength="80" data-destination="isola-di-necker">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="stat-card">
-                                <div class="stat-number" id="total-spent">€0</div>
-                                <div class="stat-label">Total Spent</div>
+
+                            <div class="destination-card" data-destination="sardinia">
+                                <div class="destination-image-upload">
+                                    <input type="file" class="destination-image-input" accept="image/*" data-destination="sardinia">
+                                    <div class="destination-image-placeholder">
+                                        <p class="placeholder-text">This destination will wait for you.</p>
+                                    </div>
+                                    <img class="destination-image-preview" src="" alt="Sardinia" style="display: none;">
+                                    <button class="destination-image-remove" style="display: none;" aria-label="Remove image">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M18 6L6 18M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <h3 class="destination-name">Sardinia</h3>
+                                <div class="destination-form">
+                                    <div class="destination-field">
+                                        <label for="sardinia-date" class="destination-label">Date of visit</label>
+                                        <input type="month" id="sardinia-date" class="destination-date-input" data-destination="sardinia">
+                                    </div>
+                                    <div class="destination-field">
+                                        <input type="text" id="sardinia-caption" class="destination-caption-input" placeholder="A quiet moment worth remembering" maxlength="80" data-destination="sardinia">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -623,6 +670,8 @@
     <script src="js/products.js"></script>
     <script src="js/cart.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/atlas-of-memories.js"></script>
     <script src="js/profile.js"></script>
 </body>
 </html>
