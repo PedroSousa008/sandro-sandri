@@ -19,21 +19,40 @@ class AtlasOfMemoriesStandalone {
     }
 
     init() {
-        // Check if user is logged in
-        if (!this.isUserLoggedIn()) {
-            this.showLoginPrompt();
-            return;
-        }
+        // Wait for AuthSystem to initialize
+        const checkAuth = () => {
+            // Check if user is logged in
+            if (!this.isUserLoggedIn()) {
+                this.showLoginPrompt();
+                return;
+            }
 
-        // Get user email
-        this.userEmail = this.getUserEmail();
-        if (!this.userEmail) {
-            this.showLoginPrompt();
-            return;
-        }
+            // Get user email
+            this.userEmail = this.getUserEmail();
+            if (!this.userEmail) {
+                // Try again after a short delay
+                setTimeout(checkAuth, 500);
+                return;
+            }
 
-        // Show content, hide login prompt
-        this.showContent();
+            // Show content, hide login prompt
+            this.showContent();
+            
+            // Continue with initialization
+            this.continueInit();
+        };
+
+        // Wait a bit for AuthSystem to initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(checkAuth, 500);
+            });
+        } else {
+            setTimeout(checkAuth, 500);
+        }
+    }
+
+    continueInit() {
 
         // Listen for atlas sync events
         window.addEventListener('atlasSynced', (e) => {
@@ -64,6 +83,9 @@ class AtlasOfMemoriesStandalone {
 
         // Set up periodic sync (every 30 seconds) and visibility change sync
         this.setupAutoSync();
+        
+        // Store instance globally for sync system
+        window.atlasStandaloneInstance = this;
     }
 
     setupAutoSync() {
@@ -101,13 +123,34 @@ class AtlasOfMemoriesStandalone {
     }
 
     isUserLoggedIn() {
-        // Check if user is logged in via AuthSystem
-        if (window.AuthSystem && window.AuthSystem.isLoggedIn()) {
-            return true;
+        // First check AuthSystem if available
+        if (window.AuthSystem) {
+            // Make sure AuthSystem is initialized
+            if (window.AuthSystem.init && !window.AuthSystem.currentUser) {
+                window.AuthSystem.init();
+            }
+            if (window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) {
+                return true;
+            }
+            // Also check currentUser directly
+            if (window.AuthSystem.currentUser && window.AuthSystem.currentUser.email) {
+                return true;
+            }
         }
         // Fallback: check localStorage
-        const user = localStorage.getItem('sandroSandri_user');
-        return user !== null;
+        const userData = localStorage.getItem('sandroSandri_user');
+        if (userData) {
+            try {
+                const user = JSON.parse(userData);
+                // Check if session is still valid
+                if (user.expiresAt && new Date(user.expiresAt) > new Date()) {
+                    return true;
+                }
+            } catch (e) {
+                // Invalid data
+            }
+        }
+        return false;
     }
 
     showLoginPrompt() {
