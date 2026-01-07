@@ -17,9 +17,12 @@ class UserSync {
             this.updateUserEmail();
             console.log('UserSync initialized. Email:', this.userEmail);
             
-            // Initial load if user is logged in
+            // Initial load if user is logged in - CRITICAL for mobile devices
             if (this.userEmail) {
+                console.log('🔄 Initial data load for logged-in user...');
                 this.loadAllData();
+            } else {
+                console.warn('⚠️ No user email found - sync will not work until user logs in');
             }
         }, 500);
         

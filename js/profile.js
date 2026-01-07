@@ -382,10 +382,20 @@ function calculateTotalSpent(orders) {
 
 // Favorites/Wishlist
 function loadFavorites() {
+    // Load from localStorage first for instant display
     const saved = localStorage.getItem('sandroSandriFavorites');
     const favorites = saved ? JSON.parse(saved) : [];
     
+    // Display immediately
     displayFavorites(favorites);
+    
+    // Then ensure we have latest from server (if user is logged in)
+    if (window.userSync && window.userSync.userEmail) {
+        // Trigger a sync to get latest from server
+        // The sync will update localStorage and call loadFavorites again via event
+        window.userSync.loadAllData();
+    }
+    
     return favorites;
 }
 
