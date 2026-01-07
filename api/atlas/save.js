@@ -1,6 +1,15 @@
 const db = require('../../lib/db');
 
 module.exports = async (req, res) => {
+    // Enable CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -11,6 +20,10 @@ module.exports = async (req, res) => {
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
+
+        console.log('Saving atlas data for email:', email);
+        console.log('Memories count:', Object.keys(memories || {}).length);
+        console.log('Chapters:', Object.keys(chapters || {}).length);
 
         // Ensure database is initialized
         await db.initDb();
@@ -27,6 +40,8 @@ module.exports = async (req, res) => {
 
         // Save to database
         await db.saveAtlasData(atlasData);
+
+        console.log('Atlas data saved successfully for', email);
 
         res.status(200).json({ 
             success: true, 

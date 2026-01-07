@@ -1,6 +1,15 @@
 const db = require('../../lib/db');
 
 module.exports = async (req, res) => {
+    // Enable CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -12,11 +21,14 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
 
+        console.log('Loading atlas data for email:', email);
+
         // Ensure database is initialized
         await db.initDb();
 
         // Load atlas data
         const atlasData = await db.getAtlasData();
+        console.log('All atlas data keys:', Object.keys(atlasData));
 
         // Get user's data or return empty
         const userData = atlasData[email] || {
@@ -24,6 +36,8 @@ module.exports = async (req, res) => {
             chapters: {},
             updatedAt: null
         };
+
+        console.log('Returning data for', email, '- memories:', Object.keys(userData.memories || {}).length);
 
         res.status(200).json({ 
             success: true,
