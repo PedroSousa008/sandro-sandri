@@ -41,6 +41,16 @@ function initProductPage() {
     initAccordions();
     initAddToCartForm(product);
     initFavoritesButton(product);
+    
+    // Listen for favorites sync events to update button state
+    window.addEventListener('favoritesSynced', (e) => {
+        const syncedFavorites = e.detail || [];
+        if (syncedFavorites.includes(product.id)) {
+            favoriteBtn.classList.add('active');
+        } else {
+            favoriteBtn.classList.remove('active');
+        }
+    });
     loadRelatedProducts(product);
     
     // Initialize swipe navigation on mobile

@@ -188,46 +188,61 @@ class UserSync {
                     // Sync favorites - CRITICAL: Always sync favorites
                     // Server always returns favorites (even if empty array)
                     const serverFavorites = result.data.favorites || [];
-                        const currentFavorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
+                    const currentFavorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
+                    
+                    // Normalize: ensure both are arrays and sort for comparison
+                    const currentNormalized = Array.isArray(currentFavorites) ? [...currentFavorites].sort((a, b) => a - b) : [];
+                    const serverNormalized = Array.isArray(serverFavorites) ? [...serverFavorites].sort((a, b) => a - b) : [];
+                    
+                    const currentStr = JSON.stringify(currentNormalized);
+                    const serverStr = JSON.stringify(serverNormalized);
+                    
+                    console.log('❤️ Checking favorites sync:');
+                    console.log('   Current local:', currentNormalized.length, 'items:', currentNormalized);
+                    console.log('   Server:', serverNormalized.length, 'items:', serverNormalized);
+                    console.log('   Match:', currentStr === serverStr);
+                    
+                    // ALWAYS use server data as source of truth (even if arrays match, ensure we have the latest)
+                    if (currentStr !== serverStr || serverNormalized.length > 0) {
+                        console.log('❤️ Syncing favorites from server (updating local)...');
+                        localStorage.setItem('sandroSandriFavorites', JSON.stringify(serverNormalized));
+                        dataUpdated = true;
                         
-                        // Normalize: ensure both are arrays and sort for comparison
-                        const currentNormalized = Array.isArray(currentFavorites) ? [...currentFavorites].sort() : [];
-                        const serverNormalized = Array.isArray(serverFavorites) ? [...serverFavorites].sort() : [];
+                        console.log('   ✅ Favorites updated in localStorage:', serverNormalized);
                         
-                        const currentStr = JSON.stringify(currentNormalized);
-                        const serverStr = JSON.stringify(serverNormalized);
-                        
-                        console.log('❤️ Checking favorites sync:');
-                        console.log('   Current:', currentNormalized.length, 'items:', currentNormalized);
-                        console.log('   Server:', serverNormalized.length, 'items:', serverNormalized);
-                        console.log('   Match:', currentStr === serverStr);
-                        
-                        if (currentStr !== serverStr) {
-                            console.log('❤️ Syncing favorites from server (updating local)...');
-                            localStorage.setItem('sandroSandriFavorites', JSON.stringify(serverNormalized));
-                            dataUpdated = true;
-                            
-                            // Update UI if favorites page is open
-                            if (window.loadFavorites) {
-                                window.loadFavorites();
-                            }
-                            // Update favorite buttons on product pages - update all favorite buttons
-                            document.querySelectorAll('.favorite-btn').forEach(btn => {
-                                const productId = parseInt(btn.closest('[data-product-id]')?.dataset.productId || btn.dataset.productId || btn.closest('article')?.dataset.productId);
-                                if (productId && serverNormalized.includes(productId)) {
-                                    btn.classList.add('active');
-                                } else {
-                                    btn.classList.remove('active');
-                                }
-                            });
-                            // Update profile stats
-                            if (window.loadProfileData) {
-                                window.loadProfileData();
-                            }
-                            window.dispatchEvent(new CustomEvent('favoritesSynced', { detail: serverNormalized }));
-                        } else {
-                            console.log('❤️ Favorites already in sync');
+                        // Update UI if favorites page is open
+                        if (window.loadFavorites) {
+                            console.log('   🔄 Calling loadFavorites() to update UI...');
+                            window.loadFavorites();
                         }
+                        
+                        // Update favorite buttons on product pages - update all favorite buttons
+                        document.querySelectorAll('.favorite-btn').forEach(btn => {
+                            const productId = parseInt(
+                                btn.closest('[data-product-id]')?.dataset.productId || 
+                                btn.dataset.productId || 
+                                btn.closest('article')?.dataset.productId ||
+                                btn.closest('.product-card')?.dataset.productId
+                            );
+                            if (productId && serverNormalized.includes(productId)) {
+                                btn.classList.add('active');
+                                console.log('   ✅ Updated favorite button for product:', productId);
+                            } else if (productId) {
+                                btn.classList.remove('active');
+                            }
+                        });
+                        
+                        // Update profile stats
+                        if (window.loadProfileData) {
+                            window.loadProfileData();
+                        }
+                        
+                        // Dispatch event for other components
+                        window.dispatchEvent(new CustomEvent('favoritesSynced', { detail: serverNormalized }));
+                        console.log('   ✅ Favorites sync complete');
+                    } else {
+                        console.log('❤️ Favorites already in sync');
+                    }
 
                     // Sync orders - CRITICAL: Always sync orders
                     if (result.data.orders && Array.isArray(result.data.orders)) {
