@@ -5,7 +5,13 @@
 class AtlasOfMemories {
     constructor() {
         this.storageKey = 'sandroSandri_atlasMemories';
-        this.destinations = ['isole-cayman', 'isola-di-necker', 'sardinia'];
+        this.chaptersKey = 'sandroSandri_atlasChapters';
+        this.chapters = {
+            1: {
+                destinations: ['isole-cayman', 'isola-di-necker', 'sardinia'],
+                launched: true
+            }
+        };
         this.init();
     }
 
@@ -24,6 +30,11 @@ class AtlasOfMemories {
         this.initDateInputs();
         this.initCaptionInputs();
         this.initImageRemoval();
+        
+        // Expose launchChapter method globally for admin use
+        window.launchAtlasChapter = (chapterNum, destinations) => {
+            this.launchChapter(chapterNum, destinations);
+        };
     }
 
     isUserLoggedIn() {
@@ -52,39 +63,160 @@ class AtlasOfMemories {
     loadMemories() {
         const saved = localStorage.getItem(this.storageKey);
         const memories = saved ? JSON.parse(saved) : {};
+        
+        // Load chapter configuration
+        const savedChapters = localStorage.getItem(this.chaptersKey);
+        if (savedChapters) {
+            this.chapters = JSON.parse(savedChapters);
+        }
 
-        this.destinations.forEach(destination => {
-            const memory = memories[destination] || {};
-            
-            // Load image
-            if (memory.image) {
-                this.setDestinationImage(destination, memory.image);
-            }
+        // Render all launched chapters
+        this.renderChapters();
 
-            // Load date
-            if (memory.date) {
-                // Map destination IDs to actual input IDs
-                const dateInputId = destination === 'isole-cayman' ? 'isole-cayman-date' :
-                                  destination === 'isola-di-necker' ? 'isola-di-necker-date' :
-                                  'sardinia-date';
-                const dateInput = document.getElementById(dateInputId);
-                if (dateInput) {
-                    dateInput.value = memory.date;
-                }
-            }
+        // Load memories for all destinations in all launched chapters
+        Object.keys(this.chapters).forEach(chapterNum => {
+            const chapter = this.chapters[chapterNum];
+            if (chapter.launched) {
+                chapter.destinations.forEach(destination => {
+                    const memory = memories[destination] || {};
+                    
+                    // Load image
+                    if (memory.image) {
+                        this.setDestinationImage(destination, memory.image);
+                    }
 
-            // Load caption
-            if (memory.caption) {
-                // Map destination IDs to actual input IDs
-                const captionInputId = destination === 'isole-cayman' ? 'isole-cayman-caption' :
-                                     destination === 'isola-di-necker' ? 'isola-di-necker-caption' :
-                                     'sardinia-caption';
-                const captionInput = document.getElementById(captionInputId);
-                if (captionInput) {
-                    captionInput.value = memory.caption;
-                }
+                    // Load date
+                    if (memory.date) {
+                        const dateInput = document.getElementById(`${destination}-date`);
+                        if (dateInput) {
+                            dateInput.value = memory.date;
+                        }
+                    }
+
+                    // Load caption
+                    if (memory.caption) {
+                        const captionInput = document.getElementById(`${destination}-caption`);
+                        if (captionInput) {
+                            captionInput.value = memory.caption;
+                        }
+                    }
+                });
             }
         });
+    }
+
+    renderChapters() {
+        const container = document.getElementById('atlas-chapters-container');
+        if (!container) return;
+
+        // Clear existing chapters (except Chapter I which is in HTML)
+        const existingChapters = container.querySelectorAll('.atlas-chapter[data-chapter]:not([data-chapter="1"])');
+        existingChapters.forEach(ch => ch.remove());
+
+        // Render additional chapters (2, 3, etc.)
+        Object.keys(this.chapters).forEach(chapterNum => {
+            const chapterNumInt = parseInt(chapterNum);
+            if (chapterNumInt > 1 && this.chapters[chapterNum].launched) {
+                this.renderChapter(chapterNumInt, this.chapters[chapterNum].destinations);
+            }
+        });
+    }
+
+    renderChapter(chapterNum, destinations) {
+        const container = document.getElementById('atlas-chapters-container');
+        if (!container) return;
+
+        const chapterDiv = document.createElement('div');
+        chapterDiv.className = 'atlas-chapter';
+        chapterDiv.setAttribute('data-chapter', chapterNum);
+
+        const chapterTitle = document.createElement('h3');
+        chapterTitle.className = 'chapter-title';
+        chapterTitle.textContent = `Chapter ${this.getRomanNumeral(chapterNum)}`;
+        chapterDiv.appendChild(chapterTitle);
+
+        const destinationsDiv = document.createElement('div');
+        destinationsDiv.className = 'atlas-destinations';
+
+        // Render destination cards (same structure as Chapter I)
+        destinations.forEach((destination, index) => {
+            const destinationData = this.getDestinationData(destination);
+            const card = this.createDestinationCard(destination, destinationData.name);
+            destinationsDiv.appendChild(card);
+        });
+
+        chapterDiv.appendChild(destinationsDiv);
+        container.appendChild(chapterDiv);
+    }
+
+    getRomanNumeral(num) {
+        const romanNumerals = {
+            1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V',
+            6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X'
+        };
+        return romanNumerals[num] || num.toString();
+    }
+
+    getDestinationData(destination) {
+        const destinations = {
+            'isole-cayman': { name: 'Isole Cayman' },
+            'isola-di-necker': { name: 'Isola di Necker' },
+            'sardinia': { name: 'Sardinia' }
+        };
+        return destinations[destination] || { name: destination };
+    }
+
+    createDestinationCard(destination, destinationName) {
+        const card = document.createElement('div');
+        card.className = 'destination-card';
+        card.setAttribute('data-destination', destination);
+
+        card.innerHTML = `
+            <div class="destination-image-upload">
+                <input type="file" class="destination-image-input" accept="image/*" data-destination="${destination}">
+                <div class="destination-image-placeholder">
+                    <p class="placeholder-text">This destination will wait for you.</p>
+                </div>
+                <img class="destination-image-preview" src="" alt="${destinationName}" style="display: none;">
+                <button class="destination-image-remove" style="display: none;" aria-label="Remove image">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <h3 class="destination-name">${destinationName}</h3>
+            <div class="destination-form">
+                <div class="destination-field">
+                    <label for="${destination}-date" class="destination-label">Date of visit</label>
+                    <input type="month" id="${destination}-date" class="destination-date-input" data-destination="${destination}">
+                </div>
+                <div class="destination-field">
+                    <input type="text" id="${destination}-caption" class="destination-caption-input" placeholder="A quiet moment worth remembering" maxlength="80" data-destination="${destination}">
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    launchChapter(chapterNum, destinations) {
+        if (!this.chapters[chapterNum]) {
+            this.chapters[chapterNum] = {
+                destinations: destinations,
+                launched: true
+            };
+            this.saveChapters();
+            this.renderChapters();
+            // Re-initialize event listeners for new cards
+            this.initImageUploads();
+            this.initDateInputs();
+            this.initCaptionInputs();
+            this.initImageRemoval();
+        }
+    }
+
+    saveChapters() {
+        localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
     }
 
     saveMemory(destination, data) {

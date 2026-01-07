@@ -2107,6 +2107,30 @@
     font-style: italic;
 }
 
+#atlas-chapters-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+.atlas-chapter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.chapter-title {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--color-navy);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-gray);
+}
+
 .atlas-destinations {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -2326,6 +2350,10 @@
 
     .destination-card[data-destination="sardinia"] {
         max-width: calc(50% - var(--space-sm) / 2); /* Same width as one of the top cards on mobile */
+    }
+
+    .chapter-title {
+        font-size: 1.25rem;
     }
 
     .atlas-title {
