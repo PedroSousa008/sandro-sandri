@@ -342,18 +342,31 @@ class AtlasOfMemoriesStandalone {
                     });
                     
                     // Load image - CRITICAL: Always check and set image
-                    if (memory.image && memory.image.length > 0 && memory.image !== 'null') {
+                    const hasValidImage = !!(memory.image && 
+                                           memory.image.length > 0 && 
+                                           memory.image !== 'null' && 
+                                           memory.image !== 'undefined' &&
+                                           memory.image.trim().length > 0);
+                    
+                    if (hasValidImage) {
                         console.log(`    ✅ Setting image for ${destination}`);
                         console.log(`       Image size: ${Math.round(memory.image.length / 1024)}KB`);
+                        console.log(`       Image preview: ${memory.image.substring(0, 50)}...`);
                         this.setDestinationImage(destination, memory.image);
                     } else {
-                        console.log(`    ❌ No image for ${destination} in server data`);
-                        // Only clear if we're sure there's no image (don't clear if we have a preview)
+                        console.log(`    ❌ No valid image for ${destination} in server data`);
+                        console.log(`       Image value:`, memory.image ? `exists but invalid (length: ${memory.image.length})` : 'null/undefined');
+                        
+                        // DON'T clear the image if there's already one displayed (might be a timing issue)
                         const card = document.querySelector(`[data-destination="${destination}"]`);
                         if (card) {
                             const preview = card.querySelector('.destination-image-preview');
-                            // If preview exists and has a src, keep it (might be unsaved local change)
-                            if (!preview || !preview.src || preview.style.display === 'none') {
+                            const hasDisplayedImage = preview && preview.src && preview.style.display !== 'none';
+                            
+                            if (hasDisplayedImage) {
+                                console.log(`    ⚠️ Keeping existing displayed image (might be unsaved or server sync pending)`);
+                            } else {
+                                // Only clear if there's no displayed image
                                 const placeholder = card.querySelector('.destination-image-placeholder');
                                 const removeBtn = card.querySelector('.destination-image-remove');
                                 if (placeholder) placeholder.style.display = 'flex';
@@ -957,7 +970,20 @@ class AtlasOfMemoriesStandalone {
                     // Now sync to server using direct API call (more reliable)
                     // Server gets the FULL data including images
                     console.log('🔄 Saving to server (with images)...');
-                    console.log('   Total payload size:', Math.round(JSON.stringify(memories).length / 1024), 'KB');
+                    const payloadSize = JSON.stringify(memories).length;
+                    console.log('   Total payload size:', Math.round(payloadSize / 1024), 'KB');
+                    console.log('   Memories being saved:', Object.keys(memories));
+                    
+                    // Log what we're about to save
+                    Object.keys(memories).forEach(key => {
+                        const mem = memories[key];
+                        console.log(`   📍 ${key}:`, {
+                            hasImage: !!(mem.image && mem.image.length > 0),
+                            imageSize: mem.image ? Math.round(mem.image.length / 1024) + 'KB' : 'none',
+                            hasDate: !!mem.date,
+                            hasCaption: !!mem.caption
+                        });
+                    });
                     
                     const syncSuccess = await this.saveToServerDirectly(memories, this.chapters);
                     
@@ -965,13 +991,16 @@ class AtlasOfMemoriesStandalone {
                         console.log('✅ Saved to server successfully - data persisted!');
                         this.showNotification('Saved successfully');
                         
-                        // After successful save, reload from server to verify
-                        setTimeout(() => {
-                            this.loadMemories(true);
-                        }, 1000);
+                        // Wait a bit longer before reloading to ensure KV has time to persist
+                        console.log('⏳ Waiting 2 seconds before reloading to verify save...');
+                        setTimeout(async () => {
+                            console.log('🔄 Reloading from server to verify...');
+                            await this.loadMemories(true);
+                        }, 2000);
                     } else {
                         console.error('❌ Failed to save to server');
-                        this.showNotification('Failed to save. Image may be too large. Please try a smaller image.');
+                        console.error('   Check Vercel function logs for details');
+                        this.showNotification('Failed to save. Check console for details.');
                     }
 
                     // Re-enable button
