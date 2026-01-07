@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
 
         // Load atlas data
         const atlasData = await db.getAtlasData();
-        console.log('All atlas data keys:', Object.keys(atlasData));
+        console.log('📦 All atlas data keys in database:', Object.keys(atlasData));
 
         // Get user's data or return empty
         const userData = atlasData[email] || {
@@ -37,7 +37,20 @@ module.exports = async (req, res) => {
             updatedAt: null
         };
 
-        console.log('Returning data for', email, '- memories:', Object.keys(userData.memories || {}).length);
+        console.log('📤 Returning data for', email);
+        console.log('   Memories count:', Object.keys(userData.memories || {}).length);
+        console.log('   Memory keys:', Object.keys(userData.memories || {}));
+        
+        // Log details of each memory
+        Object.keys(userData.memories || {}).forEach(key => {
+            const mem = userData.memories[key];
+            console.log(`   📍 ${key}:`, {
+                hasImage: !!mem.image,
+                imageSize: mem.image ? Math.round(mem.image.length / 1024) + 'KB' : 'none',
+                hasDate: !!mem.date,
+                hasCaption: !!mem.caption
+            });
+        });
 
         res.status(200).json({ 
             success: true,

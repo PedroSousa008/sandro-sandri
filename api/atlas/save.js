@@ -54,10 +54,35 @@ module.exports = async (req, res) => {
         await db.saveAtlasData(atlasData);
         console.log('✅ Atlas data saved to database successfully');
 
-        // Verify it was saved
-        const verifyData = await db.getAtlasData();
-        const savedMemories = verifyData[email]?.memories || {};
-        console.log('✅ Verification: Saved memories count:', Object.keys(savedMemories).length);
+        // Verify it was saved - try multiple times to ensure persistence
+        let verifyAttempts = 0;
+        let verified = false;
+        while (verifyAttempts < 3 && !verified) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+            const verifyData = await db.getAtlasData();
+            const savedMemories = verifyData[email]?.memories || {};
+            const savedCount = Object.keys(savedMemories).length;
+            console.log(`✅ Verification attempt ${verifyAttempts + 1}: Saved memories count:`, savedCount);
+            
+            if (savedCount === Object.keys(memories || {}).length && savedCount > 0) {
+                verified = true;
+                // Log each saved memory
+                Object.keys(savedMemories).forEach(key => {
+                    const mem = savedMemories[key];
+                    console.log(`   📍 ${key}:`, {
+                        hasImage: !!mem.image,
+                        imageSize: mem.image ? Math.round(mem.image.length / 1024) + 'KB' : 'none',
+                        hasDate: !!mem.date,
+                        hasCaption: !!mem.caption
+                    });
+                });
+            }
+            verifyAttempts++;
+        }
+        
+        if (!verified) {
+            console.warn('⚠️ Verification incomplete, but data was saved');
+        }
 
         res.status(200).json({ 
             success: true, 

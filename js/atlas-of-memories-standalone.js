@@ -645,11 +645,11 @@ class AtlasOfMemoriesStandalone {
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
-                // Create canvas to compress image
+                // Create canvas to compress image - MORE AGGRESSIVE COMPRESSION
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 1200;
-                const MAX_HEIGHT = 1200;
-                const QUALITY = 0.8; // 80% quality
+                const MAX_WIDTH = 800;  // Reduced from 1200
+                const MAX_HEIGHT = 800;  // Reduced from 1200
+                const QUALITY = 0.6;     // Reduced from 0.8 to 60% quality
                 
                 let width = img.width;
                 let height = img.height;
@@ -674,13 +674,31 @@ class AtlasOfMemoriesStandalone {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Convert to base64 with compression
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', QUALITY);
+                // Convert to base64 with compression - try different quality levels if too large
+                let compressedDataUrl = canvas.toDataURL('image/jpeg', QUALITY);
+                let quality = QUALITY;
+                
+                // If still too large, reduce quality further
+                while (compressedDataUrl.length > 1500000 && quality > 0.3) { // ~1.5MB limit
+                    quality -= 0.1;
+                    compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                }
+                
+                // If still too large, reduce dimensions
+                if (compressedDataUrl.length > 1500000) {
+                    const smallerWidth = Math.round(width * 0.7);
+                    const smallerHeight = Math.round(height * 0.7);
+                    canvas.width = smallerWidth;
+                    canvas.height = smallerHeight;
+                    ctx.drawImage(img, 0, 0, smallerWidth, smallerHeight);
+                    compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                }
                 
                 console.log('📸 Image compressed:', {
                     original: Math.round(file.size / 1024) + 'KB',
                     compressed: Math.round(compressedDataUrl.length / 1024) + 'KB',
-                    reduction: Math.round((1 - compressedDataUrl.length / file.size) * 100) + '%'
+                    reduction: Math.round((1 - compressedDataUrl.length / file.size) * 100) + '%',
+                    finalQuality: quality
                 });
                 
                 // Show the compressed image preview
@@ -875,10 +893,10 @@ class AtlasOfMemoriesStandalone {
                     console.log('   Date:', dateValue || 'None');
                     console.log('   Caption:', captionValue || 'None');
                     
-                    // Check if image is too large (Vercel limit is ~4.5MB)
-                    if (imageSizeKB > 3500) {
-                        console.error('❌ Image too large:', imageSizeKB, 'KB (max ~3500KB)');
-                        this.showNotification('Image too large. Please use a smaller image.');
+                    // Check if image is too large (Vercel limit is ~4.5MB, but we'll be conservative)
+                    if (imageSizeKB > 2000) {
+                        console.error('❌ Image too large:', imageSizeKB, 'KB (max ~2000KB)');
+                        this.showNotification('Image too large. Please use a smaller image or try again (it will compress more).');
                         button.disabled = false;
                         button.textContent = 'Save';
                         return;
@@ -975,9 +993,10 @@ class AtlasOfMemoriesStandalone {
             console.log('   Memories to save:', Object.keys(memories).length);
             console.log('   Total payload size:', payloadSizeKB, 'KB');
             
-            // Check payload size before sending
-            if (payloadSizeKB > 4000) {
-                console.error('❌ Payload too large:', payloadSizeKB, 'KB (max ~4000KB)');
+            // Check payload size before sending (Vercel limit is ~4.5MB, be conservative)
+            if (payloadSizeKB > 2500) {
+                console.error('❌ Payload too large:', payloadSizeKB, 'KB (max ~2500KB)');
+                console.error('   Try reducing image size or removing other memories');
                 return false;
             }
             
