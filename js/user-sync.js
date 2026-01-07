@@ -12,21 +12,41 @@ class UserSync {
     }
 
     init() {
-        // Get user email
-        this.updateUserEmail();
+        // Wait a bit for auth system to initialize
+        setTimeout(() => {
+            this.updateUserEmail();
+            console.log('UserSync initialized. Email:', this.userEmail);
+            
+            // Initial load if user is logged in
+            if (this.userEmail) {
+                this.loadAllData();
+            }
+        }, 500);
         
         // Listen for login/logout events
         window.addEventListener('storage', (e) => {
             if (e.key === 'sandroSandri_user') {
+                console.log('User storage changed, updating email...');
                 this.updateUserEmail();
                 if (this.userEmail) {
+                    console.log('User logged in, loading data...');
                     this.loadAllData();
                 }
             }
         });
 
+        // Also listen for custom login event
+        window.addEventListener('userLoggedIn', () => {
+            console.log('User logged in event received');
+            this.updateUserEmail();
+            if (this.userEmail) {
+                setTimeout(() => this.loadAllData(), 500);
+            }
+        });
+
         // Periodic sync every 10 seconds
         setInterval(() => {
+            this.updateUserEmail(); // Refresh email in case it changed
             if (this.userEmail && !document.hidden && !this.syncInProgress) {
                 this.loadAllData();
             }
@@ -34,52 +54,85 @@ class UserSync {
 
         // Sync when page becomes visible
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && this.userEmail) {
-                this.loadAllData();
+            if (!document.hidden) {
+                this.updateUserEmail();
+                if (this.userEmail) {
+                    this.loadAllData();
+                }
             }
         });
-
-        // Initial load if user is logged in
-        if (this.userEmail) {
-            setTimeout(() => this.loadAllData(), 1000);
-        }
     }
 
     updateUserEmail() {
-        if (window.AuthSystem && window.AuthSystem.currentUser) {
-            this.userEmail = window.AuthSystem.currentUser.email;
-        } else {
-            const userData = localStorage.getItem('sandroSandri_user');
-            if (userData) {
-                try {
-                    const user = JSON.parse(userData);
+        // Try AuthSystem first
+        if (window.AuthSystem) {
+            if (window.AuthSystem.currentUser && window.AuthSystem.currentUser.email) {
+                this.userEmail = window.AuthSystem.currentUser.email;
+                return;
+            }
+            // Try isLoggedIn and getCurrentUser
+            if (window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) {
+                const user = window.AuthSystem.loadUser();
+                if (user && user.email) {
                     this.userEmail = user.email;
-                } catch (e) {
-                    this.userEmail = null;
+                    return;
                 }
-            } else {
-                this.userEmail = null;
             }
         }
+        
+        // Fallback: check localStorage directly
+        const userData = localStorage.getItem('sandroSandri_user');
+        if (userData) {
+            try {
+                const user = JSON.parse(userData);
+                // Check if session is still valid
+                if (user.expiresAt && new Date(user.expiresAt) > new Date()) {
+                    this.userEmail = user.email;
+                    return;
+                }
+            } catch (e) {
+                console.error('Error parsing user data:', e);
+            }
+        }
+        
+        this.userEmail = null;
     }
 
     async loadAllData() {
-        if (!this.userEmail) return;
+        if (!this.userEmail) {
+            console.log('Cannot load data: no user email');
+            return;
+        }
 
         try {
-            console.log('Loading all user data for:', this.userEmail);
+            console.log('🔄 Loading all user data for:', this.userEmail);
             const response = await fetch(`/api/user/sync?email=${encodeURIComponent(this.userEmail)}`);
+            
+            console.log('API response status:', response.status);
             
             if (response.ok) {
                 const result = await response.json();
+                console.log('API response:', result);
+                
                 if (result.success && result.data) {
-                    // Sync cart
+                    let dataUpdated = false;
+
+                    // Sync cart - always use server data if available
                     if (result.data.cart && Array.isArray(result.data.cart)) {
                         const currentCart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
-                        // Merge: prefer server data if it's newer or has more items
-                        if (result.data.cart.length > 0 || currentCart.length === 0) {
-                            localStorage.setItem('sandroSandriCart', JSON.stringify(result.data.cart));
+                        const currentCartStr = JSON.stringify(currentCart);
+                        const serverCartStr = JSON.stringify(result.data.cart);
+                        
+                        if (serverCartStr !== currentCartStr) {
+                            console.log('📦 Syncing cart:', result.data.cart.length, 'items');
+                            localStorage.setItem('sandroSandriCart', serverCartStr);
+                            dataUpdated = true;
+                            
                             // Trigger cart update
+                            if (window.cart) {
+                                window.cart.items = result.data.cart;
+                                window.cart.updateCartUI();
+                            }
                             if (window.ShoppingCart && window.ShoppingCart.instance) {
                                 window.ShoppingCart.instance.items = result.data.cart;
                                 window.ShoppingCart.instance.updateCartUI();
@@ -89,12 +142,16 @@ class UserSync {
                         }
                     }
 
-                    // Sync profile
+                    // Sync profile - always use server data if available
                     if (result.data.profile) {
                         const currentProfile = localStorage.getItem('sandroSandriProfile');
                         const serverProfile = JSON.stringify(result.data.profile);
+                        
                         if (serverProfile !== currentProfile) {
+                            console.log('👤 Syncing profile');
                             localStorage.setItem('sandroSandriProfile', serverProfile);
+                            dataUpdated = true;
+                            
                             // Trigger profile update
                             if (window.loadProfileData) {
                                 window.loadProfileData();
@@ -107,29 +164,48 @@ class UserSync {
                         }
                     }
 
-                    // Sync atlas
+                    // Sync atlas - always use server data if available
                     if (result.data.atlas) {
                         const atlasMemories = result.data.atlas.memories || {};
                         const atlasChapters = result.data.atlas.chapters || {};
                         
-                        localStorage.setItem('sandroSandri_atlasMemories', JSON.stringify(atlasMemories));
-                        localStorage.setItem('sandroSandri_atlasChapters', JSON.stringify(atlasChapters));
+                        const currentMemories = JSON.parse(localStorage.getItem('sandroSandri_atlasMemories') || '{}');
+                        const currentChapters = JSON.parse(localStorage.getItem('sandroSandri_atlasChapters') || '{}');
                         
-                        // Trigger atlas update
-                        if (window.atlasStandaloneInstance) {
-                            window.atlasStandaloneInstance.loadMemories();
+                        const memoriesStr = JSON.stringify(atlasMemories);
+                        const chaptersStr = JSON.stringify(atlasChapters);
+                        const currentMemoriesStr = JSON.stringify(currentMemories);
+                        const currentChaptersStr = JSON.stringify(currentChapters);
+                        
+                        if (memoriesStr !== currentMemoriesStr || chaptersStr !== currentChaptersStr) {
+                            console.log('🗺️ Syncing atlas:', Object.keys(atlasMemories).length, 'memories');
+                            localStorage.setItem('sandroSandri_atlasMemories', memoriesStr);
+                            localStorage.setItem('sandroSandri_atlasChapters', chaptersStr);
+                            dataUpdated = true;
+                            
+                            // Trigger atlas update
+                            if (window.atlasStandaloneInstance) {
+                                window.atlasStandaloneInstance.loadMemories();
+                            }
+                            // Dispatch event
+                            window.dispatchEvent(new CustomEvent('atlasSynced', { detail: result.data.atlas }));
                         }
-                        // Dispatch event
-                        window.dispatchEvent(new CustomEvent('atlasSynced', { detail: result.data.atlas }));
                     }
 
-                    console.log('User data loaded successfully');
+                    if (dataUpdated) {
+                        console.log('✅ User data loaded and updated successfully');
+                    } else {
+                        console.log('✅ User data loaded (no changes)');
+                    }
+                } else {
+                    console.warn('API returned success but no data');
                 }
             } else {
-                console.error('Failed to load user data:', response.status);
+                const errorText = await response.text();
+                console.error('❌ Failed to load user data:', response.status, errorText);
             }
         } catch (error) {
-            console.error('Error loading user data:', error);
+            console.error('❌ Error loading user data:', error);
         }
     }
 
@@ -167,7 +243,13 @@ class UserSync {
                     }
                 };
 
-                console.log('Syncing all user data for:', this.userEmail);
+                console.log('💾 Syncing all user data for:', this.userEmail);
+                console.log('Payload:', {
+                    email: payload.email,
+                    cartItems: payload.cart.length,
+                    hasProfile: !!payload.profile,
+                    atlasMemories: Object.keys(payload.atlas.memories).length
+                });
 
                 const response = await fetch('/api/user/sync', {
                     method: 'POST',
@@ -177,14 +259,18 @@ class UserSync {
                     body: JSON.stringify(payload)
                 });
 
+                console.log('Sync response status:', response.status);
+
                 if (response.ok) {
                     const result = await response.json();
                     if (result.success) {
-                        console.log('All user data synced successfully');
+                        console.log('✅ All user data synced successfully');
+                    } else {
+                        console.error('❌ Sync failed:', result);
                     }
                 } else {
                     const errorText = await response.text();
-                    console.error('Failed to sync user data:', response.status, errorText);
+                    console.error('❌ Failed to sync user data:', response.status, errorText);
                 }
             } catch (error) {
                 console.error('Error syncing user data:', error);
@@ -228,6 +314,8 @@ class UserSync {
                 }
             };
 
+            console.log('🚀 Force syncing all user data for:', this.userEmail);
+            
             const response = await fetch('/api/user/sync', {
                 method: 'POST',
                 headers: {
@@ -236,8 +324,18 @@ class UserSync {
                 body: JSON.stringify(payload)
             });
 
+            console.log('Force sync response status:', response.status);
+
             if (response.ok) {
-                console.log('Force sync successful');
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ Force sync successful');
+                } else {
+                    console.error('❌ Force sync failed:', result);
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Force sync failed:', response.status, errorText);
             }
         } catch (error) {
             console.error('Error in force sync:', error);

@@ -77,6 +77,7 @@ class AuthSystem {
             this.setupOwnerMode();
             
             // Trigger user sync after login
+            window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email } }));
             if (window.userSync) {
                 setTimeout(() => {
                     window.userSync.updateUserEmail();
@@ -96,6 +97,7 @@ class AuthSystem {
             this.ensureUserMode();
             
             // Trigger user sync after login
+            window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email } }));
             if (window.userSync) {
                 setTimeout(() => {
                     window.userSync.updateUserEmail();
