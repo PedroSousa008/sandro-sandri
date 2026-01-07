@@ -13,11 +13,5 @@
       "source": "/(.*)",
       "destination": "/$1"
     }
-  ],
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "@vercel/node@3.0.7",
-      "includeFiles": "lib/**"
-    }
-  }
+  ]
 }
