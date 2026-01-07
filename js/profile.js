@@ -2,151 +2,60 @@
    Sandro Sandri - Profile Page
    ======================================== */
 
-// Initialize immediately if DOM is ready, otherwise wait
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        initProfile();
-    });
-} else {
-    // DOM is already ready
+document.addEventListener('DOMContentLoaded', () => {
     initProfile();
-}
+});
 
 function initProfile() {
-    try {
-        // Initialize size tracking listeners
-        initSizeTracking();
-    } catch (e) {
-        console.error('Error in initSizeTracking:', e);
+    // Initialize size tracking listeners
+    initSizeTracking();
+    initTabs();
+    loadProfileData();
+    initPersonalForm();
+    loadOrders();
+    loadFavorites();
+    initSettings();
+    
+    // Refresh stats when switching to overview tab
+    const overviewTab = document.querySelector('[data-tab="overview"]');
+    if (overviewTab) {
+        overviewTab.addEventListener('click', () => {
+            loadProfileData();
+        });
     }
     
-    try {
-        initTabs();
-    } catch (e) {
-        console.error('Error in initTabs:', e);
-    }
-    
-    try {
-        loadProfileData();
-    } catch (e) {
-        console.error('Error in loadProfileData:', e);
-    }
-    
-    try {
-        initPersonalForm();
-    } catch (e) {
-        console.error('Error in initPersonalForm:', e);
-    }
-    
-    try {
-        loadOrders();
-    } catch (e) {
-        console.error('Error in loadOrders:', e);
-    }
-    
-    try {
-        loadFavorites();
-    } catch (e) {
-        console.error('Error in loadFavorites:', e);
-    }
-    
-    try {
-        initSettings();
-    } catch (e) {
-        console.error('Error in initSettings:', e);
-    }
-    
-    // Ensure the active tab content is visible on page load
-    const activeTab = document.querySelector('.profile-tab.active');
-    if (activeTab) {
-        const tabName = activeTab.getAttribute('data-tab');
-        if (tabName) {
-            const contentId = tabName + '-tab';
-            const content = document.getElementById(contentId);
-            if (content) {
-                content.classList.add('active');
-                content.style.display = 'block';
-            }
-        }
-    }
-}
-
-// Tab Navigation - Simple and reliable
-function initTabs() {
-    const tabs = document.querySelectorAll('.profile-tab');
-    
-    if (tabs.length === 0) {
-        console.error('No tabs found');
-        return;
-    }
-
-    // First, ensure only the active tab content is visible
-    const allContents = document.querySelectorAll('.profile-tab-content');
-    allContents.forEach(content => {
-        if (content.classList.contains('active')) {
-            content.style.display = 'block';
-        } else {
-            content.style.display = 'none';
+    // Refresh stats when page becomes visible (user navigates back)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            loadProfileData();
         }
     });
+}
+
+// Tab Navigation
+function initTabs() {
+    const tabs = document.querySelectorAll('.profile-tab');
+    const tabContents = document.querySelectorAll('.profile-tab-content');
 
     tabs.forEach(tab => {
-        // Remove any existing listeners by cloning
-        const newTab = tab.cloneNode(true);
-        tab.parentNode.replaceChild(newTab, tab);
-        
-        newTab.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const tabName = this.getAttribute('data-tab');
-            if (!tabName) {
-                console.error('Tab has no data-tab attribute:', this);
-                return;
-            }
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
 
-            console.log('Switching to tab:', tabName);
+            // Remove active from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
 
-            // Hide all tab contents
-            const allContents = document.querySelectorAll('.profile-tab-content');
-            allContents.forEach(content => {
-                content.classList.remove('active');
-                content.style.display = 'none';
-            });
-
-            // Remove active from all tabs
-            document.querySelectorAll('.profile-tab').forEach(t => {
-                t.classList.remove('active');
-            });
-
-            // Activate clicked tab
-            this.classList.add('active');
-
-            // Show the corresponding content
-            const contentId = tabName + '-tab';
-            const content = document.getElementById(contentId);
-            
-            if (content) {
-                content.classList.add('active');
-                content.style.display = 'block';
-                console.log('Content shown for:', contentId, content);
-            } else {
-                console.error('Content not found:', contentId);
-            }
+            // Add active to clicked tab and corresponding content
+            tab.classList.add('active');
+            document.getElementById(`${targetTab}-tab`).classList.add('active');
             
             // Refresh data when switching tabs
-            try {
-                if (tabName === 'overview') {
-                    if (window.AtlasOfMemories && !window.atlasInitialized) {
-                        window.atlasInitialized = true;
-                    }
-                } else if (tabName === 'orders') {
-                    loadOrders();
-                } else if (tabName === 'favorites') {
-                    loadFavorites();
-                }
-            } catch (e) {
-                console.error('Error refreshing tab data:', e);
+            if (targetTab === 'overview') {
+                loadProfileData();
+            } else if (targetTab === 'orders') {
+                loadOrders();
+            } else if (targetTab === 'favorites') {
+                loadFavorites();
             }
         });
     });
@@ -158,13 +67,13 @@ function loadProfileData() {
     const membership = loadMembership();
 
     if (profile) {
-        // Update overview elements only if they exist (they don't exist in Atlas of Memories tab)
+        // Update overview
         const overviewName = document.getElementById('overview-name');
         const overviewEmail = document.getElementById('overview-email');
         if (overviewName) overviewName.textContent = profile.name || 'Guest User';
         if (overviewEmail) overviewEmail.textContent = profile.email || '';
 
-        // Update membership badge only if it exists
+        // Update membership badge
         if (membership) {
             const badge = document.getElementById('membership-badge');
             const tier = document.getElementById('membership-tier');
@@ -175,7 +84,7 @@ function loadProfileData() {
             }
         }
 
-        // Calculate stats - reload fresh data (only update if elements exist)
+        // Calculate stats - reload fresh data
         const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
         const favorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
         const totalSpent = calculateTotalSpent(orders);
@@ -243,6 +152,7 @@ function saveProfile() {
 }
 
 // Track size selection immediately when size dropdown changes
+// Auto-submit form when size is selected (if country is also selected)
 function initSizeTracking() {
     const sizeSelect = document.getElementById('profile-size');
     const countrySelect = document.getElementById('profile-country');
@@ -252,10 +162,17 @@ function initSizeTracking() {
             const size = sizeSelect.value;
             const country = countrySelect.value;
             
-            // Only track if both size and country are selected
+            // Only track and auto-submit if both size and country are selected
             if (size && country) {
                 console.log('Size selection detected:', { size, country });
                 trackSizeSelection(country, size);
+                
+                // Auto-submit the form to save the profile
+                const form = document.getElementById('profile-form-element');
+                if (form) {
+                    // Trigger form submission which will call saveProfile()
+                    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                }
             }
         });
         
@@ -264,10 +181,17 @@ function initSizeTracking() {
             const size = sizeSelect.value;
             const country = countrySelect.value;
             
-            // Only track if both size and country are selected
+            // Only track and auto-submit if both size and country are selected
             if (size && country) {
                 console.log('Country changed with size selected:', { size, country });
                 trackSizeSelection(country, size);
+                
+                // Auto-submit the form to save the profile
+                const form = document.getElementById('profile-form-element');
+                if (form) {
+                    // Trigger form submission which will call saveProfile()
+                    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                }
             }
         });
     }
@@ -365,6 +289,7 @@ function loadOrders() {
 
 function displayOrders(orders) {
     const ordersList = document.getElementById('orders-list');
+    if (!ordersList) return;
     
     if (orders.length === 0) {
         ordersList.innerHTML = `
@@ -443,6 +368,7 @@ function loadFavorites() {
 
 function displayFavorites(favorites) {
     const favoritesList = document.getElementById('favorites-list');
+    if (!favoritesList) return;
     
     if (favorites.length === 0) {
         favoritesList.innerHTML = `
@@ -542,10 +468,15 @@ function initSettings() {
     
     // Load saved settings
     if (settings) {
-        document.getElementById('notify-orders').checked = settings.notifyOrders !== false;
-        document.getElementById('notify-collections').checked = settings.notifyCollections !== false;
-        document.getElementById('notify-exclusive').checked = settings.notifyExclusive || false;
-        document.getElementById('privacy-profile').checked = settings.privacyProfile || false;
+        const notifyOrders = document.getElementById('notify-orders');
+        const notifyCollections = document.getElementById('notify-collections');
+        const notifyExclusive = document.getElementById('notify-exclusive');
+        const privacyProfile = document.getElementById('privacy-profile');
+        
+        if (notifyOrders) notifyOrders.checked = settings.notifyOrders !== false;
+        if (notifyCollections) notifyCollections.checked = settings.notifyCollections !== false;
+        if (notifyExclusive) notifyExclusive.checked = settings.notifyExclusive || false;
+        if (privacyProfile) privacyProfile.checked = settings.privacyProfile || false;
     }
 
     // Save settings on change
@@ -554,14 +485,20 @@ function initSettings() {
     });
 
     // Export data
-    document.getElementById('export-data-btn')?.addEventListener('click', exportData);
+    const exportBtn = document.getElementById('export-data-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportData);
+    }
 
     // Delete account
-    document.getElementById('delete-account-btn')?.addEventListener('click', () => {
-        if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-            deleteAccount();
-        }
-    });
+    const deleteBtn = document.getElementById('delete-account-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                deleteAccount();
+            }
+        });
+    }
 }
 
 function loadSettings() {
@@ -575,11 +512,16 @@ function loadSettings() {
 }
 
 function saveSettings() {
+    const notifyOrders = document.getElementById('notify-orders');
+    const notifyCollections = document.getElementById('notify-collections');
+    const notifyExclusive = document.getElementById('notify-exclusive');
+    const privacyProfile = document.getElementById('privacy-profile');
+    
     const settings = {
-        notifyOrders: document.getElementById('notify-orders').checked,
-        notifyCollections: document.getElementById('notify-collections').checked,
-        notifyExclusive: document.getElementById('notify-exclusive').checked,
-        privacyProfile: document.getElementById('privacy-profile').checked
+        notifyOrders: notifyOrders ? notifyOrders.checked : true,
+        notifyCollections: notifyCollections ? notifyCollections.checked : true,
+        notifyExclusive: notifyExclusive ? notifyExclusive.checked : false,
+        privacyProfile: privacyProfile ? privacyProfile.checked : false
     };
     localStorage.setItem('sandroSandriSettings', JSON.stringify(settings));
     showNotification('Settings saved');
