@@ -2861,6 +2861,140 @@
     cursor: not-allowed;
 }
 
+/* Payment Methods */
+.current-card-display {
+    margin-top: var(--space-xs);
+    padding: var(--space-sm);
+    background: var(--color-cream);
+    border: 1px solid var(--color-gray);
+}
+
+.card-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.card-type-icon {
+    width: 40px;
+    height: 28px;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+}
+
+.card-type-icon.visa {
+    background: #1a1f71;
+    color: white;
+}
+
+.card-type-icon.mastercard {
+    background: #eb001b;
+    color: white;
+}
+
+.card-type-icon.amex {
+    background: #006fcf;
+    color: white;
+}
+
+.card-details {
+    flex: 1;
+}
+
+.card-number-masked {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--color-text);
+    margin-bottom: var(--space-xs);
+}
+
+.card-last-4 {
+    font-weight: 500;
+}
+
+.card-expiry {
+    font-family: var(--font-serif);
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+}
+
+.add-card-form-container {
+    margin-top: var(--space-sm);
+}
+
+.payment-form {
+    margin-top: var(--space-xs);
+}
+
+.payment-form .form-group {
+    position: relative;
+}
+
+.payment-form .form-group input {
+    padding-right: 60px;
+}
+
+.card-type-badge {
+    position: absolute;
+    right: 0.75rem;
+    top: 2.5rem;
+    width: 40px;
+    height: 28px;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray);
+    border-radius: 4px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+}
+
+.card-type-badge.visible {
+    display: flex;
+}
+
+.card-type-badge.visa {
+    background: #1a1f71;
+    color: white;
+}
+
+.card-type-badge.mastercard {
+    background: #eb001b;
+    color: white;
+}
+
+.card-type-badge.amex {
+    background: #006fcf;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .card-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .card-info .secondary-button {
+        width: 100%;
+        margin-top: var(--space-xs);
+    }
+    
+    .payment-form .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 .secondary-button.danger {
     color: #c62828;
     border-color: #c62828;

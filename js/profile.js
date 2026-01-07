@@ -527,6 +527,9 @@ function initSettings() {
     
     // Initialize password change form
     initPasswordChangeForm();
+    
+    // Initialize payment methods
+    initPaymentMethods();
 
     // Export data
     const exportBtn = document.getElementById('export-data-btn');

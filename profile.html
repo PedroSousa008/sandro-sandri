@@ -545,6 +545,49 @@
                         </div>
 
                         <div class="settings-section">
+                            <h4 class="settings-subtitle">Payment Methods</h4>
+                            <div id="payment-methods-container">
+                                <div id="current-card-display" class="current-card-display" style="display: none;">
+                                    <div class="card-info">
+                                        <div class="card-type-icon"></div>
+                                        <div class="card-details">
+                                            <div class="card-number-masked">•••• •••• •••• <span class="card-last-4"></span></div>
+                                            <div class="card-expiry"></div>
+                                        </div>
+                                        <button class="secondary-button" id="replace-card-btn">Replace Card</button>
+                                    </div>
+                                </div>
+                                <div id="add-card-form-container" class="add-card-form-container">
+                                    <form id="add-card-form" class="payment-form">
+                                        <div class="form-group">
+                                            <label for="card-number">Card Number *</label>
+                                            <input type="text" id="card-number" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                                            <div class="card-type-badge" id="card-type-badge"></div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="card-expiry">Expiry Date *</label>
+                                                <input type="text" id="card-expiry" name="cardExpiry" placeholder="MM/YY" maxlength="5" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="card-cvv">CVV *</label>
+                                                <input type="text" id="card-cvv" name="cardCvv" placeholder="123" maxlength="4" required>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="card-name">Cardholder Name *</label>
+                                            <input type="text" id="card-name" name="cardName" placeholder="John Doe" required>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="button" class="secondary-button" id="cancel-card-btn" style="display: none;">Cancel</button>
+                                            <button type="submit" class="cta-button" id="save-card-btn">Save Card</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
                             <h4 class="settings-subtitle">Account Actions</h4>
                             <button class="secondary-button" id="export-data-btn">Export My Data</button>
                             <button class="secondary-button danger" id="delete-account-btn">Delete Account</button>
