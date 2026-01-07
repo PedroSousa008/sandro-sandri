@@ -3,7 +3,7 @@
    ======================================== */
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const db = require('../../lib/db');
+const db = require('../../lib/storage');
 
 // Shipping configuration
 const SHIPPING_FLAT_RATE = parseFloat(process.env.SHIPPING_FLAT_RATE || '20.00'); // Default €20
@@ -42,7 +42,7 @@ function calculateShipping(cart, countryCode) {
     return SHIPPING_FEES['DEFAULT'];
 }
 
-const db = require('../../lib/db');
+const db = require('../../lib/storage');
 
 // Validate cart items against inventory
 async function validateCartInventory(cart) {
