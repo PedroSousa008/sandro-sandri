@@ -68,10 +68,17 @@ class AtlasOfMemoriesStandalone {
             }
         });
 
-        // Load saved memories from API (with localStorage fallback)
+        // ALWAYS load from server first - server is the source of truth
         // Wait for load to complete before initializing listeners
-        this.loadMemories().then(() => {
+        this.loadMemories(true).then(() => {
             // Initialize event listeners after data is loaded
+            this.initImageUploads();
+            this.initDateInputs();
+            this.initCaptionInputs();
+            this.initImageRemoval();
+        }).catch(err => {
+            console.error('Error loading memories:', err);
+            // Still initialize listeners even if load fails
             this.initImageUploads();
             this.initDateInputs();
             this.initCaptionInputs();

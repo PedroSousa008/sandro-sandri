@@ -313,7 +313,7 @@ class UserSync {
 
         if (this.syncInProgress) {
             this.pendingSync = true;
-            return;
+            return Promise.resolve();
         }
 
         this.syncInProgress = true;
@@ -336,6 +336,8 @@ class UserSync {
             };
 
             console.log('🚀 Force syncing all user data for:', this.userEmail);
+            console.log('📦 Cart items:', cart.length);
+            console.log('🗺️ Atlas memories:', Object.keys(payload.atlas.memories).length);
             
             const response = await fetch('/api/user/sync', {
                 method: 'POST',
@@ -350,21 +352,25 @@ class UserSync {
             if (response.ok) {
                 const result = await response.json();
                 if (result.success) {
-                    console.log('✅ Force sync successful');
+                    console.log('✅ Force sync successful - data saved to server');
+                    return true;
                 } else {
                     console.error('❌ Force sync failed:', result);
+                    return false;
                 }
             } else {
                 const errorText = await response.text();
                 console.error('❌ Force sync failed:', response.status, errorText);
+                return false;
             }
         } catch (error) {
             console.error('Error in force sync:', error);
+            return false;
         } finally {
             this.syncInProgress = false;
             
             if (this.pendingSync) {
-                this.forceSync();
+                return this.forceSync();
             }
         }
     }
