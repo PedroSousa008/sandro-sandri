@@ -110,12 +110,21 @@ module.exports = async (req, res) => {
             console.error('❌ VERIFICATION FAILED - Data may not have been saved!');
             console.error('   This usually means KV/Redis is not configured properly.');
             console.error('   Check Vercel environment variables for KV_REST_API_URL and KV_REST_API_TOKEN');
+            console.error('   Check lib/storage.js logs above for KV configuration status');
+            
+            // Still return success but with a warning
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Atlas data saved successfully',
+                warning: 'Verification failed - data may not persist. Check KV configuration.'
+            });
         }
 
         clearTimeout(timeout);
         res.status(200).json({ 
             success: true, 
-            message: 'Atlas data saved successfully' 
+            message: 'Atlas data saved successfully',
+            verified: true
         });
     } catch (error) {
         clearTimeout(timeout);
