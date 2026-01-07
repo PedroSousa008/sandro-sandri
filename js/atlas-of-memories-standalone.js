@@ -319,6 +319,27 @@ class AtlasOfMemoriesStandalone {
         this.renderAndPopulate(memoriesMetadata);
     }
 
+    loadFromLocalStorage() {
+        try {
+            const saved = localStorage.getItem(this.storageKey);
+            if (saved) {
+                const memoriesMetadata = JSON.parse(saved);
+                // Convert metadata-only objects to full memory objects (images will be null)
+                const memories = {};
+                Object.keys(memoriesMetadata).forEach(key => {
+                    memories[key] = {
+                        ...memoriesMetadata[key],
+                        image: null // Images are not in localStorage
+                    };
+                });
+                return memories;
+            }
+        } catch (error) {
+            console.warn('Error loading from localStorage:', error);
+        }
+        return {};
+    }
+
     renderAndPopulate(memories) {
         console.log('🎨 renderAndPopulate called with', Object.keys(memories).length, 'memories');
         console.log('📋 Memory keys:', Object.keys(memories));
@@ -349,24 +370,17 @@ class AtlasOfMemoriesStandalone {
                                            memory.image.trim().length > 0);
                     
                     if (hasValidImage) {
-                        console.log(`    ✅ Setting image for ${destination}`);
-                        console.log(`       Image size: ${Math.round(memory.image.length / 1024)}KB`);
-                        console.log(`       Image preview: ${memory.image.substring(0, 50)}...`);
+                        // Set image immediately - don't wait
                         this.setDestinationImage(destination, memory.image);
                     } else {
-                        console.log(`    ❌ No valid image for ${destination} in server data`);
-                        console.log(`       Image value:`, memory.image ? `exists but invalid (length: ${memory.image.length})` : 'null/undefined');
-                        
-                        // DON'T clear the image if there's already one displayed (might be a timing issue)
+                        // Only clear if there's no displayed image (don't clear if image is already showing)
                         const card = document.querySelector(`[data-destination="${destination}"]`);
                         if (card) {
                             const preview = card.querySelector('.destination-image-preview');
                             const hasDisplayedImage = preview && preview.src && preview.style.display !== 'none';
                             
-                            if (hasDisplayedImage) {
-                                console.log(`    ⚠️ Keeping existing displayed image (might be unsaved or server sync pending)`);
-                            } else {
-                                // Only clear if there's no displayed image
+                            if (!hasDisplayedImage) {
+                                // No image displayed, show placeholder
                                 const placeholder = card.querySelector('.destination-image-placeholder');
                                 const removeBtn = card.querySelector('.destination-image-remove');
                                 if (placeholder) placeholder.style.display = 'flex';
