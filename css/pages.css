@@ -2306,12 +2306,27 @@
 /* Responsive */
 @media (max-width: 768px) {
     .atlas-destinations {
-        grid-template-columns: 1fr;
-        gap: var(--space-lg);
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-sm);
     }
 
     .atlas-title {
         font-size: 2rem;
+    }
+
+    .destination-name {
+        font-size: 0.875rem;
+    }
+
+    .destination-label,
+    .destination-date-input,
+    .destination-caption-input {
+        font-size: 0.75rem;
+    }
+
+    .placeholder-text {
+        font-size: 0.75rem;
+        padding: var(--space-xs);
     }
 }
 
