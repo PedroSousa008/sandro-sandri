@@ -3295,7 +3295,20 @@
     }
 
     .profile-stats {
-        grid-template-columns: 1fr;
+        flex-direction: row;
+        gap: var(--space-xs);
+    }
+    
+    .stat-card {
+        padding: var(--space-xs);
+    }
+    
+    .stat-number {
+        font-size: 1rem;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
     }
 
     .form-row {
