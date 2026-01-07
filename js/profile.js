@@ -40,7 +40,6 @@ function initTabs() {
     }
 
     tabs.forEach(tab => {
-        // Use once option to prevent duplicate listeners, but we'll handle it differently
         tab.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -48,22 +47,35 @@ function initTabs() {
             const targetTab = this.dataset.tab;
             
             if (!targetTab) {
+                console.error('Tab has no data-tab attribute');
                 return;
             }
 
-            // Remove active from all tabs and contents
+            console.log('Switching to tab:', targetTab);
+
+            // Remove active from all tabs
             document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            
+            // Hide all tab contents
             document.querySelectorAll('.profile-tab-content').forEach(tc => {
                 tc.classList.remove('active');
-                tc.style.display = 'none'; // Explicitly hide
+                tc.style.display = 'none';
             });
 
-            // Add active to clicked tab and corresponding content
+            // Add active to clicked tab
             this.classList.add('active');
+            
+            // Show corresponding content
             const targetContent = document.getElementById(`${targetTab}-tab`);
+            console.log('Looking for content with ID:', `${targetTab}-tab`);
+            console.log('Found element:', targetContent);
+            
             if (targetContent) {
                 targetContent.classList.add('active');
-                targetContent.style.display = 'block'; // Explicitly show
+                targetContent.style.display = 'block';
+                console.log('Tab content displayed');
+            } else {
+                console.error('Tab content not found for:', targetTab);
             }
             
             // Refresh data when switching tabs
@@ -77,7 +89,7 @@ function initTabs() {
             } else if (targetTab === 'favorites') {
                 loadFavorites();
             }
-        }, false);
+        });
     });
 }
 
