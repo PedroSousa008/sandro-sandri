@@ -115,6 +115,11 @@ class AtlasOfMemoriesStandalone {
     async loadMemories() {
         console.log('Loading memories for email:', this.userEmail);
         
+        // Check localStorage first to see if there's local data
+        const localMemories = localStorage.getItem(this.storageKey);
+        const localChapters = localStorage.getItem(this.chaptersKey);
+        const hasLocalData = localMemories && JSON.parse(localMemories) && Object.keys(JSON.parse(localMemories)).length > 0;
+        
         // First, try to load from API
         try {
             const response = await fetch(`/api/atlas/load?email=${encodeURIComponent(this.userEmail)}`);
@@ -125,9 +130,26 @@ class AtlasOfMemoriesStandalone {
                 console.log('API load result:', result);
                 
                 if (result.success && result.data) {
-                    // Use data from API
-                    const memories = result.data.memories || {};
-                    this.chapters = result.data.chapters || this.chapters;
+                    const apiMemories = result.data.memories || {};
+                    const apiChapters = result.data.chapters || {};
+                    
+                    // If we have local data but API is empty, sync local to API
+                    if (hasLocalData && Object.keys(apiMemories).length === 0) {
+                        console.log('Local data exists but API is empty, syncing local to API...');
+                        await this.forceSync();
+                        // After sync, use local data
+                        const memories = JSON.parse(localMemories);
+                        this.chapters = localChapters ? JSON.parse(localChapters) : this.chapters;
+                        localStorage.setItem(this.storageKey, JSON.stringify(memories));
+                        localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+                        this.renderAndPopulate(memories);
+                        return;
+                    }
+                    
+                    // Use data from API (merge with local if API has less data)
+                    const localMemoriesObj = localMemories ? JSON.parse(localMemories) : {};
+                    const memories = { ...localMemoriesObj, ...apiMemories }; // API takes precedence
+                    this.chapters = { ...this.chapters, ...apiChapters };
                     
                     console.log('Loaded memories from API:', Object.keys(memories).length, 'destinations');
                     
@@ -156,6 +178,12 @@ class AtlasOfMemoriesStandalone {
         const savedChapters = localStorage.getItem(this.chaptersKey);
         if (savedChapters) {
             this.chapters = JSON.parse(savedChapters);
+        }
+
+        // If we have local data, sync it to API
+        if (hasLocalData) {
+            console.log('Syncing local data to API...');
+            await this.forceSync();
         }
 
         // Render and populate
