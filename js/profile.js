@@ -443,6 +443,10 @@ function removeFavorite(productId) {
     localStorage.setItem('sandroSandriFavorites', JSON.stringify(updated));
     loadFavorites();
     loadProfileData(); // Update stats
+    // Trigger sync to server
+    if (window.userSync && window.userSync.userEmail) {
+        window.userSync.syncAllData();
+    }
     showNotification('Removed from favorites');
 }
 

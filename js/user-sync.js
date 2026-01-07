@@ -185,6 +185,56 @@ class UserSync {
                         }
                     }
 
+                    // Sync favorites
+                    if (result.data.favorites && Array.isArray(result.data.favorites)) {
+                        const currentFavorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
+                        const currentFavoritesStr = JSON.stringify(currentFavorites);
+                        const serverFavoritesStr = JSON.stringify(result.data.favorites);
+                        
+                        if (serverFavoritesStr !== currentFavoritesStr) {
+                            console.log('❤️ Syncing favorites:', result.data.favorites.length, 'items');
+                            localStorage.setItem('sandroSandriFavorites', serverFavoritesStr);
+                            dataUpdated = true;
+                            
+                            // Update UI if favorites page is open
+                            if (window.loadFavorites) {
+                                window.loadFavorites();
+                            }
+                            // Update favorite buttons on product pages
+                            if (window.updateFavoriteButtons) {
+                                window.updateFavoriteButtons();
+                            }
+                            // Update profile stats
+                            if (window.loadProfileData) {
+                                window.loadProfileData();
+                            }
+                            window.dispatchEvent(new CustomEvent('favoritesSynced', { detail: result.data.favorites }));
+                        }
+                    }
+
+                    // Sync orders
+                    if (result.data.orders && Array.isArray(result.data.orders)) {
+                        const currentOrders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
+                        const currentOrdersStr = JSON.stringify(currentOrders);
+                        const serverOrdersStr = JSON.stringify(result.data.orders);
+                        
+                        if (serverOrdersStr !== currentOrdersStr) {
+                            console.log('📦 Syncing orders:', result.data.orders.length, 'orders');
+                            localStorage.setItem('sandroSandriOrders', serverOrdersStr);
+                            dataUpdated = true;
+                            
+                            // Update UI if orders page is open
+                            if (window.loadOrders) {
+                                window.loadOrders();
+                            }
+                            // Update profile stats
+                            if (window.loadProfileData) {
+                                window.loadProfileData();
+                            }
+                            window.dispatchEvent(new CustomEvent('ordersSynced', { detail: result.data.orders }));
+                        }
+                    }
+
                     // Sync atlas - always use server data if available
                     if (result.data.atlas) {
                         const atlasMemories = result.data.atlas.memories || {};
@@ -251,6 +301,8 @@ class UserSync {
                 // Get all current data
                 const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
                 const profile = localStorage.getItem('sandroSandriProfile');
+                const favorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
+                const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
                 const atlasMemories = localStorage.getItem('sandroSandri_atlasMemories');
                 const atlasChapters = localStorage.getItem('sandroSandri_atlasChapters');
 
@@ -258,6 +310,8 @@ class UserSync {
                     email: this.userEmail,
                     cart: cart,
                     profile: profile ? JSON.parse(profile) : null,
+                    favorites: favorites,
+                    orders: orders,
                     atlas: {
                         memories: atlasMemories ? JSON.parse(atlasMemories) : {},
                         chapters: atlasChapters ? JSON.parse(atlasChapters) : {}
@@ -269,6 +323,8 @@ class UserSync {
                     email: payload.email,
                     cartItems: payload.cart.length,
                     hasProfile: !!payload.profile,
+                    favorites: payload.favorites.length,
+                    orders: payload.orders.length,
                     atlasMemories: Object.keys(payload.atlas.memories).length
                 });
 
