@@ -33,11 +33,12 @@ function initProfile() {
     }
     
     // Refresh stats when page becomes visible (user navigates back)
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            loadProfileData();
-        }
-    });
+    // Note: Don't call loadProfileData() as overview tab no longer has those elements
+    // document.addEventListener('visibilitychange', () => {
+    //     if (!document.hidden) {
+    //         loadProfileData();
+    //     }
+    // });
 }
 
 // Tab Navigation
@@ -79,27 +80,35 @@ function loadProfileData() {
     const membership = loadMembership();
 
     if (profile) {
-        // Update overview
-        document.getElementById('overview-name').textContent = profile.name || 'Guest User';
-        document.getElementById('overview-email').textContent = profile.email || '';
+        // Update overview elements only if they exist (they don't exist in Atlas of Memories tab)
+        const overviewName = document.getElementById('overview-name');
+        const overviewEmail = document.getElementById('overview-email');
+        if (overviewName) overviewName.textContent = profile.name || 'Guest User';
+        if (overviewEmail) overviewEmail.textContent = profile.email || '';
 
-        // Update membership badge
+        // Update membership badge only if it exists
         if (membership) {
             const badge = document.getElementById('membership-badge');
             const tier = document.getElementById('membership-tier');
-            badge.style.display = 'flex';
-            tier.textContent = membership.tier;
-            tier.className = `membership-tier ${membership.tier.toLowerCase()}`;
+            if (badge && tier) {
+                badge.style.display = 'flex';
+                tier.textContent = membership.tier;
+                tier.className = `membership-tier ${membership.tier.toLowerCase()}`;
+            }
         }
 
-        // Calculate stats - reload fresh data
+        // Calculate stats - reload fresh data (only update if elements exist)
         const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
         const favorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
         const totalSpent = calculateTotalSpent(orders);
 
-        document.getElementById('orders-count').textContent = orders.length;
-        document.getElementById('favorites-count').textContent = favorites.length;
-        document.getElementById('total-spent').textContent = window.ProductsAPI ? window.ProductsAPI.formatPrice(totalSpent) : `€${totalSpent.toFixed(2)}`;
+        const ordersCount = document.getElementById('orders-count');
+        const favoritesCount = document.getElementById('favorites-count');
+        const totalSpentEl = document.getElementById('total-spent');
+        
+        if (ordersCount) ordersCount.textContent = orders.length;
+        if (favoritesCount) favoritesCount.textContent = favorites.length;
+        if (totalSpentEl) totalSpentEl.textContent = window.ProductsAPI ? window.ProductsAPI.formatPrice(totalSpent) : `€${totalSpent.toFixed(2)}`;
     }
 }
 
