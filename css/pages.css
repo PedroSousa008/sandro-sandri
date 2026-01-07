@@ -2040,7 +2040,7 @@
     display: flex;
     gap: var(--space-sm);
     border-bottom: 1px solid var(--color-gray);
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-xs);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
@@ -2077,7 +2077,7 @@
 
 /* Profile Overview */
 .profile-overview {
-    padding: var(--space-lg) 0;
+    padding: var(--space-xs) 0;
 }
 
 /* The Atlas of Memories */
