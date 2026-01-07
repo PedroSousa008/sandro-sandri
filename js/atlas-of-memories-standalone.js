@@ -48,6 +48,26 @@ class AtlasOfMemoriesStandalone {
         window.launchAtlasChapter = (chapterNum, destinations) => {
             this.launchChapter(chapterNum, destinations);
         };
+
+        // Set up periodic sync (every 30 seconds) and visibility change sync
+        this.setupAutoSync();
+    }
+
+    setupAutoSync() {
+        // Sync when page becomes visible (user switches back to tab)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.userEmail) {
+                // Reload from API when page becomes visible
+                this.loadMemories();
+            }
+        });
+
+        // Periodic sync every 30 seconds (in case user has page open on multiple devices)
+        setInterval(() => {
+            if (!document.hidden && this.userEmail && !this.syncInProgress) {
+                this.loadMemories();
+            }
+        }, 30000);
     }
 
     getUserEmail() {
