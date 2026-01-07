@@ -558,13 +558,11 @@ function saveSettings() {
     const notifyOrders = document.getElementById('notify-orders');
     const notifyCollections = document.getElementById('notify-collections');
     const notifyExclusive = document.getElementById('notify-exclusive');
-    const privacyProfile = document.getElementById('privacy-profile');
     
     const settings = {
         notifyOrders: notifyOrders ? notifyOrders.checked : true,
         notifyCollections: notifyCollections ? notifyCollections.checked : true,
-        notifyExclusive: notifyExclusive ? notifyExclusive.checked : false,
-        privacyProfile: privacyProfile ? privacyProfile.checked : false
+        notifyExclusive: notifyExclusive ? notifyExclusive.checked : false
     };
     localStorage.setItem('sandroSandriSettings', JSON.stringify(settings));
     showNotification('Settings saved');
@@ -631,6 +629,129 @@ function showNotification(message) {
         toast.classList.remove('visible');
         setTimeout(() => toast.remove(), 400);
     }, 3000);
+}
+
+// Password Change Form
+function initPasswordChangeForm() {
+    const form = document.getElementById('change-password-form');
+    if (!form) return;
+    
+    const currentPasswordInput = document.getElementById('current-password');
+    const newPasswordInput = document.getElementById('new-password');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    const saveButton = document.getElementById('save-password-btn');
+    
+    // Enable new password field when current password is entered
+    currentPasswordInput.addEventListener('input', () => {
+        if (currentPasswordInput.value.trim().length > 0) {
+            newPasswordInput.disabled = false;
+        } else {
+            newPasswordInput.disabled = true;
+            newPasswordInput.value = '';
+            confirmPasswordInput.disabled = true;
+            confirmPasswordInput.value = '';
+            saveButton.disabled = true;
+        }
+    });
+    
+    // Enable confirm password field when new password is entered
+    newPasswordInput.addEventListener('input', () => {
+        if (newPasswordInput.value.trim().length > 0) {
+            confirmPasswordInput.disabled = false;
+        } else {
+            confirmPasswordInput.disabled = true;
+            confirmPasswordInput.value = '';
+            saveButton.disabled = true;
+        }
+        
+        // Check if passwords match
+        if (confirmPasswordInput.value === newPasswordInput.value && 
+            confirmPasswordInput.value.trim().length > 0 &&
+            newPasswordInput.value.trim().length > 0) {
+            saveButton.disabled = false;
+        } else {
+            saveButton.disabled = true;
+        }
+    });
+    
+    // Enable save button when passwords match
+    confirmPasswordInput.addEventListener('input', () => {
+        if (confirmPasswordInput.value === newPasswordInput.value && 
+            confirmPasswordInput.value.trim().length > 0 &&
+            newPasswordInput.value.trim().length > 0) {
+            saveButton.disabled = false;
+        } else {
+            saveButton.disabled = true;
+        }
+    });
+    
+    // Handle form submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const currentPassword = currentPasswordInput.value;
+        const newPassword = newPasswordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        // Validate passwords match
+        if (newPassword !== confirmPassword) {
+            showNotification('New passwords do not match');
+            return;
+        }
+        
+        // Validate password length
+        if (newPassword.length < 6) {
+            showNotification('New password must be at least 6 characters');
+            return;
+        }
+        
+        // Get current user email
+        const userEmail = window.AuthSystem?.currentUser?.email || 
+                         (window.AuthSystem?.loadUser && window.AuthSystem.loadUser()?.email);
+        
+        if (!userEmail) {
+            showNotification('You must be logged in to change your password');
+            return;
+        }
+        
+        // Verify current password (check against stored password or auth system)
+        const storedPassword = localStorage.getItem(`sandroSandri_password_${userEmail}`);
+        
+        // Also check against owner password if it's the owner account
+        let passwordValid = false;
+        if (userEmail === 'sandrosandri.bysousa@gmail.com') {
+            const ownerPassword = 'pmpcsousa10';
+            if (currentPassword === ownerPassword || (storedPassword && storedPassword === currentPassword)) {
+                passwordValid = true;
+            }
+        } else {
+            // For regular users, check stored password
+            if (storedPassword && storedPassword === currentPassword) {
+                passwordValid = true;
+            } else if (!storedPassword) {
+                // First time setting password - no current password required
+                passwordValid = true;
+            }
+        }
+        
+        if (!passwordValid) {
+            showNotification('Current password is incorrect');
+            currentPasswordInput.value = '';
+            currentPasswordInput.focus();
+            return;
+        }
+        
+        // Save new password
+        localStorage.setItem(`sandroSandri_password_${userEmail}`, newPassword);
+        
+        // Clear form
+        form.reset();
+        newPasswordInput.disabled = true;
+        confirmPasswordInput.disabled = true;
+        saveButton.disabled = true;
+        
+        showNotification('Password changed successfully!');
+    });
 }
 
 // Save order when checkout completes (called from checkout.js)
