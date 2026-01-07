@@ -45,9 +45,9 @@ class ShoppingCart {
     // Save cart to localStorage
     saveCart() {
         localStorage.setItem('sandroSandriCart', JSON.stringify(this.items));
-        // Sync to server
-        if (window.userSync) {
-            window.userSync.syncAllData();
+        // Sync to server immediately
+        if (window.userSync && window.userSync.userEmail) {
+            window.userSync.forceSync();
         }
     }
 

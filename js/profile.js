@@ -153,8 +153,8 @@ function saveProfile() {
         trackSizeSelection(profile.country, profile.size);
     }
     
-    // Sync to server
-    if (window.userSync) {
+    // Sync to server immediately
+    if (window.userSync && window.userSync.userEmail) {
         window.userSync.forceSync();
     }
     

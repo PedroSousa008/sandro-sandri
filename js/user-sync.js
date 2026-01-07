@@ -374,13 +374,39 @@ class UserSync {
 if (typeof window !== 'undefined') {
     window.UserSync = UserSync;
     
+    // Wait for auth system to be ready
+    function initUserSync() {
+        // Wait a bit more to ensure auth.js has initialized
+        setTimeout(() => {
+            if (!window.userSync) {
+                window.userSync = new UserSync();
+                console.log('UserSync initialized');
+            }
+        }, 1000);
+    }
+    
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            window.userSync = new UserSync();
-        });
+        document.addEventListener('DOMContentLoaded', initUserSync);
     } else {
-        window.userSync = new UserSync();
+        initUserSync();
     }
+    
+    // Also expose a manual sync function for testing
+    window.manualSync = function() {
+        if (window.userSync) {
+            console.log('Manual sync triggered');
+            window.userSync.updateUserEmail();
+            console.log('Current email:', window.userSync.userEmail);
+            if (window.userSync.userEmail) {
+                window.userSync.forceSync();
+                setTimeout(() => window.userSync.loadAllData(), 1000);
+            } else {
+                console.error('No user email found. Are you logged in?');
+            }
+        } else {
+            console.error('UserSync not initialized');
+        }
+    };
 }
 
