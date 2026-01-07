@@ -757,6 +757,262 @@ function initPasswordChangeForm() {
     });
 }
 
+// Payment Methods
+function initPaymentMethods() {
+    const currentCardDisplay = document.getElementById('current-card-display');
+    const addCardFormContainer = document.getElementById('add-card-form-container');
+    const addCardForm = document.getElementById('add-card-form');
+    const replaceCardBtn = document.getElementById('replace-card-btn');
+    const cancelCardBtn = document.getElementById('cancel-card-btn');
+    const cardNumberInput = document.getElementById('card-number');
+    const cardExpiryInput = document.getElementById('card-expiry');
+    const cardCvvInput = document.getElementById('card-cvv');
+    const cardTypeBadge = document.getElementById('card-type-badge');
+    
+    if (!addCardForm) return;
+    
+    // Load and display current card
+    loadAndDisplayCard();
+    
+    // Card number formatting and validation
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\s/g, '');
+            value = value.replace(/\D/g, '');
+            
+            // Format with spaces every 4 digits
+            let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formatted;
+            
+            // Detect card type
+            const cardType = detectCardType(value);
+            if (cardType) {
+                cardTypeBadge.textContent = cardType;
+                cardTypeBadge.className = `card-type-badge visible ${cardType.toLowerCase()}`;
+            } else {
+                cardTypeBadge.className = 'card-type-badge';
+            }
+            
+            // Validate card number (Luhn algorithm)
+            if (value.length >= 13) {
+                const isValid = validateCardNumber(value);
+                if (!isValid && value.length >= 13) {
+                    e.target.setCustomValidity('Invalid card number');
+                } else {
+                    e.target.setCustomValidity('');
+                }
+            }
+        });
+    }
+    
+    // Expiry date formatting
+    if (cardExpiryInput) {
+        cardExpiryInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+            
+            // Validate expiry date
+            if (value.length === 5) {
+                const [month, year] = value.split('/');
+                const currentDate = new Date();
+                const currentYear = currentDate.getFullYear() % 100;
+                const currentMonth = currentDate.getMonth() + 1;
+                
+                if (parseInt(month) < 1 || parseInt(month) > 12) {
+                    e.target.setCustomValidity('Invalid month');
+                } else if (parseInt(year) < currentYear || 
+                          (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+                    e.target.setCustomValidity('Card has expired');
+                } else {
+                    e.target.setCustomValidity('');
+                }
+            }
+        });
+    }
+    
+    // CVV formatting (numbers only)
+    if (cardCvvInput) {
+        cardCvvInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    }
+    
+    // Replace card button
+    if (replaceCardBtn) {
+        replaceCardBtn.addEventListener('click', () => {
+            currentCardDisplay.style.display = 'none';
+            addCardFormContainer.style.display = 'block';
+            if (cancelCardBtn) cancelCardBtn.style.display = 'inline-block';
+        });
+    }
+    
+    // Cancel button
+    if (cancelCardBtn) {
+        cancelCardBtn.addEventListener('click', () => {
+            addCardForm.reset();
+            loadAndDisplayCard();
+            cancelCardBtn.style.display = 'none';
+        });
+    }
+    
+    // Form submission
+    addCardForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const cardNumber = cardNumberInput.value.replace(/\s/g, '');
+        const cardExpiry = cardExpiryInput.value;
+        const cardCvv = cardCvvInput.value;
+        const cardName = document.getElementById('card-name').value;
+        
+        // Validate all fields
+        if (!validateCardNumber(cardNumber)) {
+            showNotification('Invalid card number');
+            return;
+        }
+        
+        if (!cardExpiry || cardExpiry.length !== 5) {
+            showNotification('Invalid expiry date');
+            return;
+        }
+        
+        if (!cardCvv || cardCvv.length < 3) {
+            showNotification('Invalid CVV');
+            return;
+        }
+        
+        if (!cardName.trim()) {
+            showNotification('Cardholder name is required');
+            return;
+        }
+        
+        // Get current user email
+        const userEmail = window.AuthSystem?.currentUser?.email || 
+                         (window.AuthSystem?.loadUser && window.AuthSystem.loadUser()?.email);
+        
+        if (!userEmail) {
+            showNotification('You must be logged in to save payment methods');
+            return;
+        }
+        
+        // Save card (masked for security)
+        const cardData = {
+            last4: cardNumber.slice(-4),
+            expiry: cardExpiry,
+            type: detectCardType(cardNumber),
+            name: cardName,
+            savedAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem(`sandroSandri_payment_${userEmail}`, JSON.stringify(cardData));
+        
+        // Clear form and reload display
+        addCardForm.reset();
+        if (cardTypeBadge) cardTypeBadge.className = 'card-type-badge';
+        loadAndDisplayCard();
+        if (cancelCardBtn) cancelCardBtn.style.display = 'none';
+        
+        showNotification('Payment method saved successfully!');
+    });
+}
+
+function loadAndDisplayCard() {
+    const currentCardDisplay = document.getElementById('current-card-display');
+    const addCardFormContainer = document.getElementById('add-card-form-container');
+    const cardLast4 = currentCardDisplay?.querySelector('.card-last-4');
+    const cardExpiry = currentCardDisplay?.querySelector('.card-expiry');
+    const cardTypeIcon = currentCardDisplay?.querySelector('.card-type-icon');
+    
+    const userEmail = window.AuthSystem?.currentUser?.email || 
+                     (window.AuthSystem?.loadUser && window.AuthSystem.loadUser()?.email);
+    
+    if (!userEmail) {
+        if (currentCardDisplay) currentCardDisplay.style.display = 'none';
+        if (addCardFormContainer) addCardFormContainer.style.display = 'block';
+        return;
+    }
+    
+    const savedCard = localStorage.getItem(`sandroSandri_payment_${userEmail}`);
+    
+    if (savedCard) {
+        try {
+            const cardData = JSON.parse(savedCard);
+            
+            if (cardLast4) cardLast4.textContent = cardData.last4;
+            if (cardExpiry) cardExpiry.textContent = `Expires ${cardData.expiry}`;
+            
+            if (cardTypeIcon && cardData.type) {
+                cardTypeIcon.textContent = cardData.type;
+                cardTypeIcon.className = `card-type-icon ${cardData.type.toLowerCase()}`;
+            }
+            
+            if (currentCardDisplay) currentCardDisplay.style.display = 'block';
+            if (addCardFormContainer) addCardFormContainer.style.display = 'none';
+        } catch (e) {
+            console.error('Error loading card:', e);
+            if (currentCardDisplay) currentCardDisplay.style.display = 'none';
+            if (addCardFormContainer) addCardFormContainer.style.display = 'block';
+        }
+    } else {
+        if (currentCardDisplay) currentCardDisplay.style.display = 'none';
+        if (addCardFormContainer) addCardFormContainer.style.display = 'block';
+    }
+}
+
+function detectCardType(cardNumber) {
+    // Remove spaces and non-digits
+    const number = cardNumber.replace(/\D/g, '');
+    
+    // Visa: starts with 4
+    if (/^4/.test(number)) {
+        return 'VISA';
+    }
+    
+    // Mastercard: starts with 5 or 2
+    if (/^5[1-5]/.test(number) || /^2[2-7]/.test(number)) {
+        return 'MASTERCARD';
+    }
+    
+    // American Express: starts with 34 or 37
+    if (/^3[47]/.test(number)) {
+        return 'AMEX';
+    }
+    
+    return null;
+}
+
+function validateCardNumber(cardNumber) {
+    // Remove spaces and non-digits
+    const number = cardNumber.replace(/\D/g, '');
+    
+    // Check length (13-19 digits)
+    if (number.length < 13 || number.length > 19) {
+        return false;
+    }
+    
+    // Luhn algorithm
+    let sum = 0;
+    let isEven = false;
+    
+    for (let i = number.length - 1; i >= 0; i--) {
+        let digit = parseInt(number[i]);
+        
+        if (isEven) {
+            digit *= 2;
+            if (digit > 9) {
+                digit -= 9;
+            }
+        }
+        
+        sum += digit;
+        isEven = !isEven;
+    }
+    
+    return sum % 10 === 0;
+}
+
 // Save order when checkout completes (called from checkout.js)
 window.saveOrder = function(orderItems) {
     const orders = loadOrders();
