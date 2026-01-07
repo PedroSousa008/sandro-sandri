@@ -13,26 +13,62 @@ if (document.readyState === 'loading') {
 }
 
 function initProfile() {
-    // Initialize size tracking listeners
-    initSizeTracking();
-    initTabs();
-    loadProfileData();
-    initPersonalForm();
-    loadOrders();
-    loadFavorites();
-    initSettings();
+    try {
+        // Initialize size tracking listeners
+        initSizeTracking();
+    } catch (e) {
+        console.error('Error in initSizeTracking:', e);
+    }
     
-    // Note: Overview tab is now "The Atlas of Memories"
-    // Atlas initialization is handled by atlas-of-memories.js via MutationObserver
-    // No need to add click listener here to avoid conflicts
+    try {
+        initTabs();
+    } catch (e) {
+        console.error('Error in initTabs:', e);
+    }
     
-    // Refresh stats when page becomes visible (user navigates back)
-    // Note: Don't call loadProfileData() as overview tab no longer has those elements
-    // document.addEventListener('visibilitychange', () => {
-    //     if (!document.hidden) {
-    //         loadProfileData();
-    //     }
-    // });
+    try {
+        loadProfileData();
+    } catch (e) {
+        console.error('Error in loadProfileData:', e);
+    }
+    
+    try {
+        initPersonalForm();
+    } catch (e) {
+        console.error('Error in initPersonalForm:', e);
+    }
+    
+    try {
+        loadOrders();
+    } catch (e) {
+        console.error('Error in loadOrders:', e);
+    }
+    
+    try {
+        loadFavorites();
+    } catch (e) {
+        console.error('Error in loadFavorites:', e);
+    }
+    
+    try {
+        initSettings();
+    } catch (e) {
+        console.error('Error in initSettings:', e);
+    }
+    
+    // Ensure the active tab content is visible on page load
+    const activeTab = document.querySelector('.profile-tab.active');
+    if (activeTab) {
+        const tabName = activeTab.getAttribute('data-tab');
+        if (tabName) {
+            const contentId = tabName + '-tab';
+            const content = document.getElementById(contentId);
+            if (content) {
+                content.classList.add('active');
+                content.style.display = 'block';
+            }
+        }
+    }
 }
 
 // Tab Navigation - Simple and reliable
@@ -44,16 +80,32 @@ function initTabs() {
         return;
     }
 
+    // First, ensure only the active tab content is visible
+    const allContents = document.querySelectorAll('.profile-tab-content');
+    allContents.forEach(content => {
+        if (content.classList.contains('active')) {
+            content.style.display = 'block';
+        } else {
+            content.style.display = 'none';
+        }
+    });
+
     tabs.forEach(tab => {
-        tab.addEventListener('click', function(e) {
+        // Remove any existing listeners by cloning
+        const newTab = tab.cloneNode(true);
+        tab.parentNode.replaceChild(newTab, tab);
+        
+        newTab.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
             const tabName = this.getAttribute('data-tab');
             if (!tabName) {
-                console.error('Tab has no data-tab attribute');
+                console.error('Tab has no data-tab attribute:', this);
                 return;
             }
+
+            console.log('Switching to tab:', tabName);
 
             // Hide all tab contents
             const allContents = document.querySelectorAll('.profile-tab-content');
@@ -77,19 +129,24 @@ function initTabs() {
             if (content) {
                 content.classList.add('active');
                 content.style.display = 'block';
+                console.log('Content shown for:', contentId, content);
             } else {
                 console.error('Content not found:', contentId);
             }
             
             // Refresh data when switching tabs
-            if (tabName === 'overview') {
-                if (window.AtlasOfMemories && !window.atlasInitialized) {
-                    window.atlasInitialized = true;
+            try {
+                if (tabName === 'overview') {
+                    if (window.AtlasOfMemories && !window.atlasInitialized) {
+                        window.atlasInitialized = true;
+                    }
+                } else if (tabName === 'orders') {
+                    loadOrders();
+                } else if (tabName === 'favorites') {
+                    loadFavorites();
                 }
-            } else if (tabName === 'orders') {
-                loadOrders();
-            } else if (tabName === 'favorites') {
-                loadFavorites();
+            } catch (e) {
+                console.error('Error refreshing tab data:', e);
             }
         });
     });
