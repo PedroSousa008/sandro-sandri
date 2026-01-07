@@ -67,7 +67,19 @@ module.exports = async (req, res) => {
         const existingMemories = existingUserData.memories || {};
         
         console.log('   Existing memories for this user:', Object.keys(existingMemories).length);
+        console.log('   Existing destination keys:', Object.keys(existingMemories));
+        // Log each existing memory
+        Object.keys(existingMemories).forEach(key => {
+            const mem = existingMemories[key];
+            const hasImage = !!(mem.image && mem.image.length > 0);
+            console.log(`   📍 Existing ${key}:`, {
+                hasImage: hasImage,
+                imageSize: hasImage ? Math.round(mem.image.length / 1024) + 'KB' : 'none'
+            });
+        });
+        
         console.log('   New memories being saved:', Object.keys(memories || {}).length);
+        console.log('   New destination keys:', Object.keys(memories || {}));
         
         // Merge: Combine existing memories with new ones (new ones take precedence)
         const mergedMemories = {
@@ -77,6 +89,16 @@ module.exports = async (req, res) => {
         
         console.log('   Merged memories total:', Object.keys(mergedMemories).length);
         console.log('   Merged destination keys:', Object.keys(mergedMemories));
+        // Log each merged memory
+        Object.keys(mergedMemories).forEach(key => {
+            const mem = mergedMemories[key];
+            const hasImage = !!(mem.image && mem.image.length > 0);
+            console.log(`   📍 Merged ${key}:`, {
+                hasImage: hasImage,
+                imageSize: hasImage ? Math.round(mem.image.length / 1024) + 'KB' : 'none',
+                source: existingMemories[key] ? (memories[key] ? 'UPDATED' : 'EXISTING') : 'NEW'
+            });
+        });
 
         // Update or create user's atlas data with merged memories
         atlasData[email] = {

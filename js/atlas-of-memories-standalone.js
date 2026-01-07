@@ -941,33 +941,55 @@ class AtlasOfMemoriesStandalone {
                             const loadResult = await loadResponse.json();
                             if (loadResult.success && loadResult.data && loadResult.data.memories) {
                                 existingMemories = loadResult.data.memories || {};
-                                console.log('✅ Loaded existing memories:', Object.keys(existingMemories).length, 'destinations');
+                                console.log('✅ Loaded existing memories from server:', Object.keys(existingMemories).length, 'destinations');
+                                // Log each existing memory
+                                Object.keys(existingMemories).forEach(key => {
+                                    const mem = existingMemories[key];
+                                    const hasImage = !!(mem.image && mem.image.length > 0);
+                                    console.log(`   📍 Existing ${key}:`, {
+                                        hasImage: hasImage,
+                                        imageSize: hasImage ? Math.round(mem.image.length / 1024) + 'KB' : 'none',
+                                        hasDate: !!mem.date,
+                                        hasCaption: !!mem.caption
+                                    });
+                                });
+                            } else {
+                                console.warn('⚠️ Server returned no memories data');
                             }
+                        } else {
+                            console.warn('⚠️ Failed to load existing memories, status:', loadResponse.status);
                         }
                     } catch (error) {
-                        console.warn('⚠️ Could not load existing memories, will use localStorage as fallback:', error);
-                        // Fallback to localStorage
-                        const saved = localStorage.getItem(this.storageKey);
-                        if (saved) {
-                            const savedMemories = JSON.parse(saved);
-                            // Note: localStorage only has metadata, not images
-                            Object.keys(savedMemories).forEach(key => {
-                                existingMemories[key] = { ...savedMemories[key] };
-                            });
-                        }
+                        console.error('❌ Error loading existing memories:', error);
                     }
                     
                     // Merge: Update only this destination, keep all others
                     const memories = { ...existingMemories };
+                    const beforeCount = Object.keys(memories).length;
                     memories[destination] = {
                         ...memories[destination], // Preserve existing data for this destination
                         ...dataToSave,            // Update with new data
                         updatedAt: new Date().toISOString()
                     };
+                    const afterCount = Object.keys(memories).length;
                     
-                    console.log('💾 Saving memories:', Object.keys(memories).length, 'destinations total');
+                    console.log('💾 Merged memories for saving:');
+                    console.log('   Before merge:', beforeCount, 'destinations');
+                    console.log('   After merge:', afterCount, 'destinations');
                     console.log('   Updated destination:', destination);
-                    console.log('   Preserved destinations:', Object.keys(memories).filter(k => k !== destination));
+                    console.log('   All destinations being saved:', Object.keys(memories));
+                    
+                    // Log each memory being saved
+                    Object.keys(memories).forEach(key => {
+                        const mem = memories[key];
+                        const hasImage = !!(mem.image && mem.image.length > 0);
+                        console.log(`   📍 Will save ${key}:`, {
+                            hasImage: hasImage,
+                            imageSize: hasImage ? Math.round(mem.image.length / 1024) + 'KB' : 'none',
+                            hasDate: !!mem.date,
+                            hasCaption: !!mem.caption
+                        });
+                    });
 
                     // Save to localStorage WITHOUT images (images are too large)
                     // Only save metadata (date, caption) to localStorage
