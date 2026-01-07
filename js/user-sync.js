@@ -186,17 +186,25 @@ class UserSync {
                     }
 
                     // Sync favorites - CRITICAL: Always sync favorites
-                    if (result.data.favorites && Array.isArray(result.data.favorites)) {
+                    // Server always returns favorites (even if empty array)
+                    const serverFavorites = result.data.favorites || [];
                         const currentFavorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
-                        const currentFavoritesStr = JSON.stringify(currentFavorites.sort());
-                        const serverFavoritesStr = JSON.stringify(result.data.favorites.sort());
                         
-                        if (serverFavoritesStr !== currentFavoritesStr) {
-                            console.log('❤️ Syncing favorites from server:');
-                            console.log('   Current:', currentFavorites.length, 'items');
-                            console.log('   Server:', result.data.favorites.length, 'items');
-                            console.log('   Server favorites:', result.data.favorites);
-                            localStorage.setItem('sandroSandriFavorites', JSON.stringify(result.data.favorites));
+                        // Normalize: ensure both are arrays and sort for comparison
+                        const currentNormalized = Array.isArray(currentFavorites) ? [...currentFavorites].sort() : [];
+                        const serverNormalized = Array.isArray(serverFavorites) ? [...serverFavorites].sort() : [];
+                        
+                        const currentStr = JSON.stringify(currentNormalized);
+                        const serverStr = JSON.stringify(serverNormalized);
+                        
+                        console.log('❤️ Checking favorites sync:');
+                        console.log('   Current:', currentNormalized.length, 'items:', currentNormalized);
+                        console.log('   Server:', serverNormalized.length, 'items:', serverNormalized);
+                        console.log('   Match:', currentStr === serverStr);
+                        
+                        if (currentStr !== serverStr) {
+                            console.log('❤️ Syncing favorites from server (updating local)...');
+                            localStorage.setItem('sandroSandriFavorites', JSON.stringify(serverNormalized));
                             dataUpdated = true;
                             
                             // Update UI if favorites page is open
@@ -205,8 +213,8 @@ class UserSync {
                             }
                             // Update favorite buttons on product pages - update all favorite buttons
                             document.querySelectorAll('.favorite-btn').forEach(btn => {
-                                const productId = parseInt(btn.closest('[data-product-id]')?.dataset.productId || btn.dataset.productId);
-                                if (productId && result.data.favorites.includes(productId)) {
+                                const productId = parseInt(btn.closest('[data-product-id]')?.dataset.productId || btn.dataset.productId || btn.closest('article')?.dataset.productId);
+                                if (productId && serverNormalized.includes(productId)) {
                                     btn.classList.add('active');
                                 } else {
                                     btn.classList.remove('active');
@@ -216,19 +224,10 @@ class UserSync {
                             if (window.loadProfileData) {
                                 window.loadProfileData();
                             }
-                            window.dispatchEvent(new CustomEvent('favoritesSynced', { detail: result.data.favorites }));
+                            window.dispatchEvent(new CustomEvent('favoritesSynced', { detail: serverNormalized }));
                         } else {
                             console.log('❤️ Favorites already in sync');
                         }
-                    } else if (result.data.favorites === null || result.data.favorites === undefined) {
-                        // Server returned no favorites, but we might have some locally
-                        const currentFavorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
-                        if (currentFavorites.length > 0) {
-                            console.log('⚠️ Server has no favorites, but local has', currentFavorites.length, '- will sync local to server');
-                            // Trigger sync to push local favorites to server
-                            setTimeout(() => this.syncAllData(), 1000);
-                        }
-                    }
 
                     // Sync orders - CRITICAL: Always sync orders
                     if (result.data.orders && Array.isArray(result.data.orders)) {
@@ -431,6 +430,11 @@ class UserSync {
                 const result = await response.json();
                 if (result.success) {
                     console.log('✅ Force sync successful - data saved to server');
+                    console.log('   Favorites saved:', favorites.length, 'items');
+                    // Immediately reload to verify it was saved
+                    setTimeout(() => {
+                        this.loadAllData();
+                    }, 500);
                     return true;
                 } else {
                     console.error('❌ Force sync failed:', result);
@@ -442,7 +446,7 @@ class UserSync {
                 return false;
             }
         } catch (error) {
-            console.error('Error in force sync:', error);
+            console.error('❌ Error in force sync:', error);
             return false;
         } finally {
             this.syncInProgress = false;

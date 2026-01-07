@@ -72,12 +72,12 @@ module.exports = async (req, res) => {
                 return res.status(400).json({ error: 'Email is required' });
             }
 
-            console.log('Saving user data for email:', email);
-            console.log('Cart items:', cart?.length || 0);
-            console.log('Profile:', profile ? 'present' : 'null');
-            console.log('Favorites:', favorites?.length || 0);
-            console.log('Orders:', orders?.length || 0);
-            console.log('Atlas memories:', Object.keys(atlas?.memories || {}).length);
+            console.log('💾 Saving user data for email:', email);
+            console.log('   Cart items:', cart?.length || 0);
+            console.log('   Profile:', profile ? 'present' : 'null');
+            console.log('   Favorites:', favorites?.length || 0, 'items:', favorites || []);
+            console.log('   Orders:', orders?.length || 0);
+            console.log('   Atlas memories:', Object.keys(atlas?.memories || {}).length);
 
             await db.initDb();
 
@@ -94,14 +94,19 @@ module.exports = async (req, res) => {
                 updatedAt: null
             };
 
+            console.log('   Existing favorites:', existingUser.favorites?.length || 0, 'items:', existingUser.favorites || []);
+
             // Update user data (merge to preserve existing data if not provided)
+            // CRITICAL: Always update favorites if provided (don't merge, replace)
             userData[email] = {
                 cart: cart !== undefined ? cart : existingUser.cart,
                 profile: profile !== undefined ? profile : existingUser.profile,
-                favorites: favorites !== undefined ? favorites : existingUser.favorites,
+                favorites: favorites !== undefined ? (Array.isArray(favorites) ? favorites : []) : existingUser.favorites,
                 orders: orders !== undefined ? orders : existingUser.orders,
                 updatedAt: new Date().toISOString()
             };
+
+            console.log('   Saved favorites:', userData[email].favorites?.length || 0, 'items:', userData[email].favorites || []);
 
             // Update atlas data
             if (atlas) {
