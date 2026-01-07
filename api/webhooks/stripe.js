@@ -3,7 +3,7 @@
    ======================================== */
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const db = require('../../lib/db');
+const db = require('../../lib/storage');
 
 // Process webhook event with idempotency
 async function processWebhookEvent(event) {

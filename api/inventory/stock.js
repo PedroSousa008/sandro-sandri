@@ -33,7 +33,7 @@ async function getInventoryStatus() {
     return status;
 }
 
-const db = require('../../lib/db');
+const db = require('../../lib/storage');
 
 module.exports = async (req, res) => {
     if (req.method !== 'GET') {
