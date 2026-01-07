@@ -1885,13 +1885,13 @@
 
 .profile-display {
     text-align: center;
-    padding: var(--space-xl) var(--space-md);
+    padding: var(--space-sm) var(--space-md);
 }
 
 .profile-avatar {
-    width: 120px;
-    height: 120px;
-    margin: 0 auto var(--space-md);
+    width: 60px;
+    height: 60px;
+    margin: 0 auto var(--space-xs);
     border-radius: 50%;
     background: var(--color-gray-light);
     display: flex;
@@ -1910,8 +1910,8 @@
 }
 
 .avatar-placeholder svg {
-    width: 60px;
-    height: 60px;
+    width: 30px;
+    height: 30px;
 }
 
 #avatar-image {
@@ -2453,10 +2453,10 @@
 
 .profile-header-card {
     display: flex;
-    gap: var(--space-lg);
-    padding: var(--space-xl);
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
     background: var(--color-cream);
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-md);
     align-items: center;
 }
 
@@ -2502,16 +2502,19 @@
 }
 
 .profile-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-direction: row;
     gap: var(--space-sm);
+    justify-content: space-between;
 }
 
 .stat-card {
+    flex: 1;
     padding: var(--space-sm) var(--space-xs);
     background: var(--color-white);
     border: 1px solid var(--color-gray);
     text-align: center;
+    min-width: 0;
 }
 
 .stat-number {
