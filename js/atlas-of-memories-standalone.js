@@ -208,18 +208,21 @@ class AtlasOfMemoriesStandalone {
             
             if (response.ok) {
                 const result = await response.json();
-                console.log('📦 API load result - success:', result.success, 'memories count:', Object.keys(result.data?.memories || {}).length);
+                console.log('📦 API load result - success:', result.success);
                 
                 if (result.success && result.data) {
                     const apiMemories = result.data.memories || {};
                     const apiChapters = result.data.chapters || {};
                     
-                    console.log('📸 Memory destinations:', Object.keys(apiMemories));
+                    console.log('📸 Memory destinations from server:', Object.keys(apiMemories));
                     // Log which destinations have images
                     Object.keys(apiMemories).forEach(key => {
-                        if (apiMemories[key].image) {
-                            console.log('  ✅', key, 'has image');
-                        }
+                        const memory = apiMemories[key];
+                        console.log(`  📍 ${key}:`, {
+                            hasImage: !!memory.image,
+                            hasDate: !!memory.date,
+                            hasCaption: !!memory.caption
+                        });
                     });
                     
                     // ALWAYS use server data - it's the source of truth
@@ -271,6 +274,7 @@ class AtlasOfMemoriesStandalone {
 
     renderAndPopulate(memories) {
         console.log('🎨 renderAndPopulate called with', Object.keys(memories).length, 'memories');
+        console.log('📋 Memory keys:', Object.keys(memories));
         
         // Render all launched chapters
         this.renderChapters();
@@ -282,39 +286,54 @@ class AtlasOfMemoriesStandalone {
                 chapter.destinations.forEach(destination => {
                     const memory = memories[destination] || {};
                     
-                    console.log('  📍 Processing destination:', destination, 'has image:', !!memory.image);
+                    console.log(`  📍 Processing destination: ${destination}`);
+                    console.log(`     Memory data:`, {
+                        hasImage: !!memory.image,
+                        imageLength: memory.image ? memory.image.length : 0,
+                        date: memory.date || 'none',
+                        caption: memory.caption || 'none'
+                    });
                     
                     // Load image - CRITICAL: Always check and set image
-                    if (memory.image) {
-                        console.log('    ✅ Setting image for', destination);
+                    if (memory.image && memory.image.length > 0) {
+                        console.log(`    ✅ Setting image for ${destination} (${memory.image.substring(0, 50)}...)`);
                         this.setDestinationImage(destination, memory.image);
                     } else {
-                        console.log('    ❌ No image for', destination);
+                        console.log(`    ❌ No image for ${destination}`);
                         // Clear image if it was removed
                         const card = document.querySelector(`[data-destination="${destination}"]`);
                         if (card) {
                             const placeholder = card.querySelector('.destination-image-placeholder');
                             const preview = card.querySelector('.destination-image-preview');
                             const removeBtn = card.querySelector('.destination-image-remove');
-                            if (placeholder) placeholder.style.display = 'block';
-                            if (preview) preview.style.display = 'none';
+                            if (placeholder) placeholder.style.display = 'flex';
+                            if (preview) {
+                                preview.src = '';
+                                preview.style.display = 'none';
+                            }
                             if (removeBtn) removeBtn.style.display = 'none';
                         }
                     }
 
                     // Load date
-                    if (memory.date) {
-                        const dateInput = document.getElementById(`${destination}-date`);
-                        if (dateInput) {
+                    const dateInput = document.getElementById(`${destination}-date`);
+                    if (dateInput) {
+                        if (memory.date) {
                             dateInput.value = memory.date;
+                            console.log(`    ✅ Set date for ${destination}: ${memory.date}`);
+                        } else {
+                            dateInput.value = '';
                         }
                     }
 
                     // Load caption
-                    if (memory.caption) {
-                        const captionInput = document.getElementById(`${destination}-caption`);
-                        if (captionInput) {
+                    const captionInput = document.getElementById(`${destination}-caption`);
+                    if (captionInput) {
+                        if (memory.caption) {
                             captionInput.value = memory.caption;
+                            console.log(`    ✅ Set caption for ${destination}: ${memory.caption}`);
+                        } else {
+                            captionInput.value = '';
                         }
                     }
                 });
@@ -741,11 +760,16 @@ class AtlasOfMemoriesStandalone {
                 try {
                     // Get all current data for this destination
                     const card = document.querySelector(`[data-destination="${destination}"]`);
-                    if (!card) return;
+                    if (!card) {
+                        console.error('Card not found for destination:', destination);
+                        button.disabled = false;
+                        button.textContent = 'Save';
+                        return;
+                    }
 
                     // Get image (if uploaded)
                     const imagePreview = card.querySelector('.destination-image-preview');
-                    const imageDataUrl = imagePreview && imagePreview.style.display !== 'none' 
+                    const imageDataUrl = imagePreview && imagePreview.style.display !== 'none' && imagePreview.src
                         ? imagePreview.src 
                         : null;
 
@@ -757,39 +781,50 @@ class AtlasOfMemoriesStandalone {
                     const captionInput = document.getElementById(`${destination}-caption`);
                     const captionValue = captionInput ? captionInput.value.trim() : null;
 
-                    // Prepare data to save
-                    const dataToSave = {};
-                    if (imageDataUrl) {
-                        dataToSave.image = imageDataUrl;
-                    }
-                    if (dateValue) {
-                        dataToSave.date = dateValue;
-                    }
-                    if (captionValue) {
-                        dataToSave.caption = captionValue;
-                    }
+                    // Prepare data to save - include all fields
+                    const dataToSave = {
+                        image: imageDataUrl || null,
+                        date: dateValue || null,
+                        caption: captionValue || null
+                    };
 
-                    console.log('💾 Saving destination:', destination, 'Data:', Object.keys(dataToSave));
+                    console.log('💾 Saving destination:', destination);
+                    console.log('   Image:', imageDataUrl ? 'Yes' : 'No');
+                    console.log('   Date:', dateValue || 'None');
+                    console.log('   Caption:', captionValue || 'None');
 
-                    // Save to memory
-                    await this.saveMemory(destination, dataToSave);
+                    // Save to localStorage first
+                    const saved = localStorage.getItem(this.storageKey);
+                    const memories = saved ? JSON.parse(saved) : {};
+                    memories[destination] = {
+                        ...memories[destination],
+                        ...dataToSave,
+                        updatedAt: new Date().toISOString()
+                    };
+                    localStorage.setItem(this.storageKey, JSON.stringify(memories));
 
-                    // Force immediate sync to server
-                    if (window.userSync && window.userSync.userEmail) {
-                        await window.userSync.forceSync();
+                    // Save chapters too
+                    localStorage.setItem(this.chaptersKey, JSON.stringify(this.chapters));
+
+                    console.log('✅ Saved to localStorage');
+
+                    // Now sync to server using direct API call (more reliable)
+                    const syncSuccess = await this.saveToServerDirectly(memories, this.chapters);
+                    
+                    if (syncSuccess) {
+                        console.log('✅ Saved to server successfully');
+                        this.showNotification('Saved successfully');
                     } else {
-                        await this.forceSync();
+                        console.error('❌ Failed to save to server');
+                        this.showNotification('Saved locally, but sync failed. Please try again.');
                     }
-
-                    // Show success notification
-                    this.showNotification('Saved successfully');
 
                     // Re-enable button
                     button.disabled = false;
                     button.textContent = 'Save';
 
                 } catch (error) {
-                    console.error('Error saving destination:', error);
+                    console.error('❌ Error saving destination:', error);
                     this.showNotification('Error saving. Please try again.');
                     
                     // Re-enable button
@@ -798,6 +833,46 @@ class AtlasOfMemoriesStandalone {
                 }
             });
         });
+    }
+
+    async saveToServerDirectly(memories, chapters) {
+        if (!this.userEmail) {
+            console.error('No user email for saving');
+            return false;
+        }
+
+        try {
+            console.log('🔄 Syncing to server directly...');
+            const response = await fetch('/api/atlas/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: this.userEmail,
+                    memories: memories,
+                    chapters: chapters
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ Server save successful');
+                    return true;
+                } else {
+                    console.error('❌ Server returned error:', result);
+                    return false;
+                }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Server save failed:', response.status, errorText);
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error syncing to server:', error);
+            return false;
+        }
     }
 
     showNotification(message) {
