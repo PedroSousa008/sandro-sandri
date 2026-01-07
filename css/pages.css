@@ -2068,11 +2068,11 @@
 }
 
 .profile-tab-content {
-    display: none !important;
+    display: none;
 }
 
 .profile-tab-content.active {
-    display: block !important;
+    display: block;
 }
 
 /* Profile Overview */
