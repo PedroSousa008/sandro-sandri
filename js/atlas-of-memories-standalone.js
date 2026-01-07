@@ -1036,8 +1036,22 @@ class AtlasOfMemoriesStandalone {
             const payloadSizeKB = Math.round(payloadSize / 1024);
             
             console.log('🔄 Syncing to server directly...');
+            console.log('   Email:', this.userEmail);
             console.log('   Memories to save:', Object.keys(memories).length);
+            console.log('   Memory keys:', Object.keys(memories));
             console.log('   Total payload size:', payloadSizeKB, 'KB');
+            
+            // Log each memory being saved
+            Object.keys(memories).forEach(key => {
+                const mem = memories[key];
+                const hasImage = !!(mem.image && mem.image.length > 0);
+                console.log(`   📍 ${key}:`, {
+                    hasImage: hasImage,
+                    imageSize: hasImage ? Math.round(mem.image.length / 1024) + 'KB' : 'none',
+                    hasDate: !!mem.date,
+                    hasCaption: !!mem.caption
+                });
+            });
             
             // Check payload size before sending (Vercel limit is ~4.5MB, be conservative)
             if (payloadSizeKB > 2500) {
@@ -1046,6 +1060,7 @@ class AtlasOfMemoriesStandalone {
                 return false;
             }
             
+            console.log('📤 Sending POST request to /api/atlas/save...');
             const response = await fetch('/api/atlas/save', {
                 method: 'POST',
                 headers: {
@@ -1058,9 +1073,43 @@ class AtlasOfMemoriesStandalone {
 
             if (response.ok) {
                 const result = await response.json();
-                console.log('📦 Server response:', result);
+                console.log('📦 Server response body:', result);
+                
                 if (result.success) {
                     console.log('✅ Server save successful - data persisted!');
+                    
+                    // Immediately verify by loading back
+                    console.log('🔍 Verifying save by loading data back in 2 seconds...');
+                    setTimeout(async () => {
+                        console.log('🔍 Loading data to verify save...');
+                        const verifyResponse = await fetch(`/api/atlas/load?email=${encodeURIComponent(this.userEmail)}`);
+                        if (verifyResponse.ok) {
+                            const verifyResult = await verifyResponse.json();
+                            const loadedMemories = verifyResult.data?.memories || {};
+                            console.log('🔍 Verification load result:');
+                            console.log('   Loaded memories count:', Object.keys(loadedMemories).length);
+                            console.log('   Loaded memory keys:', Object.keys(loadedMemories));
+                            
+                            if (Object.keys(loadedMemories).length === 0) {
+                                console.error('❌ VERIFICATION FAILED: No memories loaded back from server!');
+                                console.error('   This means the save did not persist. Check Vercel function logs.');
+                                console.error('   Most likely: KV/Redis is not configured or not working.');
+                            } else {
+                                console.log('✅ Verification successful: Memories were saved and can be loaded back!');
+                                Object.keys(loadedMemories).forEach(key => {
+                                    const mem = loadedMemories[key];
+                                    const hasImage = !!(mem.image && mem.image.length > 0);
+                                    console.log(`   📍 ${key}:`, {
+                                        hasImage: hasImage,
+                                        imageSize: hasImage ? Math.round(mem.image.length / 1024) + 'KB' : 'none'
+                                    });
+                                });
+                            }
+                        } else {
+                            console.error('❌ Verification load failed:', verifyResponse.status);
+                        }
+                    }, 2000);
+                    
                     return true;
                 } else {
                     console.error('❌ Server returned error:', result);
@@ -1068,10 +1117,13 @@ class AtlasOfMemoriesStandalone {
                 }
             } else {
                 const errorText = await response.text();
-                console.error('❌ Server save failed:', response.status, errorText);
+                console.error('❌ Server save failed:', response.status);
+                console.error('   Error response:', errorText);
                 
                 if (response.status === 413) {
                     console.error('❌ Payload too large! Image needs to be smaller.');
+                } else if (response.status === 500) {
+                    console.error('❌ Server error! Check Vercel function logs for details.');
                 }
                 
                 return false;
