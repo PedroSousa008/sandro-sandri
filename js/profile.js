@@ -39,20 +39,23 @@ function initTabs() {
         return;
     }
 
+    // Remove all existing event listeners by replacing with new elements
     tabs.forEach(tab => {
-        // Remove any existing listeners by cloning
         const newTab = tab.cloneNode(true);
         tab.parentNode.replaceChild(newTab, tab);
-        
-        newTab.addEventListener('click', function(e) {
+    });
+
+    // Get fresh references after cloning
+    const freshTabs = document.querySelectorAll('.profile-tab');
+    
+    freshTabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            // Don't prevent default or stop propagation - let it work naturally
             const targetTab = this.dataset.tab;
             
             if (!targetTab) {
-                console.warn('Tab has no data-tab attribute');
                 return;
             }
-
-            console.log('Tab clicked:', targetTab);
 
             // Remove active from all tabs and contents
             document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
@@ -63,9 +66,6 @@ function initTabs() {
             const targetContent = document.getElementById(`${targetTab}-tab`);
             if (targetContent) {
                 targetContent.classList.add('active');
-                console.log('Tab content activated:', targetTab);
-            } else {
-                console.error('Tab content not found:', `${targetTab}-tab`);
             }
             
             // Refresh data when switching tabs
@@ -79,7 +79,7 @@ function initTabs() {
             } else if (targetTab === 'favorites') {
                 loadFavorites();
             }
-        }, true); // Use capture phase
+        });
     });
 }
 

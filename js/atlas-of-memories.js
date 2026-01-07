@@ -262,8 +262,13 @@ class AtlasOfMemories {
                 if (e.target.closest('.destination-image-remove') || e.target.classList.contains('destination-image-preview')) {
                     return;
                 }
+                // Don't trigger if clicking on a profile tab
+                if (e.target.closest('.profile-tab')) {
+                    return;
+                }
                 const input = uploadArea.querySelector('.destination-image-input');
                 if (input) {
+                    e.stopPropagation(); // Prevent event from bubbling to parent elements
                     input.click();
                 }
             });
