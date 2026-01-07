@@ -34,52 +34,32 @@ function initTabs() {
     const tabs = document.querySelectorAll('.profile-tab');
     
     if (tabs.length === 0) {
-        console.warn('No profile tabs found');
         return;
     }
 
-    // Remove any existing listeners by using a single delegated listener
-    const tabsContainer = document.querySelector('.profile-tabs');
-    if (tabsContainer) {
-        // Remove old listeners by cloning
-        const newContainer = tabsContainer.cloneNode(true);
-        tabsContainer.parentNode.replaceChild(newContainer, tabsContainer);
-        
-        // Add single delegated listener
-        newContainer.addEventListener('click', function(e) {
-            const tab = e.target.closest('.profile-tab');
-            if (!tab) return;
-            
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
-            const targetTab = tab.dataset.tab;
-            
-            if (!targetTab) {
-                return;
-            }
+            const targetTab = this.dataset.tab;
+            if (!targetTab) return;
 
-            // Remove active from all tabs
+            // Remove active from all tabs and contents
             document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-            
-            // Hide all tab contents
-            document.querySelectorAll('.profile-tab-content').forEach(tc => {
-                tc.classList.remove('active');
-            });
+            document.querySelectorAll('.profile-tab-content').forEach(tc => tc.classList.remove('active'));
 
             // Add active to clicked tab
-            tab.classList.add('active');
+            this.classList.add('active');
             
             // Show corresponding content
             const targetContent = document.getElementById(`${targetTab}-tab`);
-            
             if (targetContent) {
                 targetContent.classList.add('active');
             }
             
             // Refresh data when switching tabs
             if (targetTab === 'overview') {
-                // Initialize Atlas of Memories if not already initialized
                 if (window.AtlasOfMemories && !window.atlasInitialized) {
                     window.atlasInitialized = true;
                 }
@@ -89,50 +69,7 @@ function initTabs() {
                 loadFavorites();
             }
         });
-    } else {
-        // Fallback: attach to individual tabs
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const targetTab = this.dataset.tab;
-                
-                if (!targetTab) {
-                    return;
-                }
-
-                // Remove active from all tabs
-                document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-                
-                // Hide all tab contents
-                document.querySelectorAll('.profile-tab-content').forEach(tc => {
-                    tc.classList.remove('active');
-                });
-
-                // Add active to clicked tab
-                this.classList.add('active');
-                
-                // Show corresponding content
-                const targetContent = document.getElementById(`${targetTab}-tab`);
-                
-                if (targetContent) {
-                    targetContent.classList.add('active');
-                }
-                
-                // Refresh data when switching tabs
-                if (targetTab === 'overview') {
-                    if (window.AtlasOfMemories && !window.atlasInitialized) {
-                        window.atlasInitialized = true;
-                    }
-                } else if (targetTab === 'orders') {
-                    loadOrders();
-                } else if (targetTab === 'favorites') {
-                    loadFavorites();
-                }
-            });
-        });
-    }
+    });
 }
 
 // Load and display profile data
