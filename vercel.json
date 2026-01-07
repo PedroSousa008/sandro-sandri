@@ -18,6 +18,10 @@
     "api/**/*.js": {
       "runtime": "nodejs18.x",
       "includeFiles": "lib/**"
+    },
+    "api/webhooks/stripe.js": {
+      "runtime": "nodejs18.x",
+      "includeFiles": "lib/**"
     }
   }
 }

@@ -83,21 +83,21 @@ async function handleCheckoutCompleted(session) {
         throw new Error(`Insufficient stock: ${inventoryResult.error}`);
     }
     
-        // Save successful order
-        const order = await db.saveOrder({
-            id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            stripeSessionId: session.id,
-            status: 'PAID',
-            email: customerEmail,
-            name: customerName,
-            shippingCountry: shippingCountry,
-            cart: cart,
-            subtotal: subtotal,
-            shipping: shippingAmount / 100,
-            total: total,
-            currency: 'eur',
-            createdAt: new Date().toISOString()
-        });
+    // Save successful order
+    const order = await db.saveOrder({
+        id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        stripeSessionId: session.id,
+        status: 'PAID',
+        email: customerEmail,
+        name: customerName,
+        shippingCountry: shippingCountry,
+        cart: cart,
+        subtotal: subtotal,
+        shipping: shippingAmount / 100,
+        total: total,
+        currency: 'eur',
+        createdAt: new Date().toISOString()
+    });
     
     // TODO: Send order confirmation email
     console.log(`Order ${order.id} created successfully`);
@@ -194,14 +194,20 @@ module.exports = async (req, res) => {
     let event;
     let body;
     
-    // Get raw body (Vercel provides it as a buffer or string)
+    // Vercel serverless functions need raw body for webhook signature verification
+    // The body should be available as req.body, but we need to ensure it's a Buffer
     if (Buffer.isBuffer(req.body)) {
         body = req.body;
     } else if (typeof req.body === 'string') {
-        body = Buffer.from(req.body);
+        body = Buffer.from(req.body, 'utf8');
+    } else if (req.body) {
+        // If body is already parsed as JSON, we need the raw body
+        // For Vercel, we should use req.body directly if it's a string
+        // Otherwise, we need to access the raw body differently
+        body = Buffer.from(JSON.stringify(req.body), 'utf8');
     } else {
-        // If body is already parsed, we need to stringify it back
-        body = Buffer.from(JSON.stringify(req.body));
+        // Fallback: try to get raw body from request
+        body = req.body || Buffer.alloc(0);
     }
     
     try {
