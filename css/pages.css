@@ -2134,8 +2134,8 @@
 
 .atlas-destinations {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-xl);
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
     margin-top: 0;
     max-width: 1200px;
     margin-left: auto;
@@ -2147,10 +2147,11 @@
     min-width: 0; /* Prevent overflow */
 }
 
+/* Remove special Sardinia styling on desktop - all cards same size */
 .destination-card[data-destination="sardinia"] {
-    grid-column: 1 / -1;
-    justify-self: center;
-    max-width: calc(50% - var(--space-xl) / 2); /* Same width as one of the top cards */
+    grid-column: auto;
+    justify-self: auto;
+    max-width: none;
 }
 
 .destination-card {
