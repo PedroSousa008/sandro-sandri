@@ -132,15 +132,19 @@ module.exports = async (req, res) => {
         let emailError = null;
         try {
             console.log('📧 Attempting to send verification email...');
-            await emailService.sendVerificationEmail(email, rawToken);
+            console.log('   Email:', email);
+            console.log('   Token length:', rawToken.length);
+            const emailResult = await emailService.sendVerificationEmail(email, rawToken);
             emailSent = true;
             console.log('✅ Verification email sent successfully to:', email);
+            console.log('   Email result:', JSON.stringify(emailResult, null, 2));
         } catch (err) {
             emailError = err;
             console.error('❌ Error sending verification email:');
             console.error('   Error type:', err.constructor.name);
             console.error('   Error message:', err.message);
             console.error('   Error stack:', err.stack);
+            console.error('   Full error object:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
             // Still return success but log the error
             // User can request resend if email doesn't arrive
             // This prevents signup from failing if email service has temporary issues
