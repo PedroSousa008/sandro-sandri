@@ -231,6 +231,11 @@ function initCheckoutForm() {
         submitBtn.textContent = 'Processing...';
         submitBtn.disabled = true;
 
+        // Track checkout start
+        if (window.ActivityTracker) {
+            window.ActivityTracker.trackCheckoutStart(cart);
+        }
+
         try {
             // Create Stripe checkout session
             const response = await fetch('/api/checkout/create-session', {

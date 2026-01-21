@@ -312,6 +312,8 @@
     </main>
 
     <script src="js/auth.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/activity-tracker.js"></script>
     <script src="js/admin.js"></script>
     <script>
         // Check authentication
@@ -865,7 +867,17 @@
                     <h3 style="margin-bottom: var(--space-sm);">Favorites</h3>
                     <div style="font-size: 0.875rem;">
                         ${customer.favorites.length > 0 
-                            ? customer.favorites.map(fav => `<span style="display: inline-block; padding: 4px 8px; background: var(--color-gray-light); margin: 4px; border-radius: 2px;">Product ID: ${fav}</span>`).join('')
+                            ? customer.favorites.map(fav => {
+                                // Get product name from ProductsAPI if available
+                                let productName = `Product ID: ${fav}`;
+                                if (window.ProductsAPI && window.ProductsAPI.getById) {
+                                    const product = window.ProductsAPI.getById(fav);
+                                    if (product && product.name) {
+                                        productName = product.name;
+                                    }
+                                }
+                                return `<span style="display: inline-block; padding: 4px 8px; background: var(--color-gray-light); margin: 4px; border-radius: 2px;">${productName}</span>`;
+                            }).join('')
                             : 'No favorites'
                         }
                     </div>

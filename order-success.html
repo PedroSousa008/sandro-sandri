@@ -58,6 +58,7 @@
 
     <script src="js/products.js"></script>
     <script src="js/inventory.js"></script>
+    <script src="js/activity-tracker.js"></script>
     <script>
         // Get session ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -66,6 +67,21 @@
         if (sessionId) {
             // Optionally fetch order details from backend
             console.log('Order session ID:', sessionId);
+            
+            // Track order completion
+            if (window.ActivityTracker) {
+                // Try to get order details from localStorage or fetch from server
+                const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
+                const latestOrder = orders.length > 0 ? orders[orders.length - 1] : null;
+                
+                if (latestOrder) {
+                    window.ActivityTracker.trackOrderComplete(
+                        latestOrder.id || sessionId,
+                        latestOrder.orderNumber || latestOrder.id || sessionId,
+                        latestOrder.total || 0
+                    );
+                }
+            }
         }
         
         // Sync inventory from server after successful order

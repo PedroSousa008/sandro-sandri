@@ -115,6 +115,7 @@ module.exports = async (req, res) => {
                 cart: user.cart || [],
                 favorites: user.favorites || [],
                 orders: ordersWithPaymentMethods,
+                activities: user.activities || [], // Include activity log
                 totalOrders: userOrders.length,
                 totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0),
                 lastOrderDate: userOrders.length > 0 

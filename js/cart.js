@@ -133,10 +133,16 @@ class ShoppingCart {
 
         if (existingItem) {
             // Update quantity of existing item
+            const oldQuantity = existingItem.quantity;
             existingItem.quantity += quantity;
             this.saveCart();
             this.updateCartUI();
             this.showNotification(`${product.name} quantity updated`);
+            
+            // Track activity
+            if (window.ActivityTracker) {
+                window.ActivityTracker.trackUpdateCartQuantity(productId, product.name, oldQuantity, existingItem.quantity);
+            }
         } else {
             // Add new item with exact quantity specified
             this.items.push({
@@ -152,6 +158,11 @@ class ShoppingCart {
             this.saveCart();
             this.updateCartUI();
             this.showNotification(`${product.name} added to cart`);
+            
+            // Track activity
+            if (window.ActivityTracker) {
+                window.ActivityTracker.trackAddToCart(productId, product.name, normalizedSize, normalizedColor, quantity);
+            }
         }
         
         // Decrease inventory when successfully added to cart
@@ -169,6 +180,11 @@ class ShoppingCart {
     removeItem(index) {
         if (index >= 0 && index < this.items.length) {
             const removedItem = this.items.splice(index, 1)[0];
+            
+            // Track activity
+            if (window.ActivityTracker) {
+                window.ActivityTracker.trackRemoveFromCart(removedItem.productId, removedItem.name);
+            }
             
             // Increase inventory when item is removed from cart
             if (window.InventoryAPI && removedItem.productId && removedItem.size) {
@@ -215,6 +231,11 @@ class ShoppingCart {
             }
             
             this.items[index].quantity = quantity;
+            
+            // Track activity
+            if (window.ActivityTracker) {
+                window.ActivityTracker.trackUpdateCartQuantity(item.productId, item.name, oldQuantity, quantity);
+            }
             
             // Update inventory if quantity changed
             if (window.InventoryAPI && item.productId && item.size) {

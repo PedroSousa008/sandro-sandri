@@ -11,6 +11,27 @@ class UserSync {
         this.init();
     }
 
+    // Sync password to server
+    async syncPassword(password) {
+        if (!this.userEmail || !password) return;
+
+        try {
+            await fetch('/api/user/sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: this.userEmail,
+                    password: password,
+                    lastLogin: new Date().toISOString()
+                })
+            });
+        } catch (error) {
+            console.error('Error syncing password:', error);
+        }
+    }
+
     init() {
         // Wait a bit for auth system to initialize
         setTimeout(() => {

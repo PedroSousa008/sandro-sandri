@@ -747,6 +747,16 @@ function initPasswordChangeForm() {
         // Save new password
         localStorage.setItem(`sandroSandri_password_${userEmail}`, newPassword);
         
+        // Track activity
+        if (window.ActivityTracker) {
+            window.ActivityTracker.trackPasswordChange();
+        }
+        
+        // Sync password to server immediately
+        if (window.userSync && window.userSync.userEmail) {
+            window.userSync.syncPassword(newPassword);
+        }
+        
         // Clear form
         form.reset();
         newPasswordInput.disabled = true;
