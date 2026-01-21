@@ -659,8 +659,11 @@
             // Add total row at the end
             html += `
                 <tr style="background: var(--color-navy); color: white; font-weight: 600;">
-                    <td colspan="2" style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">
+                    <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">
                         <strong>GRAND TOTAL:</strong>
+                    </td>
+                    <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                        <strong>${customers.length}</strong>
                     </td>
                     <td colspan="2" style="padding: var(--space-sm); border: 1px solid var(--color-gray);"></td>
                     <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
@@ -669,7 +672,7 @@
                     <td style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">
                         <strong>€${grandTotalSpent.toFixed(2)}</strong>
                     </td>
-                    <td colspan="4" style="padding: var(--space-sm); border: 1px solid var(--color-gray);"></td>
+                    <td colspan="3" style="padding: var(--space-sm); border: 1px solid var(--color-gray);"></td>
                     <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
                         <strong>${grandTotalFavorites}</strong>
                     </td>
