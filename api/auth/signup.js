@@ -91,9 +91,6 @@ module.exports = async (req, res) => {
 
         // Get verification tokens
         const tokens = await db.getEmailVerificationTokens();
-
-        // Normalize email for consistency
-        const normalizedEmail = email.toLowerCase().trim();
         
         // If user exists but not verified, invalidate old tokens
         if (existingUser && existingUser.email_verified === false) {

@@ -211,7 +211,15 @@
                     body: JSON.stringify({ email, password })
                 });
                 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (jsonError) {
+                    console.error('Failed to parse JSON response:', jsonError);
+                    errorEl.textContent = 'Server error. Please try again.';
+                    errorEl.classList.add('show');
+                    return;
+                }
                 
                 if (response.ok) {
                     // Success
@@ -227,7 +235,8 @@
                     errorEl.classList.add('show');
                 }
             } catch (error) {
-                errorEl.textContent = 'Network error. Please try again.';
+                console.error('Signup error:', error);
+                errorEl.innerHTML = `Network error: ${error.message || 'Please check your connection and try again.'}`;
                 errorEl.classList.add('show');
             } finally {
                 button.disabled = false;
