@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { email, password } = req.body;
+        let { email, password } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({ 
@@ -38,11 +38,15 @@ module.exports = async (req, res) => {
             });
         }
 
+        // Normalize email (lowercase, trim) to match signup
+        email = email.toLowerCase().trim();
+
         await db.initDb();
 
         // Get user data
         const userData = await db.getUserData();
-        const user = userData[email];
+        // Check both normalized and original email (for migration)
+        const user = userData[email] || userData[email.toLowerCase()] || userData[email.toUpperCase()];
 
         if (!user) {
             return res.status(401).json({ 
@@ -69,7 +73,15 @@ module.exports = async (req, res) => {
             if (storedPassword && storedPassword === password) {
                 // Migrate to hashed password
                 const newHash = await bcrypt.hash(password, 10);
-                userData[email] = {
+                // Find the actual key in userData (might be different case)
+                let userKey = email;
+                for (const key in userData) {
+                    if (key.toLowerCase() === email.toLowerCase()) {
+                        userKey = key;
+                        break;
+                    }
+                }
+                userData[userKey] = {
                     ...user,
                     passwordHash: newHash,
                     password: undefined // Remove plaintext
@@ -91,7 +103,16 @@ module.exports = async (req, res) => {
         }
 
         // Update last login
-        userData[email] = {
+        // Find the actual key in userData (might be different case)
+        let userKey = email;
+        for (const key in userData) {
+            if (key.toLowerCase() === email.toLowerCase()) {
+                userKey = key;
+                break;
+            }
+        }
+        
+        userData[userKey] = {
             ...user,
             lastLogin: new Date().toISOString()
         };
@@ -100,7 +121,7 @@ module.exports = async (req, res) => {
         res.status(200).json({
             success: true,
             message: 'Login successful',
-            email: email
+            email: userKey || email // Return the actual email key used
         });
 
     } catch (error) {
