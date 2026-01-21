@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Allura&family=Arapey:ital@0;1&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <style>
+        .signup-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-lg);
+            background: var(--color-cream);
+        }
+        
+        .signup-container {
+            max-width: 400px;
+            width: 100%;
+            background: var(--color-white);
+            padding: var(--space-xl);
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .signup-title {
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            color: var(--color-navy);
+            margin-bottom: var(--space-md);
+            text-align: center;
+        }
+        
+        .signup-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+        
+        .form-label {
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            color: var(--color-text);
+            font-weight: 500;
+        }
+        
+        .form-input {
+            padding: var(--space-sm);
+            border: 1px solid var(--color-gray);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--color-text);
+            transition: border-color var(--transition-fast);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-navy);
+        }
+        
+        .signup-button {
+            padding: var(--space-sm) var(--space-md);
+            background: var(--color-navy);
+            color: var(--color-white);
+            border: none;
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+        
+        .signup-button:hover:not(:disabled) {
+            background: var(--color-navy-dark);
+        }
+        
+        .signup-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .signup-error {
+            color: #d32f2f;
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            margin-top: var(--space-xs);
+            display: none;
+        }
+        
+        .signup-error.show {
+            display: block;
+        }
+        
+        .signup-success {
+            color: #4caf50;
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            margin-top: var(--space-xs);
+            display: none;
+            padding: var(--space-sm);
+            background: #f1f8f4;
+            border-radius: 4px;
+        }
+        
+        .signup-success.show {
+            display: block;
+        }
+        
+        .back-link {
+            text-align: center;
+            margin-top: var(--space-md);
+        }
+        
+        .back-link a {
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            color: var(--color-text-light);
+            text-decoration: none;
+        }
+        
+        .back-link a:hover {
+            color: var(--color-navy);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: var(--space-sm);
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            color: var(--color-text-light);
+        }
+        
+        .login-link a {
+            color: var(--color-navy);
+            text-decoration: none;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-page">
+        <div class="signup-container">
+            <h1 class="signup-title">Sandro Sandri</h1>
+            <form class="signup-form" id="signup-form">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" required autocomplete="new-password" minlength="6">
+                    <small style="font-size: 0.75rem; color: var(--color-text-light); margin-top: 4px;">
+                        Must be at least 6 characters
+                    </small>
+                </div>
+                <div class="signup-error" id="signup-error"></div>
+                <div class="signup-success" id="signup-success"></div>
+                <button type="submit" class="signup-button" id="signup-button">Create Account</button>
+            </form>
+            <div class="login-link">
+                Already have an account? <a href="login.html">Login</a>
+            </div>
+            <div class="back-link">
+                <a href="index.html">← Back to Website</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('signup-error');
+            const successEl = document.getElementById('signup-success');
+            const button = document.getElementById('signup-button');
+            
+            // Clear previous messages
+            errorEl.classList.remove('show');
+            successEl.classList.remove('show');
+            errorEl.textContent = '';
+            successEl.textContent = '';
+            
+            // Disable button
+            button.disabled = true;
+            button.textContent = 'Creating Account...';
+            
+            try {
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Success
+                    successEl.textContent = 'Account created! Please check your email to verify your account before logging in.';
+                    successEl.classList.add('show');
+                    document.getElementById('signup-form').reset();
+                    
+                    // Scroll to success message
+                    successEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    // Error
+                    errorEl.textContent = data.error || 'Failed to create account';
+                    errorEl.classList.add('show');
+                }
+            } catch (error) {
+                errorEl.textContent = 'Network error. Please try again.';
+                errorEl.classList.add('show');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>
+

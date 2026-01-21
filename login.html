@@ -132,6 +132,9 @@
                 <div class="login-error" id="login-error"></div>
                 <button type="submit" class="login-button">Login</button>
             </form>
+            <div style="text-align: center; margin-top: var(--space-sm); font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text-light);">
+                Don't have an account? <a href="signup.html" style="color: var(--color-navy); text-decoration: none;">Sign up</a>
+            </div>
             <div class="back-link">
                 <a href="index.html">← Back to Website</a>
             </div>
@@ -142,14 +145,24 @@
     <script src="js/activity-tracker.js"></script>
     <script src="js/activity-monitor.js"></script>
     <script>
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorEl = document.getElementById('login-error');
+            const button = document.querySelector('.login-button');
             
-            const result = window.AuthSystem.login(email, password);
+            // Clear previous error
+            errorEl.classList.remove('show');
+            errorEl.textContent = '';
+            button.disabled = true;
+            button.textContent = 'Logging in...';
+            
+            const result = await window.AuthSystem.login(email, password);
+            
+            button.disabled = false;
+            button.textContent = 'Login';
             
             if (result.success) {
                 if (result.role === 'OWNER') {
@@ -160,8 +173,53 @@
                     window.location.href = 'index.html';
                 }
             } else {
-                errorEl.textContent = 'Invalid credentials';
-                errorEl.classList.add('show');
+                if (result.error === 'EMAIL_NOT_VERIFIED') {
+                    errorEl.innerHTML = `
+                        ${result.message || 'Please verify your email before logging in.'}<br>
+                        <a href="#" id="resend-verification-link" style="color: var(--color-navy); text-decoration: underline; margin-top: 8px; display: inline-block;">Resend verification email</a>
+                    `;
+                    errorEl.classList.add('show');
+                    
+                    // Handle resend verification
+                    document.getElementById('resend-verification-link').addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        const resendLink = e.target;
+                        resendLink.textContent = 'Sending...';
+                        resendLink.style.pointerEvents = 'none';
+                        
+                        try {
+                            const response = await fetch('/api/auth/resend-verification', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ email })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (response.ok) {
+                                resendLink.textContent = 'Verification email sent! Check your inbox.';
+                                resendLink.style.color = '#4caf50';
+                            } else {
+                                resendLink.textContent = data.error || 'Failed to send email';
+                                setTimeout(() => {
+                                    resendLink.textContent = 'Resend verification email';
+                                    resendLink.style.pointerEvents = 'auto';
+                                }, 3000);
+                            }
+                        } catch (error) {
+                            resendLink.textContent = 'Error. Please try again.';
+                            setTimeout(() => {
+                                resendLink.textContent = 'Resend verification email';
+                                resendLink.style.pointerEvents = 'auto';
+                            }, 3000);
+                        }
+                    });
+                } else {
+                    errorEl.textContent = result.error || result.message || 'Invalid credentials';
+                    errorEl.classList.add('show');
+                }
             }
         });
     </script>

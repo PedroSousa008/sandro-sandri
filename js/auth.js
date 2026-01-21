@@ -65,14 +65,14 @@ class AuthSystem {
     }
     
     // Login function
-    login(email, password) {
-        // Always save password to localStorage
-        if (password) {
-            localStorage.setItem(`sandroSandri_password_${email}`, password);
-        }
-
-        // Validate owner credentials
+    async login(email, password) {
+        // Validate owner credentials (owner doesn't need email verification)
         if (email === this.OWNER_EMAIL && password === this.OWNER_PASSWORD) {
+            // Always save password to localStorage
+            if (password) {
+                localStorage.setItem(`sandroSandri_password_${email}`, password);
+            }
+
             const user = {
                 email: email,
                 role: this.ROLES.OWNER,
@@ -103,8 +103,41 @@ class AuthSystem {
             }
             
             return { success: true, role: this.ROLES.OWNER };
-        } else {
-            // Regular user (no special privileges)
+        }
+
+        // Regular user - check with server for email verification
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Check if email is not verified
+                if (data.emailNotVerified) {
+                    return { 
+                        success: false, 
+                        error: 'EMAIL_NOT_VERIFIED',
+                        message: data.error,
+                        email: data.email
+                    };
+                }
+                return { 
+                    success: false, 
+                    error: data.error || 'Login failed' 
+                };
+            }
+
+            // Login successful - save to localStorage
+            if (password) {
+                localStorage.setItem(`sandroSandri_password_${email}`, password);
+            }
+
             const user = {
                 email: email,
                 role: this.ROLES.USER,
@@ -135,6 +168,12 @@ class AuthSystem {
             }
             
             return { success: true, role: this.ROLES.USER };
+        } catch (error) {
+            console.error('Login error:', error);
+            return { 
+                success: false, 
+                error: 'Network error. Please try again.' 
+            };
         }
     }
     

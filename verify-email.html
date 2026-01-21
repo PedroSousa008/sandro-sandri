@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email | Sandro Sandri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Allura&family=Arapey:ital@0;1&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <style>
+        .verify-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-lg);
+            background: var(--color-cream);
+        }
+        
+        .verify-container {
+            max-width: 500px;
+            width: 100%;
+            background: var(--color-white);
+            padding: var(--space-xl);
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .verify-title {
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            color: var(--color-navy);
+            margin-bottom: var(--space-md);
+        }
+        
+        .verify-message {
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--color-text);
+            line-height: 1.6;
+            margin-bottom: var(--space-lg);
+        }
+        
+        .verify-success {
+            color: #4caf50;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            margin-bottom: var(--space-lg);
+            padding: var(--space-md);
+            background: #f1f8f4;
+            border-radius: 4px;
+        }
+        
+        .verify-error {
+            color: #d32f2f;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            margin-bottom: var(--space-lg);
+            padding: var(--space-md);
+            background: #ffebee;
+            border-radius: 4px;
+        }
+        
+        .verify-loading {
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--color-text);
+            margin-bottom: var(--space-lg);
+        }
+        
+        .verify-button {
+            padding: var(--space-sm) var(--space-md);
+            background: var(--color-navy);
+            color: var(--color-white);
+            border: none;
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .verify-button:hover {
+            background: var(--color-navy-dark);
+        }
+        
+        .back-link {
+            margin-top: var(--space-md);
+        }
+        
+        .back-link a {
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            color: var(--color-text-light);
+            text-decoration: none;
+        }
+        
+        .back-link a:hover {
+            color: var(--color-navy);
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-page">
+        <div class="verify-container">
+            <h1 class="verify-title">Sandro Sandri</h1>
+            <div id="verify-content">
+                <div class="verify-loading">Verifying your email...</div>
+            </div>
+            <div class="back-link">
+                <a href="index.html">← Back to Website</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get token and email from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const email = urlParams.get('email');
+        
+        const contentEl = document.getElementById('verify-content');
+        
+        if (!token || !email) {
+            contentEl.innerHTML = `
+                <div class="verify-error">
+                    Invalid verification link. Please check your email and try again.
+                </div>
+            `;
+        } else {
+            // Verify email
+            (async () => {
+                try {
+                    const response = await fetch(`/api/auth/verify-email?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        if (data.alreadyVerified) {
+                            contentEl.innerHTML = `
+                                <div class="verify-success">
+                                    Your email is already verified. You can now login.
+                                </div>
+                                <a href="login.html" class="verify-button">Go to Login</a>
+                            `;
+                        } else {
+                            contentEl.innerHTML = `
+                                <div class="verify-success">
+                                    Email verified successfully! You can now login to your account.
+                                </div>
+                                <a href="login.html" class="verify-button">Go to Login</a>
+                            `;
+                        }
+                    } else {
+                        contentEl.innerHTML = `
+                            <div class="verify-error">
+                                ${data.error || 'Verification failed. The link may have expired or is invalid.'}
+                            </div>
+                            <a href="login.html" class="verify-button">Go to Login</a>
+                        `;
+                    }
+                } catch (error) {
+                    contentEl.innerHTML = `
+                        <div class="verify-error">
+                            Network error. Please try again later.
+                        </div>
+                        <a href="login.html" class="verify-button">Go to Login</a>
+                    `;
+                }
+            })();
+        }
+    </script>
+</body>
+</html>
+
