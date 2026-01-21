@@ -110,8 +110,8 @@
                 <div class="filter-bar">
                     <div class="filter-categories">
                         <button class="filter-btn active" data-chapter="chapter-1">Chapter I</button>
-                        <!-- Future chapters will be added here -->
-                        <!-- <button class="filter-btn" data-chapter="chapter-2">Chapter II</button> -->
+                        <!-- Chapter II will automatically appear on June 13, 2026 -->
+                        <button class="filter-btn" data-chapter="chapter-2" style="display: none;">Chapter II</button>
                     </div>
                     <div class="filter-sort">
                         <select class="sort-select" id="sort-select">
@@ -213,6 +213,7 @@
     <div class="cart-overlay"></div>
 
     <script src="js/products.js"></script>
+    <script src="js/feature-flags.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/user-sync.js"></script>
     <script src="js/cart.js"></script>

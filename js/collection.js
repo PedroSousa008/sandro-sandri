@@ -24,6 +24,9 @@ function initCollection() {
         currentCollection = collectionParam;
     }
 
+    // Update chapter filter buttons based on launch dates
+    updateChapterFilters();
+
     // Initial render
     renderProducts();
 
@@ -47,8 +50,36 @@ function initCollection() {
         renderProducts();
     });
 
+    function updateChapterFilters() {
+        // Hide/show chapter filter buttons based on launch dates
+        filterButtons.forEach(btn => {
+            const chapterId = btn.dataset.chapter;
+            if (chapterId && window.FeatureFlags) {
+                const shouldShow = window.FeatureFlags.shouldShowChapter(chapterId);
+                if (!shouldShow) {
+                    btn.style.display = 'none';
+                } else {
+                    btn.style.display = '';
+                }
+            }
+        });
+    }
+
     function renderProducts() {
         let products = window.ProductsAPI.getAll();
+        
+        // Filter by chapter (respects launch dates)
+        if (currentChapter && window.FeatureFlags) {
+            // Only filter if chapter should be shown
+            if (window.FeatureFlags.shouldShowChapter(currentChapter)) {
+                products = filterByChapter(products, currentChapter);
+            } else {
+                // If trying to view unpublished chapter, show nothing (or fallback to chapter-1)
+                if (!window.FeatureFlags.isPreviewMode()) {
+                    products = [];
+                }
+            }
+        }
         
         // Filter by collection if set (from footer links)
         if (currentCollection) {
@@ -101,6 +132,21 @@ function initCollection() {
 
         // Add quick-add functionality
         initQuickAdd();
+    }
+
+    function filterByChapter(products, chapterId) {
+        // Map chapter IDs to product IDs
+        // Chapter I: Products 1-5 (current t-shirts)
+        // Chapter II: Will be products 6+ (add when ready)
+        const chapterProductMap = {
+            'chapter-1': [1, 2, 3, 4, 5], // Current products
+            'chapter-2': [6, 7, 8, 9, 10] // Future Chapter II products (add IDs when ready)
+        };
+        
+        const productIds = chapterProductMap[chapterId];
+        if (!productIds) return products; // If chapter not mapped, show all
+        
+        return products.filter(product => productIds.includes(product.id));
     }
 
     function filterByCollection(products, collectionKey) {
