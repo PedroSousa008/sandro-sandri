@@ -127,8 +127,12 @@ module.exports = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Account created. Please check your email to verify your account.',
-            email: email
+            message: emailSent 
+                ? 'Account created. Please check your email to verify your account.'
+                : 'Account created. Verification email may not have been sent. Please use "Resend verification email" if needed.',
+            email: email,
+            emailSent: emailSent,
+            emailError: emailError ? emailError.message : null
         });
 
     } catch (error) {
