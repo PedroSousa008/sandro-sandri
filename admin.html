@@ -248,7 +248,7 @@
         async function updateDashboard() {
             try {
                 // Fetch active users from server
-                const response = await fetch('/api/admin/activity');
+                const response = await fetch('/api/admin?endpoint=activity');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -297,7 +297,7 @@
             summaryEl.style.display = 'none';
 
             try {
-                const response = await fetch('/api/admin/customers');
+                const response = await fetch('/api/admin?endpoint=customers');
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {

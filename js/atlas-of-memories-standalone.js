@@ -203,7 +203,7 @@ class AtlasOfMemoriesStandalone {
         
         // ALWAYS load from server first - server is the source of truth
         try {
-            const response = await fetch(`/api/atlas/load?email=${encodeURIComponent(this.userEmail)}`);
+            const response = await fetch(`/api/atlas?email=${encodeURIComponent(this.userEmail)}`);
             console.log('📡 API load response status:', response.status);
             
             if (response.ok) {
@@ -601,7 +601,7 @@ class AtlasOfMemoriesStandalone {
 
                 console.log('Syncing to API - Email:', this.userEmail, 'Memories:', Object.keys(memories).length);
 
-                const response = await fetch('/api/atlas/save', {
+                const response = await fetch('/api/atlas', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

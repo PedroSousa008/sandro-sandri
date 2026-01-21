@@ -131,7 +131,7 @@ class ActivityMonitor {
                           window.location.href.includes('cart');
         
         try {
-            const response = await fetch('/api/admin/activity', {
+            const response = await fetch('/api/admin?endpoint=activity', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
