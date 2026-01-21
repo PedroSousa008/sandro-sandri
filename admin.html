@@ -576,8 +576,15 @@
                     ? new Date(customer.lastOrderDate).toLocaleDateString()
                     : 'Never';
                 
-                // Get all sizes purchased across all orders
+                // Get all sizes from profile and orders
                 const allSizes = new Set();
+                
+                // First, check the customer's profile size (their selected size preference)
+                if (customer.profile && customer.profile.size) {
+                    allSizes.add(customer.profile.size);
+                }
+                
+                // Then, get sizes from all orders
                 customer.orders.forEach(order => {
                     if (order.sizesPurchased && Array.isArray(order.sizesPurchased)) {
                         order.sizesPurchased.forEach(size => allSizes.add(size));
