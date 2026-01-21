@@ -59,7 +59,9 @@ async function handleCheckoutCompleted(session) {
     const shippingAmount = session.amount_total - session.amount_subtotal;
     const total = session.amount_total / 100; // Convert from cents
     
-    // Decrement inventory atomically
+    // IMPORTANT: Only decrement inventory AFTER payment is confirmed
+    // All products start with full stock, and quantities are only updated here
+    console.log('💰 Payment confirmed, decrementing inventory for:', cart.length, 'items');
     const inventoryResult = await decrementInventoryAtomic(cart);
     
     if (!inventoryResult.success) {
@@ -124,11 +126,15 @@ async function handleCheckoutCompleted(session) {
 }
 
 // Atomic inventory decrement with transaction
+// IMPORTANT: This is the ONLY place where inventory quantities are decremented
+// All products start with full stock, and quantities are only reduced here after payment
 async function decrementInventoryAtomic(cart) {
-    // Load current inventory
+    // Load current inventory (starts with full stock for all products)
     const inventory = await db.getInventory();
     const errors = [];
     const updates = {};
+    
+    console.log('📦 Current inventory before decrement:', JSON.stringify(inventory, null, 2));
     
     // First pass: validate all items have sufficient stock
     for (const item of cart) {
@@ -138,6 +144,8 @@ async function decrementInventoryAtomic(cart) {
         
         const currentStock = inventory[productId]?.[size] || 0;
         
+        console.log(`   Checking: Product ${productId}, Size ${size} - Requested: ${quantity}, Available: ${currentStock}`);
+        
         if (currentStock < quantity) {
             errors.push({
                 productId,
@@ -146,16 +154,18 @@ async function decrementInventoryAtomic(cart) {
                 available: currentStock
             });
         } else {
-            // Prepare update
+            // Prepare update - decrement quantity
             if (!updates[productId]) {
                 updates[productId] = { ...inventory[productId] };
             }
             updates[productId][size] = currentStock - quantity;
+            console.log(`   ✅ Will decrement: ${currentStock} - ${quantity} = ${updates[productId][size]}`);
         }
     }
     
     // If any errors, return without updating
     if (errors.length > 0) {
+        console.error('❌ Insufficient stock:', errors);
         return {
             success: false,
             error: `Insufficient stock for ${errors.map(e => `${e.size} (${e.available} available, ${e.requested} requested)`).join(', ')}`
@@ -167,8 +177,9 @@ async function decrementInventoryAtomic(cart) {
         inventory[productId] = updates[productId];
     }
     
-    // Save updated inventory
+    // Save updated inventory (quantities now reduced)
     await db.saveInventory(inventory);
+    console.log('✅ Inventory updated after payment:', JSON.stringify(inventory, null, 2));
     
     return { success: true };
 }
