@@ -57,11 +57,15 @@ module.exports = async (req, res) => {
         await db.initDb();
         console.log('✅ Database initialized');
 
+        // Normalize email for consistency
+        const normalizedEmail = email.toLowerCase().trim();
+        
         // Check if user already exists
         console.log('📖 Loading user data...');
         const userData = await db.getUserData();
         console.log('✅ User data loaded, total users:', Object.keys(userData).length);
-        const existingUser = userData[email];
+        // Check both normalized and original email (for migration)
+        const existingUser = userData[normalizedEmail] || userData[email];
 
         // If user exists and is already verified, return error
         if (existingUser && existingUser.email_verified === true) {
