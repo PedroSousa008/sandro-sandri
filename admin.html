@@ -265,6 +265,39 @@
         </div>
 
         <div class="admin-section">
+            <h2 class="admin-section-title">Customer Information</h2>
+            <div style="margin-bottom: var(--space-md);">
+                <button class="admin-action-btn admin-action-btn-primary" id="load-customers-btn">Load All Customers</button>
+                <button class="admin-action-btn admin-action-btn-secondary" id="export-customers-btn" style="display: none;">Export to CSV</button>
+            </div>
+            <div id="customers-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
+                Loading customer data...
+            </div>
+            <div id="customers-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
+            <div id="customers-summary" style="display: none; margin-bottom: var(--space-md); padding: var(--space-md); background: var(--color-gray-light); border-radius: 4px;">
+                <strong>Total Customers:</strong> <span id="total-customers-count">0</span>
+            </div>
+            <div id="customers-table-container" style="overflow-x: auto; display: none;">
+                <table id="customers-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="background: var(--color-gray-light);">
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-gray-light); z-index: 10;">Email</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Name</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Total Orders</th>
+                            <th style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray); font-weight: 600;">Total Spent</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Last Order</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Favorites</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Payment Methods</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customers-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
             <h2 class="admin-section-title">Quick Links</h2>
             <div class="admin-actions">
                 <a href="index.html" class="admin-action-btn admin-action-btn-secondary">Home Page</a>
@@ -564,6 +597,254 @@
                 updateSizeTracking();
             }
         }, 1000);
+
+        // Customer Information Management
+        let allCustomersData = null;
+
+        async function loadCustomers() {
+            const loadingEl = document.getElementById('customers-loading');
+            const errorEl = document.getElementById('customers-error');
+            const tableContainer = document.getElementById('customers-table-container');
+            const summaryEl = document.getElementById('customers-summary');
+            const tbody = document.getElementById('customers-tbody');
+
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            tableContainer.style.display = 'none';
+            summaryEl.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/admin/customers');
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Failed to load customers');
+                }
+
+                allCustomersData = data.customers;
+                
+                // Update summary
+                document.getElementById('total-customers-count').textContent = data.totalCustomers;
+                summaryEl.style.display = 'block';
+                
+                // Render table
+                renderCustomersTable(allCustomersData);
+                tableContainer.style.display = 'block';
+                document.getElementById('export-customers-btn').style.display = 'inline-block';
+
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                errorEl.textContent = `Error: ${error.message}`;
+                errorEl.style.display = 'block';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        function renderCustomersTable(customers) {
+            const tbody = document.getElementById('customers-tbody');
+            
+            if (customers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">
+                            No customers found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            customers.forEach((customer, index) => {
+                const name = customer.profile?.name || customer.email.split('@')[0];
+                const lastOrderDate = customer.lastOrderDate 
+                    ? new Date(customer.lastOrderDate).toLocaleDateString()
+                    : 'Never';
+                
+                // Get unique payment methods
+                const paymentMethods = new Set();
+                customer.orders.forEach(order => {
+                    if (order.paymentMethod) {
+                        if (order.paymentMethod.card) {
+                            const cardInfo = `${order.paymentMethod.card.brand.toUpperCase()} •••• ${order.paymentMethod.card.last4} (${order.paymentMethod.card.exp_month}/${order.paymentMethod.card.exp_year})`;
+                            paymentMethods.add(cardInfo);
+                        }
+                    }
+                });
+                const paymentMethodsList = Array.from(paymentMethods).join(', ') || 'None';
+
+                const rowClass = index % 2 === 0 ? 'style="background: var(--color-white);"' : 'style="background: var(--color-gray-light);"';
+                
+                html += `
+                    <tr ${rowClass} data-email="${customer.email}">
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); position: sticky; left: 0; background: inherit; font-weight: 500;">
+                            ${customer.email}
+                        </td>
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray);">
+                            ${name}
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            ${customer.totalOrders}
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">
+                            €${customer.totalSpent.toFixed(2)}
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            ${lastOrderDate}
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            ${customer.favorites.length}
+                        </td>
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem; max-width: 200px;">
+                            ${paymentMethodsList || 'None'}
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            <button class="view-customer-details" data-email="${customer.email}" style="padding: 4px 8px; font-size: 0.75rem; background: var(--color-navy); color: white; border: none; cursor: pointer; border-radius: 2px;">
+                                View Details
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+
+            // Add click handlers for view details
+            document.querySelectorAll('.view-customer-details').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const email = btn.dataset.email;
+                    showCustomerDetails(email);
+                });
+            });
+        }
+
+        function showCustomerDetails(email) {
+            const customer = allCustomersData.find(c => c.email === email);
+            if (!customer) return;
+
+            // Create modal
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: var(--space-lg);';
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = 'background: white; max-width: 900px; max-height: 90vh; overflow-y: auto; padding: var(--space-xl); border-radius: 4px; position: relative;';
+            
+            let ordersHtml = '';
+            customer.orders.forEach((order, index) => {
+                const orderDate = new Date(order.createdAt).toLocaleString();
+                const paymentInfo = order.paymentMethod?.card 
+                    ? `${order.paymentMethod.card.brand.toUpperCase()} •••• ${order.paymentMethod.card.last4} (Exp: ${order.paymentMethod.card.exp_month}/${order.paymentMethod.card.exp_year})`
+                    : 'N/A';
+                
+                ordersHtml += `
+                    <div style="border: 1px solid var(--color-gray); padding: var(--space-md); margin-bottom: var(--space-md); border-radius: 4px;">
+                        <h4 style="margin-bottom: var(--space-sm);">Order #${order.id}</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); font-size: 0.875rem;">
+                            <div><strong>Date:</strong> ${orderDate}</div>
+                            <div><strong>Status:</strong> ${order.status}</div>
+                            <div><strong>Total:</strong> €${order.total.toFixed(2)}</div>
+                            <div><strong>Shipping Country:</strong> ${order.shippingCountry || 'N/A'}</div>
+                            <div><strong>Payment Method:</strong> ${paymentInfo}</div>
+                            <div><strong>Stripe Session:</strong> ${order.stripeSessionId || 'N/A'}</div>
+                        </div>
+                        <div style="margin-top: var(--space-sm);">
+                            <strong>Items:</strong>
+                            <ul style="margin-top: var(--space-xs); padding-left: var(--space-lg);">
+                                ${order.cart.map(item => `
+                                    <li>${item.name || 'Product'} - ${item.size} / ${item.color} × ${item.quantity} - €${(item.price * item.quantity).toFixed(2)}</li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            });
+
+            modalContent.innerHTML = `
+                <button class="close-modal" style="position: absolute; top: var(--space-md); right: var(--space-md); background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-light);">&times;</button>
+                <h2 style="margin-bottom: var(--space-lg);">Customer Details: ${customer.email}</h2>
+                
+                <div style="margin-bottom: var(--space-lg);">
+                    <h3 style="margin-bottom: var(--space-sm);">Profile Information</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); font-size: 0.875rem;">
+                        <div><strong>Name:</strong> ${customer.profile?.name || 'N/A'}</div>
+                        <div><strong>Email:</strong> ${customer.email}</div>
+                        <div><strong>Total Orders:</strong> ${customer.totalOrders}</div>
+                        <div><strong>Total Spent:</strong> €${customer.totalSpent.toFixed(2)}</div>
+                        <div><strong>Favorites:</strong> ${customer.favorites.length} items</div>
+                        <div><strong>Last Updated:</strong> ${customer.updatedAt ? new Date(customer.updatedAt).toLocaleString() : 'N/A'}</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: var(--space-lg);">
+                    <h3 style="margin-bottom: var(--space-sm);">Favorites</h3>
+                    <div style="font-size: 0.875rem;">
+                        ${customer.favorites.length > 0 
+                            ? customer.favorites.map(fav => `<span style="display: inline-block; padding: 4px 8px; background: var(--color-gray-light); margin: 4px; border-radius: 2px;">Product ID: ${fav}</span>`).join('')
+                            : 'No favorites'
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="margin-bottom: var(--space-sm);">Order History (${customer.orders.length})</h3>
+                    ${ordersHtml || '<p>No orders yet</p>'}
+                </div>
+            `;
+
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            // Close modal handlers
+            modal.querySelector('.close-modal').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            });
+        }
+
+        function exportToCSV() {
+            if (!allCustomersData) {
+                alert('Please load customers first');
+                return;
+            }
+
+            // Create CSV content
+            let csv = 'Email,Name,Total Orders,Total Spent,Last Order Date,Favorites Count,Payment Methods\n';
+            
+            allCustomersData.forEach(customer => {
+                const name = customer.profile?.name || customer.email.split('@')[0];
+                const lastOrderDate = customer.lastOrderDate || 'Never';
+                
+                const paymentMethods = new Set();
+                customer.orders.forEach(order => {
+                    if (order.paymentMethod?.card) {
+                        paymentMethods.add(`${order.paymentMethod.card.brand} •••• ${order.paymentMethod.card.last4}`);
+                    }
+                });
+                const paymentMethodsStr = Array.from(paymentMethods).join('; ') || 'None';
+                
+                csv += `"${customer.email}","${name}",${customer.totalOrders},${customer.totalSpent.toFixed(2)},"${lastOrderDate}",${customer.favorites.length},"${paymentMethodsStr}"\n`;
+            });
+
+            // Download CSV
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `customers_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Bind buttons
+        document.getElementById('load-customers-btn').addEventListener('click', loadCustomers);
+        document.getElementById('export-customers-btn').addEventListener('click', exportToCSV);
     </script>
 </body>
 </html>
