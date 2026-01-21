@@ -50,21 +50,8 @@ module.exports = async (req, res) => {
             });
         }
 
-        // Rate limiting: Check last verification email sent
-        const lastResend = user.lastVerificationEmailSent;
-        const now = new Date();
-        
-        if (lastResend) {
-            const timeSinceLastResend = (now - new Date(lastResend)) / (1000 * 60 * 60); // hours
-            if (timeSinceLastResend < 1) {
-                // Less than 1 hour ago
-                const minutesRemaining = Math.ceil(60 - (timeSinceLastResend * 60));
-                return res.status(429).json({ 
-                    error: `Please wait ${minutesRemaining} minute(s) before requesting another verification email`,
-                    retryAfter: minutesRemaining
-                });
-            }
-        }
+        // Rate limiting removed - users can request verification emails anytime
+        // (Rate limiting was previously set to 1 hour, but removed per user request)
 
         // Get verification tokens
         const tokens = await db.getEmailVerificationTokens();
