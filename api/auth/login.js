@@ -7,12 +7,21 @@ const db = require('../../lib/storage');
 const bcrypt = require('bcryptjs');
 
 module.exports = async (req, res) => {
+    // Log incoming request for debugging
+    console.log('🔍 Login API called:', {
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        body: req.body ? 'present' : 'missing'
+    });
+
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
+        console.log('✅ CORS preflight request handled');
         return res.status(200).end();
     }
 
