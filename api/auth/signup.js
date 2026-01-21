@@ -88,30 +88,49 @@ module.exports = async (req, res) => {
         // Get verification tokens
         const tokens = await db.getEmailVerificationTokens();
 
+        // Normalize email for consistency
+        const normalizedEmail = email.toLowerCase().trim();
+        
         // If user exists but not verified, invalidate old tokens
         if (existingUser && existingUser.email_verified === false) {
-            // Remove old tokens for this email
+            // Remove old tokens for this email (case-insensitive)
+            let deletedCount = 0;
             Object.keys(tokens).forEach(key => {
-                if (tokens[key].email === email) {
+                const tokenEmail = tokens[key].email ? tokens[key].email.toLowerCase().trim() : null;
+                if (tokenEmail === normalizedEmail) {
                     delete tokens[key];
+                    deletedCount++;
                 }
             });
+            console.log(`   Deleted ${deletedCount} old token(s) for this email`);
         }
 
         // Store new token
         const tokenId = `token_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
         tokens[tokenId] = {
-            email: email,
+            email: normalizedEmail, // Use normalized email
             tokenHash: tokenHash,
             expiresAt: expiresAt.toISOString(),
             createdAt: new Date().toISOString(),
             usedAt: null
         };
 
+        console.log('💾 Saving verification token:');
+        console.log('   Token ID:', tokenId);
+        console.log('   Email:', email.toLowerCase().trim());
+        console.log('   Expires at:', expiresAt.toISOString());
+        console.log('   Total tokens before save:', Object.keys(tokens).length);
+        
         await db.saveEmailVerificationTokens(tokens);
+        
+        // Verify token was saved
+        const verifyTokens = await db.getEmailVerificationTokens();
+        console.log('   Total tokens after save:', Object.keys(verifyTokens).length);
+        console.log('   Token saved successfully:', !!verifyTokens[tokenId]);
 
         // Create or update user (with email_verified = false)
-        userData[email] = {
+        // Use normalized email as key
+        userData[normalizedEmail] = {
             ...(existingUser || {}),
             email: email,
             passwordHash: passwordHash,
@@ -155,7 +174,7 @@ module.exports = async (req, res) => {
             message: emailSent 
                 ? 'Account created. Please check your email to verify your account.'
                 : 'Account created. Verification email may not have been sent. Please use "Resend verification email" if needed.',
-            email: email,
+            email: normalizedEmail, // Return normalized email
             emailSent: emailSent,
             emailError: emailError ? emailError.message : null
         });

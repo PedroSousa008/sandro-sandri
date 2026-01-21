@@ -27,12 +27,28 @@ module.exports = async (req, res) => {
     });
 
     try {
-        const { email, token } = req.method === 'GET' ? req.query : req.body;
+        let { email, token } = req.method === 'GET' ? req.query : req.body;
+        
+        // Normalize email (lowercase, trim)
+        if (email) {
+            email = email.toLowerCase().trim();
+        }
+        
+        // Decode token if it's URL encoded
+        if (token) {
+            try {
+                token = decodeURIComponent(token);
+            } catch (e) {
+                // Token might not be encoded, that's okay
+                console.log('   Token decoding note: token may not be URL encoded');
+            }
+        }
         
         console.log('📧 Verification request:');
-        console.log('   Email:', email);
+        console.log('   Email (normalized):', email);
         console.log('   Token length:', token ? token.length : 0);
         console.log('   Token first 10 chars:', token ? token.substring(0, 10) : 'N/A');
+        console.log('   Token last 10 chars:', token && token.length > 10 ? token.substring(token.length - 10) : 'N/A');
 
         if (!email || !token) {
             return res.status(400).json({ 
@@ -47,8 +63,10 @@ module.exports = async (req, res) => {
         // Get user data
         console.log('📖 Loading user data...');
         const userData = await db.getUserData();
-        const user = userData[email];
+        // Check both normalized and original email (for migration)
+        const user = userData[email] || userData[email.toLowerCase()] || userData[email.toUpperCase()];
         console.log('   User exists:', !!user);
+        console.log('   Checked emails:', [email, email.toLowerCase(), email.toUpperCase()]);
 
         if (!user) {
             console.error('❌ User not found:', email);
@@ -81,7 +99,9 @@ module.exports = async (req, res) => {
         let tokensForEmail = 0;
 
         for (const [id, tokenData] of Object.entries(tokens)) {
-            if (tokenData.email === email) {
+            // Normalize stored email for comparison
+            const storedEmail = tokenData.email ? tokenData.email.toLowerCase().trim() : null;
+            if (storedEmail === email) {
                 tokensForEmail++;
                 console.log(`   Token ${id}:`, {
                     email: tokenData.email,
@@ -140,13 +160,23 @@ module.exports = async (req, res) => {
         await db.saveEmailVerificationTokens(tokens);
 
         // Update user as verified
-        userData[email] = {
+        // Find the actual key in userData (might be different case)
+        let userKey = email;
+        for (const key in userData) {
+            if (key.toLowerCase() === email.toLowerCase()) {
+                userKey = key;
+                break;
+            }
+        }
+        
+        userData[userKey] = {
             ...user,
             email_verified: true,
             email_verified_at: new Date().toISOString()
         };
 
         await db.saveUserData(userData);
+        console.log('   User key used:', userKey);
 
         console.log('✅ Email verified for:', email);
 
