@@ -106,12 +106,20 @@ module.exports = async (req, res) => {
         // Send verification email
         try {
             await emailService.sendVerificationEmail(email, rawToken);
-            console.log('✅ Verification email resent to:', email);
+            console.log('✅ Verification email resent successfully to:', email);
         } catch (emailError) {
             console.error('❌ Error sending verification email:', emailError);
+            console.error('   Full error:', JSON.stringify(emailError, null, 2));
+            
+            // Provide user-friendly error message
+            let errorMessage = 'Failed to send verification email';
+            if (emailError.message) {
+                errorMessage = emailError.message;
+            }
+            
             return res.status(500).json({
-                error: 'Failed to send verification email',
-                message: emailError.message
+                error: errorMessage,
+                message: emailError.message || 'Please check your Resend API key and domain configuration'
             });
         }
 

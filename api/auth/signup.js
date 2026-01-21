@@ -116,10 +116,13 @@ module.exports = async (req, res) => {
         // Send verification email
         try {
             await emailService.sendVerificationEmail(email, rawToken);
-            console.log('✅ Verification email sent to:', email);
+            console.log('✅ Verification email sent successfully to:', email);
         } catch (emailError) {
             console.error('❌ Error sending verification email:', emailError);
-            // Don't fail signup if email fails - user can request resend
+            console.error('   Error details:', emailError.message);
+            // Still return success but log the error
+            // User can request resend if email doesn't arrive
+            // This prevents signup from failing if email service has temporary issues
         }
 
         res.status(201).json({
