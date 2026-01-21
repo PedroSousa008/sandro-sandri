@@ -41,8 +41,9 @@ module.exports = async (req, res) => {
             });
         }
 
-        // Check email verification
-        if (user.email_verified !== true) {
+        // Check email verification (only for new users)
+        // Existing users (without email_verified field) are grandfathered in
+        if (user.hasOwnProperty('email_verified') && user.email_verified !== true) {
             return res.status(403).json({ 
                 error: 'Please verify your email before logging in',
                 emailNotVerified: true,
