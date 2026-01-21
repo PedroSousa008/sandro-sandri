@@ -51,6 +51,24 @@ function initProductPage() {
             favoriteBtn.classList.remove('active');
         }
     });
+    
+    // Listen for inventory sync events to refresh inventory display
+    window.addEventListener('inventorySynced', () => {
+        console.log('📦 Inventory synced, refreshing product page...');
+        const selectedSize = document.getElementById('selected-size-input')?.value;
+        if (selectedSize) {
+            // Update quantity max for selected size
+            if (window.updateQuantityMax) {
+                window.updateQuantityMax(product.id, selectedSize);
+            }
+            // Update add to cart button state
+            if (window.updateAddToCartButton) {
+                window.updateAddToCartButton(product.id, selectedSize);
+            }
+            // Refresh size buttons (sold out states)
+            initSizeSelection(product);
+        }
+    });
     loadRelatedProducts(product);
     
     // Initialize swipe navigation on mobile

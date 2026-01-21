@@ -57,6 +57,7 @@
     </footer>
 
     <script src="js/products.js"></script>
+    <script src="js/inventory.js"></script>
     <script>
         // Get session ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -66,6 +67,15 @@
             // Optionally fetch order details from backend
             console.log('Order session ID:', sessionId);
         }
+        
+        // Sync inventory from server after successful order
+        // This ensures inventory quantities are updated after purchase
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.InventoryAPI && window.InventoryAPI.syncFromServer) {
+                console.log('🔄 Syncing inventory after order completion...');
+                await window.InventoryAPI.syncFromServer();
+            }
+        });
     </script>
 </body>
 </html>

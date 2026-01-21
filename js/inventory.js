@@ -131,37 +131,44 @@ function increaseInventory(productId, size, quantity = 1) {
 }
 
 // Initialize on load - ensure it runs after ProductsAPI is loaded
-function initInventoryWhenReady() {
+async function initInventoryWhenReady() {
     if (window.ProductsAPI && window.ProductsAPI.getAll) {
         const products = window.ProductsAPI.getAll();
         if (products && products.length > 0) {
-            const inventory = initializeInventory();
+            // First, try to sync from server (server is source of truth)
+            const synced = await syncInventoryFromServer();
             
-            // Verify all products have inventory - if not, reset
-            let needsReset = false;
-            products.forEach(product => {
-                if (product.inventory) {
-                    if (!inventory[product.id]) {
-                        needsReset = true;
-                    } else {
-                        // Check if any size is missing or has 0 stock when it shouldn't
-                        Object.keys(product.inventory).forEach(size => {
-                            const expectedStock = product.inventory[size];
-                            const currentStock = inventory[product.id][size];
-                            if (currentStock === undefined || currentStock === null || currentStock < 0) {
-                                needsReset = true;
-                            }
-                        });
+            // If sync failed, fall back to localStorage initialization
+            if (!synced) {
+                console.log('⚠️ Server sync failed, using localStorage inventory');
+                const inventory = initializeInventory();
+                
+                // Verify all products have inventory - if not, reset
+                let needsReset = false;
+                products.forEach(product => {
+                    if (product.inventory) {
+                        if (!inventory[product.id]) {
+                            needsReset = true;
+                        } else {
+                            // Check if any size is missing or has 0 stock when it shouldn't
+                            Object.keys(product.inventory).forEach(size => {
+                                const expectedStock = product.inventory[size];
+                                const currentStock = inventory[product.id][size];
+                                if (currentStock === undefined || currentStock === null || currentStock < 0) {
+                                    needsReset = true;
+                                }
+                            });
+                        }
                     }
+                });
+                
+                if (needsReset) {
+                    console.log('Inventory corrupted or missing - resetting to full stock');
+                    resetInventoryToFull();
                 }
-            });
-            
-            if (needsReset) {
-                console.log('Inventory corrupted or missing - resetting to full stock');
-                resetInventoryToFull();
+                
+                console.log('Inventory initialized from localStorage:', JSON.parse(localStorage.getItem('sandroSandriInventory') || '{}'));
             }
-            
-            console.log('Inventory initialized:', JSON.parse(localStorage.getItem('sandroSandriInventory') || '{}'));
         } else {
             // Wait a bit and try again
             setTimeout(initInventoryWhenReady, 100);
@@ -184,6 +191,53 @@ if (window.ProductsAPI) {
     }
 }
 
+// Fetch inventory from server and sync with localStorage
+async function syncInventoryFromServer() {
+    try {
+        console.log('🔄 Syncing inventory from server...');
+        const response = await fetch('/api/inventory/stock');
+        
+        if (!response.ok) {
+            console.warn('⚠️ Failed to fetch inventory from server:', response.status);
+            return false;
+        }
+        
+        const serverStatus = await response.json();
+        
+        // Transform server response to frontend format
+        // Server format: [{ productId: 1, sizes: [{ size: "XS", stock: 10 }, ...] }, ...]
+        // Frontend format: { "1": { "XS": 10, "S": 20, ... }, ... }
+        const serverInventory = {};
+        
+        serverStatus.forEach(product => {
+            const productInventory = {};
+            product.sizes.forEach(sizeInfo => {
+                productInventory[sizeInfo.size] = sizeInfo.stock;
+            });
+            serverInventory[product.productId] = productInventory;
+        });
+        
+        // Update localStorage with server inventory (server is source of truth)
+        localStorage.setItem('sandroSandriInventory', JSON.stringify(serverInventory));
+        
+        console.log('✅ Inventory synced from server:', serverInventory);
+        
+        // Trigger UI update if products are displayed
+        // Dispatch custom event so product pages can refresh
+        window.dispatchEvent(new CustomEvent('inventorySynced', { detail: serverInventory }));
+        
+        // Also call global update function if it exists
+        if (typeof window.updateProductInventory === 'function') {
+            window.updateProductInventory();
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Error syncing inventory from server:', error);
+        return false;
+    }
+}
+
 // Export functions
 window.InventoryAPI = {
     get: getInventory,
@@ -191,6 +245,7 @@ window.InventoryAPI = {
     decrease: decreaseInventory,
     increase: increaseInventory,
     init: initializeInventory,
-    reset: resetInventoryToFull
+    reset: resetInventoryToFull,
+    syncFromServer: syncInventoryFromServer
 };
 
