@@ -256,7 +256,6 @@
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Favorites</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Payment Methods</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Actions</th>
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; background: var(--color-navy); color: white;">Total</th>
                         </tr>
                     </thead>
                     <tbody id="customers-tbody">
@@ -553,7 +552,7 @@
             if (customers.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="13" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">
+                        <td colspan="12" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">
                             No customers found
                         </td>
                     </tr>
@@ -653,13 +652,6 @@
                                 View Details
                             </button>
                         </td>
-                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; background: var(--color-gray-light);">
-                            <div style="font-size: 0.75rem; line-height: 1.4;">
-                                <div><strong>Orders:</strong> ${customer.totalOrders}</div>
-                                <div><strong>Spent:</strong> €${customer.totalSpent.toFixed(2)}</div>
-                                <div><strong>Favs:</strong> ${customer.favorites.length}</div>
-                            </div>
-                        </td>
                     </tr>
                 `;
             });
@@ -667,16 +659,21 @@
             // Add total row at the end
             html += `
                 <tr style="background: var(--color-navy); color: white; font-weight: 600;">
-                    <td colspan="11" style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">
+                    <td colspan="2" style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">
                         <strong>GRAND TOTAL:</strong>
                     </td>
+                    <td colspan="2" style="padding: var(--space-sm); border: 1px solid var(--color-gray);"></td>
                     <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                        <div style="font-size: 0.875rem; line-height: 1.5;">
-                            <div><strong>Orders:</strong> ${grandTotalOrders}</div>
-                            <div><strong>Spent:</strong> €${grandTotalSpent.toFixed(2)}</div>
-                            <div><strong>Favorites:</strong> ${grandTotalFavorites}</div>
-                        </div>
+                        <strong>${grandTotalOrders}</strong>
                     </td>
+                    <td style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">
+                        <strong>€${grandTotalSpent.toFixed(2)}</strong>
+                    </td>
+                    <td colspan="4" style="padding: var(--space-sm); border: 1px solid var(--color-gray);"></td>
+                    <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                        <strong>${grandTotalFavorites}</strong>
+                    </td>
+                    <td colspan="2" style="padding: var(--space-sm); border: 1px solid var(--color-gray);"></td>
                 </tr>
             `;
             
