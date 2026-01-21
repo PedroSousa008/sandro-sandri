@@ -54,29 +54,74 @@ async function handleCheckoutCompleted(session) {
     const customerName = session.metadata.customerName;
     const shippingCountry = session.metadata.shippingCountry;
     
+    // Get shipping address from Stripe session
+    let shippingAddress = null;
+    if (session.shipping_details && session.shipping_details.address) {
+        shippingAddress = {
+            street: session.shipping_details.address.line1 || '',
+            apartment: session.shipping_details.address.line2 || '',
+            city: session.shipping_details.address.city || '',
+            postalCode: session.shipping_details.address.postal_code || '',
+            country: session.shipping_details.address.country || shippingCountry || '',
+            countryName: session.shipping_details.address.country || shippingCountry || ''
+        };
+    }
+    
     // Calculate totals
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const shippingAmount = session.amount_total - session.amount_subtotal;
+    const tax = 0; // No tax currently
     const total = session.amount_total / 100; // Convert from cents
+    
+    // Generate order number (format: SS-YYYYMMDD-XXXXX)
+    const orderNumber = `SS-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    
+    // Determine chapters purchased from product IDs
+    const chaptersPurchased = new Set();
+    cart.forEach(item => {
+        if (item.productId >= 1 && item.productId <= 5) {
+            chaptersPurchased.add('Chapter I');
+        } else if (item.productId >= 6) {
+            chaptersPurchased.add('Chapter II');
+        }
+    });
+    
+    // Get all sizes purchased
+    const sizesPurchased = new Set();
+    cart.forEach(item => {
+        if (item.size) {
+            sizesPurchased.add(item.size);
+        }
+    });
     
     // IMPORTANT: Only decrement inventory AFTER payment is confirmed
     // All products start with full stock, and quantities are only updated here
     console.log('💰 Payment confirmed, decrementing inventory for:', cart.length, 'items');
     const inventoryResult = await decrementInventoryAtomic(cart);
     
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const userId = customerEmail; // Using email as user ID
+    
     if (!inventoryResult.success) {
         // Inventory insufficient - mark order as failed
         await db.saveOrder({
-            id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: orderId,
+            userId: userId,
+            orderNumber: orderNumber,
             stripeSessionId: session.id,
             status: 'FAILED_STOCK',
             email: customerEmail,
             name: customerName,
+            shippingAddress: shippingAddress,
+            shippingCountry: shippingCountry,
             cart: cart,
             subtotal: subtotal,
-            shipping: shippingAmount / 100,
+            shippingCost: shippingAmount / 100,
+            tax: tax,
             total: total,
             currency: 'eur',
+            chaptersPurchased: Array.from(chaptersPurchased),
+            sizesPurchased: Array.from(sizesPurchased),
             error: inventoryResult.error,
             createdAt: new Date().toISOString()
         });
@@ -87,17 +132,23 @@ async function handleCheckoutCompleted(session) {
     
     // Save successful order
     const order = await db.saveOrder({
-        id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: orderId,
+        userId: userId,
+        orderNumber: orderNumber,
         stripeSessionId: session.id,
         status: 'PAID',
         email: customerEmail,
         name: customerName,
+        shippingAddress: shippingAddress,
         shippingCountry: shippingCountry,
         cart: cart,
         subtotal: subtotal,
-        shipping: shippingAmount / 100,
+        shippingCost: shippingAmount / 100,
+        tax: tax,
         total: total,
         currency: 'eur',
+        chaptersPurchased: Array.from(chaptersPurchased),
+        sizesPurchased: Array.from(sizesPurchased),
         createdAt: new Date().toISOString()
     });
     

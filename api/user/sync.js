@@ -32,8 +32,18 @@ module.exports = async (req, res) => {
                 profile: null,
                 favorites: [],
                 orders: [],
+                password: null,
+                lastLogin: null,
                 updatedAt: null
             };
+            
+            // Get password and last login from request if provided
+            if (req.body && req.body.password) {
+                user.password = req.body.password;
+            }
+            if (req.body && req.body.lastLogin) {
+                user.lastLogin = req.body.lastLogin;
+            }
 
             const atlas = atlasData[email] || {
                 memories: {},
@@ -66,7 +76,7 @@ module.exports = async (req, res) => {
     } else if (req.method === 'POST') {
         // Save user data
         try {
-            const { email, cart, profile, favorites, orders, atlas } = req.body;
+            const { email, cart, profile, favorites, orders, atlas, password, lastLogin } = req.body;
 
             if (!email) {
                 return res.status(400).json({ error: 'Email is required' });
@@ -91,6 +101,8 @@ module.exports = async (req, res) => {
                 profile: null,
                 favorites: [],
                 orders: [],
+                password: null,
+                lastLogin: null,
                 updatedAt: null
             };
 
@@ -103,6 +115,8 @@ module.exports = async (req, res) => {
                 profile: profile !== undefined ? profile : existingUser.profile,
                 favorites: favorites !== undefined ? (Array.isArray(favorites) ? favorites : []) : existingUser.favorites,
                 orders: orders !== undefined ? orders : existingUser.orders,
+                password: req.body.password !== undefined ? req.body.password : existingUser.password,
+                lastLogin: req.body.lastLogin !== undefined ? req.body.lastLogin : existingUser.lastLogin,
                 updatedAt: new Date().toISOString()
             };
 

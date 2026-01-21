@@ -71,19 +71,47 @@ module.exports = async (req, res) => {
                         }
                     }
                     
+                    // Ensure order has all required fields
                     return {
-                        ...order,
-                        paymentMethod: paymentMethod
+                        order_id: order.id || order.order_id,
+                        user_id: order.userId || order.user_id || email,
+                        order_number: order.orderNumber || order.order_number || order.id,
+                        status: order.status || 'UNKNOWN',
+                        currency: order.currency || 'eur',
+                        subtotal: order.subtotal || 0,
+                        shipping_cost: order.shippingCost || order.shipping || 0,
+                        tax: order.tax || 0,
+                        total: order.total || 0,
+                        chaptersPurchased: order.chaptersPurchased || [],
+                        sizesPurchased: order.sizesPurchased || [],
+                        shippingAddress: order.shippingAddress || null,
+                        shippingCountry: order.shippingCountry || null,
+                        cart: order.cart || [],
+                        createdAt: order.createdAt,
+                        stripeSessionId: order.stripeSessionId,
+                        paymentMethod: paymentMethod,
+                        // Keep original order data
+                        ...order
                     };
                 })
             );
 
             // Get profile information
             const profile = user.profile || null;
+            
+            // Get password from user data (if stored) - Note: passwords are stored client-side in localStorage
+            // We'll need to sync this to server or note it's only available client-side
+            // For now, we'll try to get it from userData if it was synced
+            const password = user.password || null;
+            
+            // Get last login from auth system (stored in localStorage, but we can check user data)
+            const lastLogin = user.lastLogin || user.loggedInAt || null;
 
             customersWithDetails.push({
                 email: email,
                 profile: profile,
+                password: password, // May be null if not synced
+                lastLogin: lastLogin,
                 cart: user.cart || [],
                 favorites: user.favorites || [],
                 orders: ordersWithPaymentMethods,

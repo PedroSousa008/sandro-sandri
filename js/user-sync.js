@@ -345,6 +345,21 @@ class UserSync {
                 const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
                 const atlasMemories = localStorage.getItem('sandroSandri_atlasMemories');
                 const atlasChapters = localStorage.getItem('sandroSandri_atlasChapters');
+                
+                // Get password from localStorage (stored per email)
+                const password = localStorage.getItem(`sandroSandri_password_${this.userEmail}`);
+                
+                // Get last login from auth system
+                const userData = localStorage.getItem('sandroSandri_user');
+                let lastLogin = null;
+                if (userData) {
+                    try {
+                        const user = JSON.parse(userData);
+                        lastLogin = user.loggedInAt || null;
+                    } catch (e) {
+                        console.error('Error parsing user data:', e);
+                    }
+                }
 
                 const payload = {
                     email: this.userEmail,
@@ -352,6 +367,8 @@ class UserSync {
                     profile: profile ? JSON.parse(profile) : null,
                     favorites: favorites,
                     orders: orders,
+                    password: password,
+                    lastLogin: lastLogin,
                     atlas: {
                         memories: atlasMemories ? JSON.parse(atlasMemories) : {},
                         chapters: atlasChapters ? JSON.parse(atlasChapters) : {}

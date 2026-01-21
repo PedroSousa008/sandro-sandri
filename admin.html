@@ -283,9 +283,13 @@
                         <tr style="background: var(--color-gray-light);">
                             <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-gray-light); z-index: 10;">Email</th>
                             <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Name</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Password</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Last Login</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Total Orders</th>
                             <th style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray); font-weight: 600;">Total Spent</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Last Order</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Sizes</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Chapters</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Favorites</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Payment Methods</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Actions</th>
@@ -647,7 +651,7 @@
             if (customers.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">
+                        <td colspan="12" style="padding: var(--space-md); text-align: center; color: var(--color-text-light);">
                             No customers found
                         </td>
                     </tr>
@@ -658,16 +662,42 @@
             let html = '';
             customers.forEach((customer, index) => {
                 const name = customer.profile?.name || customer.email.split('@')[0];
+                const password = customer.password || 'Not set';
+                const lastLogin = customer.lastLogin 
+                    ? new Date(customer.lastLogin).toLocaleString()
+                    : 'Never';
                 const lastOrderDate = customer.lastOrderDate 
                     ? new Date(customer.lastOrderDate).toLocaleDateString()
                     : 'Never';
+                
+                // Get all sizes purchased across all orders
+                const allSizes = new Set();
+                customer.orders.forEach(order => {
+                    if (order.sizesPurchased && Array.isArray(order.sizesPurchased)) {
+                        order.sizesPurchased.forEach(size => allSizes.add(size));
+                    } else if (order.cart) {
+                        order.cart.forEach(item => {
+                            if (item.size) allSizes.add(item.size);
+                        });
+                    }
+                });
+                const sizesList = Array.from(allSizes).sort().join(', ') || 'None';
+                
+                // Get all chapters purchased
+                const allChapters = new Set();
+                customer.orders.forEach(order => {
+                    if (order.chaptersPurchased && Array.isArray(order.chaptersPurchased)) {
+                        order.chaptersPurchased.forEach(chapter => allChapters.add(chapter));
+                    }
+                });
+                const chaptersList = Array.from(allChapters).join(', ') || 'None';
                 
                 // Get unique payment methods
                 const paymentMethods = new Set();
                 customer.orders.forEach(order => {
                     if (order.paymentMethod) {
                         if (order.paymentMethod.card) {
-                            const cardInfo = `${order.paymentMethod.card.brand.toUpperCase()} •••• ${order.paymentMethod.card.last4} (${order.paymentMethod.card.exp_month}/${order.paymentMethod.card.exp_year})`;
+                            const cardInfo = `${order.paymentMethod.card.brand.toUpperCase()} •••• ${order.paymentMethod.card.last4}`;
                             paymentMethods.add(cardInfo);
                         }
                     }
@@ -684,19 +714,31 @@
                         <td style="padding: var(--space-sm); border: 1px solid var(--color-gray);">
                             ${name}
                         </td>
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem; font-family: monospace;">
+                            ${password}
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-size: 0.75rem;">
+                            ${lastLogin}
+                        </td>
                         <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
                             ${customer.totalOrders}
                         </td>
                         <td style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">
                             €${customer.totalSpent.toFixed(2)}
                         </td>
-                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-size: 0.75rem;">
                             ${lastOrderDate}
+                        </td>
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem;">
+                            ${sizesList}
+                        </td>
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem;">
+                            ${chaptersList}
                         </td>
                         <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
                             ${customer.favorites.length}
                         </td>
-                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem; max-width: 200px;">
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem; max-width: 150px;">
                             ${paymentMethodsList || 'None'}
                         </td>
                         <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
@@ -728,7 +770,14 @@
             modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: var(--space-lg);';
             
             const modalContent = document.createElement('div');
-            modalContent.style.cssText = 'background: white; max-width: 900px; max-height: 90vh; overflow-y: auto; padding: var(--space-xl); border-radius: 4px; position: relative;';
+            modalContent.style.cssText = 'background: white; max-width: 1000px; max-height: 90vh; overflow-y: auto; padding: var(--space-xl); border-radius: 4px; position: relative;';
+            
+            // Get most recent shipping address from orders
+            let latestAddress = null;
+            if (customer.orders.length > 0) {
+                const sortedOrders = [...customer.orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                latestAddress = sortedOrders[0].shippingAddress;
+            }
             
             let ordersHtml = '';
             customer.orders.forEach((order, index) => {
@@ -737,16 +786,40 @@
                     ? `${order.paymentMethod.card.brand.toUpperCase()} •••• ${order.paymentMethod.card.last4} (Exp: ${order.paymentMethod.card.exp_month}/${order.paymentMethod.card.exp_year})`
                     : 'N/A';
                 
+                const address = order.shippingAddress || {};
+                const addressStr = address.street 
+                    ? `${address.street}${address.apartment ? ', ' + address.apartment : ''}, ${address.city}, ${address.postalCode}, ${address.country || order.shippingCountry || 'N/A'}`
+                    : (order.shippingCountry || 'N/A');
+                
                 ordersHtml += `
                     <div style="border: 1px solid var(--color-gray); padding: var(--space-md); margin-bottom: var(--space-md); border-radius: 4px;">
-                        <h4 style="margin-bottom: var(--space-sm);">Order #${order.id}</h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); font-size: 0.875rem;">
-                            <div><strong>Date:</strong> ${orderDate}</div>
+                        <h4 style="margin-bottom: var(--space-sm);">Order #${order.order_number || order.id}</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); font-size: 0.875rem; margin-bottom: var(--space-sm);">
+                            <div><strong>Order ID:</strong> ${order.order_id || order.id}</div>
+                            <div><strong>User ID:</strong> ${order.user_id || customer.email}</div>
+                            <div><strong>Order Number:</strong> ${order.order_number || order.id}</div>
                             <div><strong>Status:</strong> ${order.status}</div>
-                            <div><strong>Total:</strong> €${order.total.toFixed(2)}</div>
-                            <div><strong>Shipping Country:</strong> ${order.shippingCountry || 'N/A'}</div>
+                            <div><strong>Date:</strong> ${orderDate}</div>
+                            <div><strong>Currency:</strong> ${order.currency || 'EUR'}</div>
+                            <div><strong>Subtotal:</strong> €${(order.subtotal || 0).toFixed(2)}</div>
+                            <div><strong>Shipping Cost:</strong> €${(order.shipping_cost || order.shipping || 0).toFixed(2)}</div>
+                            <div><strong>Tax:</strong> €${(order.tax || 0).toFixed(2)}</div>
+                            <div><strong>Total:</strong> €${(order.total || 0).toFixed(2)}</div>
                             <div><strong>Payment Method:</strong> ${paymentInfo}</div>
                             <div><strong>Stripe Session:</strong> ${order.stripeSessionId || 'N/A'}</div>
+                        </div>
+                        <div style="margin-top: var(--space-sm); margin-bottom: var(--space-sm);">
+                            <strong>Shipping Address:</strong>
+                            <div style="font-size: 0.875rem; margin-top: var(--space-xs); padding: var(--space-xs); background: var(--color-gray-light); border-radius: 2px;">
+                                ${address.street || 'N/A'}<br>
+                                ${address.apartment ? address.apartment + '<br>' : ''}
+                                ${address.city || ''} ${address.postalCode || ''}<br>
+                                ${address.country || order.shippingCountry || 'N/A'}
+                            </div>
+                        </div>
+                        <div style="margin-top: var(--space-sm); margin-bottom: var(--space-sm);">
+                            <strong>Chapters Purchased:</strong> ${(order.chaptersPurchased || []).join(', ') || 'N/A'}<br>
+                            <strong>Sizes Purchased:</strong> ${(order.sizesPurchased || []).join(', ') || 'N/A'}
                         </div>
                         <div style="margin-top: var(--space-sm);">
                             <strong>Items:</strong>
@@ -769,10 +842,22 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); font-size: 0.875rem;">
                         <div><strong>Name:</strong> ${customer.profile?.name || 'N/A'}</div>
                         <div><strong>Email:</strong> ${customer.email}</div>
+                        <div><strong>Password:</strong> <span style="font-family: monospace;">${customer.password || 'Not set'}</span></div>
+                        <div><strong>Last Login:</strong> ${customer.lastLogin ? new Date(customer.lastLogin).toLocaleString() : 'Never'}</div>
                         <div><strong>Total Orders:</strong> ${customer.totalOrders}</div>
                         <div><strong>Total Spent:</strong> €${customer.totalSpent.toFixed(2)}</div>
                         <div><strong>Favorites:</strong> ${customer.favorites.length} items</div>
                         <div><strong>Last Updated:</strong> ${customer.updatedAt ? new Date(customer.updatedAt).toLocaleString() : 'N/A'}</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: var(--space-lg);">
+                    <h3 style="margin-bottom: var(--space-sm);">Shipping Address</h3>
+                    <div style="font-size: 0.875rem; padding: var(--space-md); background: var(--color-gray-light); border-radius: 4px;">
+                        ${latestAddress 
+                            ? `${latestAddress.street || 'N/A'}<br>${latestAddress.apartment ? latestAddress.apartment + '<br>' : ''}${latestAddress.city || ''} ${latestAddress.postalCode || ''}<br>${latestAddress.country || 'N/A'}`
+                            : 'No address on file'
+                        }
                     </div>
                 </div>
 
@@ -813,11 +898,31 @@
             }
 
             // Create CSV content
-            let csv = 'Email,Name,Total Orders,Total Spent,Last Order Date,Favorites Count,Payment Methods\n';
+            let csv = 'Email,Name,Password,Last Login,Total Orders,Total Spent,Last Order Date,Sizes Purchased,Chapters Purchased,Favorites Count,Payment Methods\n';
             
             allCustomersData.forEach(customer => {
                 const name = customer.profile?.name || customer.email.split('@')[0];
+                const password = customer.password || 'Not set';
+                const lastLogin = customer.lastLogin ? new Date(customer.lastLogin).toLocaleString() : 'Never';
                 const lastOrderDate = customer.lastOrderDate || 'Never';
+                
+                // Get all sizes
+                const allSizes = new Set();
+                customer.orders.forEach(order => {
+                    if (order.sizesPurchased && Array.isArray(order.sizesPurchased)) {
+                        order.sizesPurchased.forEach(size => allSizes.add(size));
+                    }
+                });
+                const sizesStr = Array.from(allSizes).sort().join('; ') || 'None';
+                
+                // Get all chapters
+                const allChapters = new Set();
+                customer.orders.forEach(order => {
+                    if (order.chaptersPurchased && Array.isArray(order.chaptersPurchased)) {
+                        order.chaptersPurchased.forEach(chapter => allChapters.add(chapter));
+                    }
+                });
+                const chaptersStr = Array.from(allChapters).join('; ') || 'None';
                 
                 const paymentMethods = new Set();
                 customer.orders.forEach(order => {
@@ -827,7 +932,7 @@
                 });
                 const paymentMethodsStr = Array.from(paymentMethods).join('; ') || 'None';
                 
-                csv += `"${customer.email}","${name}",${customer.totalOrders},${customer.totalSpent.toFixed(2)},"${lastOrderDate}",${customer.favorites.length},"${paymentMethodsStr}"\n`;
+                csv += `"${customer.email}","${name}","${password}","${lastLogin}",${customer.totalOrders},${customer.totalSpent.toFixed(2)},"${lastOrderDate}","${sizesStr}","${chaptersStr}",${customer.favorites.length},"${paymentMethodsStr}"\n`;
             });
 
             // Download CSV
