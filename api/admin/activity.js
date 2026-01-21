@@ -18,7 +18,7 @@ module.exports = async (req, res) => {
     if (req.method === 'POST') {
         // Record user activity
         try {
-            const { sessionId, email, page, isCheckout, userAgent } = req.body;
+            const { sessionId, email, page, pageName, isCheckout, userAgent } = req.body;
 
             if (!sessionId) {
                 return res.status(400).json({ error: 'Session ID is required' });
@@ -32,24 +32,31 @@ module.exports = async (req, res) => {
                 activityData = {};
             }
 
+            // Determine if user is on checkout page
+            const currentPage = page || pageName || 'unknown';
+            const onCheckoutPage = isCheckout === true || 
+                                  currentPage.includes('checkout') || 
+                                  currentPage.includes('cart');
+
             // Update or create session activity
             activityData[sessionId] = {
                 sessionId: sessionId,
-                email: email || null,
-                page: page || 'unknown',
-                isCheckout: isCheckout || false,
+                email: email || null, // null for guest users
+                page: currentPage,
+                isCheckout: onCheckoutPage,
                 userAgent: userAgent || 'unknown',
                 lastActivity: new Date().toISOString(),
                 createdAt: activityData[sessionId]?.createdAt || new Date().toISOString()
             };
 
-            // Clean up old sessions (older than 10 minutes)
+            // Clean up old sessions (older than 10 minutes) - but keep active ones
             const now = new Date();
             Object.keys(activityData).forEach(id => {
                 const session = activityData[id];
                 if (session && session.lastActivity) {
                     const lastActivityTime = new Date(session.lastActivity);
                     const minutesSinceActivity = (now - lastActivityTime) / (1000 * 60);
+                    // Remove sessions older than 10 minutes (safety cleanup)
                     if (minutesSinceActivity > 10) {
                         delete activityData[id];
                     }
@@ -89,15 +96,17 @@ module.exports = async (req, res) => {
                 return timeSinceActivity <= INACTIVE_THRESHOLD;
             });
 
-            // Count online users (excluding owner)
+            // Count online users (ALL users except owner)
+            // This includes both logged-in users and guest users
             const onlineUsers = activeSessions.filter(s => {
                 // Exclude owner email
                 return s.email !== 'sandrosandri.bysousa@gmail.com';
             }).length;
 
-            // Count users on checkout
+            // Count users on checkout (must be on checkout page AND active within 5 minutes)
             const checkoutUsers = activeSessions.filter(s => {
-                return s.isCheckout && s.email !== 'sandrosandri.bysousa@gmail.com';
+                // Must be on checkout page AND not the owner
+                return s.isCheckout === true && s.email !== 'sandrosandri.bysousa@gmail.com';
             }).length;
 
             res.status(200).json({
@@ -105,6 +114,7 @@ module.exports = async (req, res) => {
                 onlineUsers: onlineUsers,
                 checkoutUsers: checkoutUsers,
                 activeSessions: activeSessions.length,
+                totalSessions: Object.keys(activityData).length,
                 sessions: activeSessions
             });
 
