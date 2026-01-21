@@ -31,11 +31,10 @@ module.exports = async (req, res) => {
         
         console.log('📧 Verification request:');
         console.log('   Email:', email);
-        console.log('   Token present:', !!token);
         console.log('   Token length:', token ? token.length : 0);
+        console.log('   Token first 10 chars:', token ? token.substring(0, 10) : 'N/A');
 
         if (!email || !token) {
-            console.error('❌ Missing email or token:', { email: !!email, token: !!token });
             return res.status(400).json({ 
                 error: 'Email and token are required' 
             });
@@ -49,9 +48,10 @@ module.exports = async (req, res) => {
         console.log('📖 Loading user data...');
         const userData = await db.getUserData();
         const user = userData[email];
-        console.log('   User found:', !!user);
+        console.log('   User exists:', !!user);
 
         if (!user) {
+            console.error('❌ User not found:', email);
             return res.status(404).json({ 
                 error: 'User not found' 
             });
@@ -59,6 +59,7 @@ module.exports = async (req, res) => {
 
         // Check if already verified
         if (user.email_verified === true) {
+            console.log('✅ Email already verified');
             return res.status(200).json({
                 success: true,
                 message: 'Email already verified',
@@ -77,56 +78,58 @@ module.exports = async (req, res) => {
         // Find matching token for this email
         let tokenFound = null;
         let tokenId = null;
-        let matchingTokens = 0;
-        let expiredTokens = 0;
-        let usedTokens = 0;
+        let tokensForEmail = 0;
 
-        console.log('🔍 Searching for matching token...');
         for (const [id, tokenData] of Object.entries(tokens)) {
             if (tokenData.email === email) {
-                matchingTokens++;
-                console.log(`   Found token for email: ${id}`);
-                console.log(`     Used: ${!!tokenData.usedAt}`);
-                console.log(`     Expires: ${tokenData.expiresAt}`);
+                tokensForEmail++;
+                console.log(`   Token ${id}:`, {
+                    email: tokenData.email,
+                    usedAt: tokenData.usedAt,
+                    expiresAt: tokenData.expiresAt,
+                    createdAt: tokenData.createdAt
+                });
                 
-                if (tokenData.usedAt) {
-                    usedTokens++;
-                    console.log(`     ❌ Token already used at: ${tokenData.usedAt}`);
-                    continue;
-                }
-                
-                // Check expiration
-                const expiresAt = new Date(tokenData.expiresAt);
-                if (expiresAt <= now) {
-                    expiredTokens++;
-                    console.log(`     ❌ Token expired (expired ${Math.round((now - expiresAt) / (1000 * 60))} minutes ago)`);
-                    continue;
-                }
-                
-                // Verify token hash
-                console.log(`     🔐 Verifying token hash...`);
-                const isValid = await bcrypt.compare(token, tokenData.tokenHash);
-                console.log(`     Token hash valid: ${isValid}`);
-                
-                if (isValid) {
-                    tokenFound = tokenData;
-                    tokenId = id;
-                    console.log(`     ✅ Token found and valid!`);
-                    break;
+                if (!tokenData.usedAt) {
+                    // Check expiration
+                    const expiresAt = new Date(tokenData.expiresAt);
+                    const isExpired = expiresAt <= now;
+                    console.log(`   Token ${id} expiration check:`, {
+                        expiresAt: expiresAt.toISOString(),
+                        now: now.toISOString(),
+                        isExpired: isExpired,
+                        timeUntilExpiry: isExpired ? 'EXPIRED' : `${Math.round((expiresAt - now) / (1000 * 60))} minutes`
+                    });
+                    
+                    if (!isExpired) {
+                        // Verify token hash
+                        console.log(`   Verifying token hash for ${id}...`);
+                        const isValid = await bcrypt.compare(token, tokenData.tokenHash);
+                        console.log(`   Token ${id} hash match:`, isValid);
+                        if (isValid) {
+                            tokenFound = tokenData;
+                            tokenId = id;
+                            console.log('✅ Valid token found!');
+                            break;
+                        }
+                    } else {
+                        console.log(`   Token ${id} is expired`);
+                    }
                 } else {
-                    console.log(`     ❌ Token hash mismatch`);
+                    console.log(`   Token ${id} already used at:`, tokenData.usedAt);
                 }
             }
         }
-        
-        console.log('📊 Token search summary:');
-        console.log(`   Matching tokens: ${matchingTokens}`);
-        console.log(`   Used tokens: ${usedTokens}`);
-        console.log(`   Expired tokens: ${expiredTokens}`);
-        console.log(`   Valid token found: ${!!tokenFound}`);
+
+        console.log(`   Total tokens for email ${email}:`, tokensForEmail);
 
         if (!tokenFound) {
             console.error('❌ No valid token found');
+            console.error('   Possible reasons:');
+            console.error('   - Token expired');
+            console.error('   - Token already used');
+            console.error('   - Token hash mismatch');
+            console.error('   - No tokens exist for this email');
             return res.status(400).json({ 
                 error: 'Invalid or expired verification token. Please request a new verification email.' 
             });
