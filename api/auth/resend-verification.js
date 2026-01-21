@@ -5,6 +5,7 @@
 
 const db = require('../../lib/storage');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const emailService = require('../../lib/email');
 
 module.exports = async (req, res) => {
@@ -77,7 +78,6 @@ module.exports = async (req, res) => {
 
         // Generate new verification token
         const rawToken = crypto.randomBytes(32).toString('hex');
-        const bcrypt = require('bcryptjs');
         const tokenHash = await bcrypt.hash(rawToken, 10);
 
         // Set expiration (24 hours from now)
