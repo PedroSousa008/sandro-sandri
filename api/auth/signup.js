@@ -22,6 +22,12 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    console.log('🔍 Signup API called:', {
+        method: req.method,
+        url: req.url,
+        body: req.body ? { email: req.body.email, password: req.body.password ? '***' : 'missing' } : 'missing'
+    });
+
     try {
         const { email, password } = req.body;
 
@@ -47,10 +53,14 @@ module.exports = async (req, res) => {
             });
         }
 
+        console.log('📦 Initializing database...');
         await db.initDb();
+        console.log('✅ Database initialized');
 
         // Check if user already exists
+        console.log('📖 Loading user data...');
         const userData = await db.getUserData();
+        console.log('✅ User data loaded, total users:', Object.keys(userData).length);
         const existingUser = userData[email];
 
         // If user exists and is already verified, return error
@@ -61,11 +71,15 @@ module.exports = async (req, res) => {
         }
 
         // Hash password
+        console.log('🔐 Hashing password...');
         const passwordHash = await bcrypt.hash(password, 10);
+        console.log('✅ Password hashed');
 
         // Generate verification token
+        console.log('🎫 Generating verification token...');
         const rawToken = crypto.randomBytes(32).toString('hex');
         const tokenHash = await bcrypt.hash(rawToken, 10);
+        console.log('✅ Token generated and hashed');
 
         // Set expiration (24 hours from now)
         const expiresAt = new Date();
@@ -136,10 +150,16 @@ module.exports = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error during signup:', error);
+        console.error('❌ Error during signup:');
+        console.error('   Error type:', error.constructor.name);
+        console.error('   Error message:', error.message);
+        console.error('   Error stack:', error.stack);
+        console.error('   Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+        
         res.status(500).json({
             error: 'Failed to create account',
-            message: error.message
+            message: error.message || 'An unexpected error occurred',
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
