@@ -245,11 +245,19 @@
         }
         
         // Initialize dashboard
-        function updateDashboard() {
-            // Update online users
-            if (window.AdminSystem) {
-                const onlineCount = window.AdminSystem.onlineUsers || 0;
-                document.getElementById('dashboard-online-count').textContent = onlineCount;
+        async function updateDashboard() {
+            try {
+                // Fetch active users from server
+                const response = await fetch('/api/admin/activity');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('dashboard-online-count').textContent = data.onlineUsers || 0;
+                        document.getElementById('dashboard-checkout-count').textContent = data.checkoutUsers || 0;
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
             }
         }
         
@@ -267,10 +275,10 @@
             }
         });
         
-        // Update dashboard every 2 seconds for real-time updates
+        // Update dashboard every 3 seconds for real-time updates
         setInterval(() => {
             updateDashboard();
-        }, 2000);
+        }, 3000);
         updateDashboard();
 
         // Customer Information Management
