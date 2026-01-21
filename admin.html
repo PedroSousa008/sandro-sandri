@@ -254,6 +254,7 @@
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Sizes</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Chapters</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Favorites</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Address</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Payment Methods</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Actions</th>
                         </tr>
@@ -616,6 +617,26 @@
                     }
                 });
                 const paymentMethodsList = Array.from(paymentMethods).join(', ') || 'None';
+                
+                // Get address from profile first, then from most recent order
+                let customerAddress = 'None';
+                if (customer.profile && customer.profile.address) {
+                    // Profile address is stored as a single string
+                    customerAddress = customer.profile.address;
+                } else if (customer.orders && customer.orders.length > 0) {
+                    // Fall back to most recent order address
+                    const sortedOrders = [...customer.orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    const latestOrder = sortedOrders[0];
+                    if (latestOrder.shippingAddress) {
+                        const addr = latestOrder.shippingAddress;
+                        customerAddress = `${addr.street || ''}${addr.apartment ? ', ' + addr.apartment : ''}, ${addr.city || ''} ${addr.postalCode || ''}, ${addr.country || latestOrder.shippingCountry || ''}`.trim();
+                        if (customerAddress.endsWith(',')) {
+                            customerAddress = customerAddress.slice(0, -1);
+                        }
+                    } else if (latestOrder.shippingCountry) {
+                        customerAddress = latestOrder.shippingCountry;
+                    }
+                }
 
                 const rowClass = index % 2 === 0 ? 'style="background: var(--color-white);"' : 'style="background: var(--color-gray-light);"';
                 
@@ -651,6 +672,9 @@
                         <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
                             ${customer.favorites.length}
                         </td>
+                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem; max-width: 200px;">
+                            ${customerAddress}
+                        </td>
                         <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem; max-width: 150px;">
                             ${paymentMethodsList || 'None'}
                         </td>
@@ -683,6 +707,7 @@
                     <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
                         <strong>${grandTotalFavorites}</strong>
                     </td>
+                    <td style="padding: var(--space-sm); border: 1px solid var(--color-gray);"></td>
                     <td colspan="2" style="padding: var(--space-sm); border: 1px solid var(--color-gray);"></td>
                 </tr>
             `;
@@ -709,9 +734,17 @@
             const modalContent = document.createElement('div');
             modalContent.style.cssText = 'background: white; max-width: 1000px; max-height: 90vh; overflow-y: auto; padding: var(--space-xl); border-radius: 4px; position: relative;';
             
-            // Get most recent shipping address from orders
+            // Get address from profile first, then from most recent order
             let latestAddress = null;
-            if (customer.orders.length > 0) {
+            if (customer.profile && customer.profile.address) {
+                // Profile address is stored as a string, convert to object format for display
+                latestAddress = {
+                    street: customer.profile.address,
+                    city: customer.profile.city || '',
+                    postalCode: customer.profile.postalCode || '',
+                    country: customer.profile.country || ''
+                };
+            } else if (customer.orders.length > 0) {
                 const sortedOrders = [...customer.orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 latestAddress = sortedOrders[0].shippingAddress;
             }
