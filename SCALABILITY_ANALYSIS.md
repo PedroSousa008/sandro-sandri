@@ -1,4 +1,4 @@
-# Scalability Analysis for 50,000 Concurrent Users
+# Scalability Analysis for 10,000-50,000 Concurrent Users
 
 ## Current Architecture Assessment
 
@@ -11,13 +11,22 @@
 ### ⚠️ **Critical Issues for 50k Concurrent Users:**
 
 #### 1. **API Call Frequency (HIGH PRIORITY)**
+
+**For 10,000 Concurrent Users:**
 - **Activity Monitor**: Sends request every 1 second per user
-  - 50k users × 1 req/sec = **50,000 requests/second**
+  - 10k users × 1 req/sec = **10,000 requests/second**
 - **User Sync**: Every 3 seconds per logged-in user
-  - If 30k are logged in: 30k ÷ 3 = **10,000 requests/second**
+  - If 6k are logged in: 6k ÷ 3 = **2,000 requests/second**
+- **Total**: ~12,000 requests/second at peak
+
+**For 50,000 Concurrent Users:**
+- **Activity Monitor**: 50k users × 1 req/sec = **50,000 requests/second**
+- **User Sync**: If 30k are logged in: 30k ÷ 3 = **10,000 requests/second**
 - **Total**: ~60,000 requests/second at peak
 
-**Impact**: Vercel Hobby plan will hit rate limits and fail
+**Impact**: 
+- **10k users**: Vercel Hobby plan will struggle, Pro recommended
+- **50k users**: Vercel Hobby plan will fail, Pro/Enterprise required
 
 #### 2. **Vercel Plan Limitations**
 - **Hobby Plan**: 
@@ -121,9 +130,21 @@
 
 ## Conclusion:
 
+### **For 10,000 Concurrent Users:**
+
+**Current Status**: ⚠️ **MARGINAL - Will work but may have issues**
+
+**With Minor Optimizations**: ✅ **Should handle 10k concurrent users**
+- Reduce activity monitor to 3-5 seconds
+- Reduce user sync to 5-10 seconds
+- Upgrade to Vercel Pro recommended
+- **Timeline**: 3-5 days of optimization
+
+### **For 50,000 Concurrent Users:**
+
 **Current Status**: ❌ **NOT ready for 50k concurrent users**
 
-**After Optimizations**: ✅ **Should handle 50k concurrent users**
+**After Full Optimizations**: ✅ **Should handle 50k concurrent users**
 
 **Timeline**: 1-2 weeks of optimization work needed before launch
 
