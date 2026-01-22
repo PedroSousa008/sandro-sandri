@@ -129,14 +129,15 @@ module.exports = async (req, res) => {
         console.log('   Total tokens after save:', Object.keys(verifyTokens).length);
         console.log('   Token saved successfully:', !!verifyTokens[tokenId]);
 
-        // Create or update user (with email_verified = false)
+        // Create or update user (with email_verified = true for now, until domain is set up)
+        // TODO: Set email_verified: false and send verification email once domain is verified in Resend
         // Use normalized email as key
         userData[normalizedEmail] = {
             ...(existingUser || {}),
             email: email,
             passwordHash: passwordHash,
-            email_verified: false,
-            email_verified_at: null,
+            email_verified: true, // Temporarily set to true - will require verification once domain is set up
+            email_verified_at: new Date().toISOString(), // Set verification timestamp
             cart: existingUser?.cart || [],
             profile: existingUser?.profile || null,
             favorites: existingUser?.favorites || [],
@@ -147,37 +148,17 @@ module.exports = async (req, res) => {
 
         await db.saveUserData(userData);
 
-        // Send verification email
-        let emailSent = false;
-        let emailError = null;
-        try {
-            console.log('📧 Attempting to send verification email...');
-            console.log('   Email:', email);
-            console.log('   Token length:', rawToken.length);
-            const emailResult = await emailService.sendVerificationEmail(email, rawToken);
-            emailSent = true;
-            console.log('✅ Verification email sent successfully to:', email);
-            console.log('   Email result:', JSON.stringify(emailResult, null, 2));
-        } catch (err) {
-            emailError = err;
-            console.error('❌ Error sending verification email:');
-            console.error('   Error type:', err.constructor.name);
-            console.error('   Error message:', err.message);
-            console.error('   Error stack:', err.stack);
-            console.error('   Full error object:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
-            // Still return success but log the error
-            // User can request resend if email doesn't arrive
-            // This prevents signup from failing if email service has temporary issues
-        }
+        // Skip sending verification email for now (until domain is set up)
+        // TODO: Re-enable email verification once domain is verified in Resend
+        console.log('📧 Email verification skipped - account automatically verified');
+        console.log('   Note: Email verification will be required once domain is set up in Resend');
 
         res.status(201).json({
             success: true,
-            message: emailSent 
-                ? 'Account created. Please check your email to verify your account.'
-                : 'Account created. Verification email may not have been sent. Please use "Resend verification email" if needed.',
-            email: normalizedEmail, // Return normalized email
-            emailSent: emailSent,
-            emailError: emailError ? emailError.message : null
+            message: 'Account created successfully. You can now login.',
+            email: normalizedEmail,
+            emailSent: false, // No email sent for now
+            emailError: null
         });
 
     } catch (error) {
