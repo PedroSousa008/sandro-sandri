@@ -15,6 +15,7 @@ function initProfile() {
     loadOrders();
     loadFavorites();
     initSettings();
+    initLogout();
     
     // Listen for profile sync events
     window.addEventListener('profileSynced', (e) => {
@@ -612,6 +613,44 @@ window.isFavorite = function(productId) {
 function loadMembership() {
     const saved = localStorage.getItem('sandroSandriMembership');
     return saved ? JSON.parse(saved) : null;
+}
+
+// Logout functionality
+function initLogout() {
+    const logoutBtn = document.getElementById('profile-logout-btn');
+    if (!logoutBtn) return;
+    
+    logoutBtn.addEventListener('click', () => {
+        // Confirm logout
+        if (!confirm('Are you sure you want to log out? You will need to log in again to access your account.')) {
+            return;
+        }
+        
+        // Call logout from auth system
+        if (window.AuthSystem && window.AuthSystem.logout) {
+            window.AuthSystem.logout();
+        } else if (window.auth && window.auth.logout) {
+            window.auth.logout();
+        } else {
+            // Fallback: manually clear data and redirect
+            localStorage.removeItem('sandroSandri_user');
+            localStorage.removeItem('sandroSandriProfile');
+            localStorage.removeItem('sandroSandriOrders');
+            localStorage.removeItem('sandroSandriFavorites');
+            localStorage.removeItem('sandroSandriCart');
+            localStorage.removeItem('sandroSandriAtlas');
+            
+            // Clear all password storage
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('sandroSandri_password_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+        
+        // Redirect to home page
+        window.location.href = 'index.html';
+    });
 }
 
 // Settings

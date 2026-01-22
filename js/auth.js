@@ -248,11 +248,8 @@ class AuthSystem {
         this.currentUser = null;
         this.ensureUserMode();
         
-        // Redirect to home if on admin pages
-        if (window.location.pathname.includes('admin')) {
-            window.location.href = 'index.html';
-        } else if (window.location.pathname.includes('profile')) {
-            // Redirect to home if on profile page
+        // Redirect to home if on admin or profile pages
+        if (window.location.pathname.includes('admin') || window.location.pathname.includes('profile')) {
             window.location.href = 'index.html';
         }
     }
