@@ -95,22 +95,36 @@ module.exports = async (req, res) => {
             await emailService.sendVerificationEmail(email, rawToken);
             console.log('✅ Verification email resent successfully to:', email);
         } catch (emailError) {
-            console.error('❌ Error sending verification email:', emailError);
-            console.error('   Full error:', JSON.stringify(emailError, null, 2));
+            console.error('❌ Error sending verification email:');
+            console.error('   Error type:', emailError?.constructor?.name || typeof emailError);
+            console.error('   Error message:', emailError?.message || 'No message');
+            console.error('   Error stack:', emailError?.stack || 'No stack');
+            console.error('   Full error object:', emailError);
+            
+            // Try to stringify the error properly
+            let errorString = 'Unknown error';
+            try {
+                errorString = JSON.stringify(emailError, Object.getOwnPropertyNames(emailError), 2);
+            } catch (e) {
+                errorString = String(emailError);
+            }
+            console.error('   Stringified error:', errorString);
             
             // Provide user-friendly error message
             let errorMessage = 'Failed to send verification email.';
             
             // Check if it's a configuration issue
-            if (emailError.message && emailError.message.includes('RESEND_API_KEY')) {
+            const errorMsg = emailError?.message || String(emailError) || '';
+            if (errorMsg.includes('RESEND_API_KEY') || errorMsg.includes('not configured')) {
                 errorMessage = 'Email service is not configured. Please contact support.';
-            } else if (emailError.message && !emailError.message.includes('RESEND_FROM_EMAIL')) {
-                errorMessage = emailError.message;
+            } else if (errorMsg && !errorMsg.includes('RESEND_FROM_EMAIL')) {
+                errorMessage = errorMsg;
             }
             
             return res.status(500).json({
                 error: errorMessage,
-                message: 'Please try again later or contact support if the issue persists.'
+                message: 'Please try again later or contact support if the issue persists.',
+                details: process.env.NODE_ENV === 'development' ? errorMsg : undefined
             });
         }
 
