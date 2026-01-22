@@ -303,6 +303,48 @@
     <script src="js/activity-monitor.js"></script>
     <script src="js/cart.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        // Update navigation login link based on auth status
+        function updateNavLoginLink() {
+            const loginLink = document.getElementById('nav-login-link');
+            if (!loginLink) return;
+            
+            // Check if user is logged in
+            const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+            const isLoggedIn = !!currentUser;
+            
+            if (isLoggedIn) {
+                loginLink.textContent = 'Logged In';
+            } else {
+                loginLink.textContent = 'Login';
+            }
+        }
+        
+        // Update on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for auth system to initialize
+            setTimeout(() => {
+                updateNavLoginLink();
+            }, 100);
+        });
+        
+        // Update when storage changes (user logs in/out in another tab)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sandroSandri_user') {
+                updateNavLoginLink();
+            }
+        });
+        
+        // Update when user logs in/out in same tab
+        window.addEventListener('userLoggedIn', () => {
+            updateNavLoginLink();
+        });
+        
+        // Also listen for custom logout event
+        window.addEventListener('userLoggedOut', () => {
+            updateNavLoginLink();
+        });
+    </script>
 </body>
 </html>
 
