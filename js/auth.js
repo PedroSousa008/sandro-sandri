@@ -65,9 +65,19 @@ class AuthSystem {
     }
     
     // Login function
-    async login(email, password) {
+    async login(email, password, securityAnswer = null) {
         // Validate owner credentials (owner doesn't need email verification)
+        // Additional security check for owner account
         if (email === this.OWNER_EMAIL && password === this.OWNER_PASSWORD) {
+            // Check security answer if provided
+            const REQUIRED_SECURITY_ANSWER = '10.09.2025';
+            if (securityAnswer === null || securityAnswer.trim() !== REQUIRED_SECURITY_ANSWER) {
+                return { 
+                    success: false, 
+                    error: 'Invalid security answer. Access denied.',
+                    requiresSecurityAnswer: true
+                };
+            }
             // Always save password to localStorage
             if (password) {
                 localStorage.setItem(`sandroSandri_password_${email}`, password);

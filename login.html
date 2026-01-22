@@ -134,6 +134,13 @@
                     <label class="form-label" for="password">Password</label>
                     <input type="password" id="password" name="password" class="form-input" required autocomplete="current-password">
                 </div>
+                <div class="form-group" id="security-question-group" style="display: none;">
+                    <label class="form-label" for="security-answer">Relationship date?</label>
+                    <input type="text" id="security-answer" name="securityAnswer" class="form-input" placeholder="DD.MM.YYYY" autocomplete="off">
+                    <small style="font-size: 0.75rem; color: var(--color-text-light); margin-top: 4px;">
+                        Additional security verification required for admin access
+                    </small>
+                </div>
                 <div class="login-error" id="login-error"></div>
                 <button type="submit" class="login-button">Login</button>
             </form>
@@ -150,21 +157,51 @@
     <script src="js/activity-tracker.js"></script>
     <script src="js/activity-monitor.js"></script>
     <script>
+        const OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
+        const SECURITY_ANSWER = '10.09.2025';
+        
+        // Show/hide security question based on email
+        document.getElementById('email').addEventListener('input', (e) => {
+            const email = e.target.value.toLowerCase().trim();
+            const securityGroup = document.getElementById('security-question-group');
+            const securityInput = document.getElementById('security-answer');
+            
+            if (email === OWNER_EMAIL.toLowerCase()) {
+                securityGroup.style.display = 'flex';
+                securityInput.required = true;
+            } else {
+                securityGroup.style.display = 'none';
+                securityInput.required = false;
+                securityInput.value = '';
+            }
+        });
+        
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const securityAnswer = document.getElementById('security-answer').value;
             const errorEl = document.getElementById('login-error');
             const button = document.querySelector('.login-button');
             
             // Clear previous error
             errorEl.classList.remove('show');
             errorEl.textContent = '';
+            
+            // Check security answer for owner account
+            if (email.toLowerCase().trim() === OWNER_EMAIL.toLowerCase()) {
+                if (!securityAnswer || securityAnswer.trim() !== SECURITY_ANSWER) {
+                    errorEl.textContent = 'Invalid security answer. Access denied.';
+                    errorEl.classList.add('show');
+                    return;
+                }
+            }
+            
             button.disabled = true;
             button.textContent = 'Logging in...';
             
-            const result = await window.AuthSystem.login(email, password);
+            const result = await window.AuthSystem.login(email, password, securityAnswer);
             
             button.disabled = false;
             button.textContent = 'Login';
