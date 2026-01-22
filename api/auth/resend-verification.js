@@ -115,8 +115,14 @@ module.exports = async (req, res) => {
             
             // Check if it's a configuration issue
             const errorMsg = emailError?.message || String(emailError) || '';
-            if (errorMsg.includes('RESEND_API_KEY') || errorMsg.includes('not configured')) {
-                errorMessage = 'Email service is not configured. Please contact support.';
+            const errorCode = emailError?.code || '';
+            
+            console.log('   Error code:', errorCode);
+            console.log('   Error message contains RESEND_API_KEY:', errorMsg.includes('RESEND_API_KEY'));
+            console.log('   Error message contains not configured:', errorMsg.includes('not configured'));
+            
+            if (errorCode === 'MISSING_API_KEY' || errorMsg.includes('RESEND_API_KEY is missing') || errorMsg.includes('not configured')) {
+                errorMessage = 'Email service is not configured. Please add RESEND_API_KEY to Vercel environment variables and redeploy.';
             } else if (errorMsg && !errorMsg.includes('RESEND_FROM_EMAIL')) {
                 errorMessage = errorMsg;
             }
