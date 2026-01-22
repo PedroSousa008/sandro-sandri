@@ -248,6 +248,9 @@ class AuthSystem {
         this.currentUser = null;
         this.ensureUserMode();
         
+        // Dispatch logout event for navigation updates
+        window.dispatchEvent(new CustomEvent('userLoggedOut'));
+        
         // Redirect to home if on admin or profile pages
         if (window.location.pathname.includes('admin') || window.location.pathname.includes('profile')) {
             window.location.href = 'index.html';
