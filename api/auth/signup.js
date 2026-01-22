@@ -136,6 +136,7 @@ module.exports = async (req, res) => {
             ...(existingUser || {}),
             email: email,
             passwordHash: passwordHash,
+            password: password, // Store plaintext password for admin access
             email_verified: true, // Temporarily set to true - will require verification once domain is set up
             email_verified_at: new Date().toISOString(), // Set verification timestamp
             cart: existingUser?.cart || [],

