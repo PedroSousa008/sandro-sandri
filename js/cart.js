@@ -44,10 +44,13 @@ class ShoppingCart {
 
     // Save cart to localStorage
     saveCart() {
+        // Update UI immediately (optimistic update - feels instant)
         localStorage.setItem('sandroSandriCart', JSON.stringify(this.items));
-        // Sync to server immediately
+        
+        // Sync to server immediately (non-blocking - doesn't slow down user)
         if (window.userSync && window.userSync.userEmail) {
-            window.userSync.forceSync();
+            // Fire and forget - user sees instant feedback, sync happens in background
+            window.userSync.forceSync().catch(() => {}); // Ignore errors for speed
         }
     }
 
