@@ -184,11 +184,37 @@ class AuthSystem {
             window.ActivityTracker.trackLogout();
         }
         
+        // Get current user email before clearing
+        const currentEmail = this.currentUser?.email;
+        
+        // Clear ALL user-specific data from localStorage
         localStorage.removeItem('sandroSandri_user');
+        localStorage.removeItem('sandroSandriProfile');
+        localStorage.removeItem('sandroSandriOrders');
+        localStorage.removeItem('sandroSandriFavorites');
+        localStorage.removeItem('sandroSandriCart');
+        localStorage.removeItem('sandroSandriAtlas');
+        
+        // Clear all password storage for this user
+        if (currentEmail) {
+            localStorage.removeItem(`sandroSandri_password_${currentEmail}`);
+        }
+        
+        // Clear all password storage (in case email is not available)
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('sandroSandri_password_')) {
+                localStorage.removeItem(key);
+            }
+        });
+        
         this.currentUser = null;
         this.ensureUserMode();
+        
         // Redirect to home if on admin pages
         if (window.location.pathname.includes('admin')) {
+            window.location.href = 'index.html';
+        } else if (window.location.pathname.includes('profile')) {
+            // Redirect to home if on profile page
             window.location.href = 'index.html';
         }
     }

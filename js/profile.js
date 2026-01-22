@@ -81,10 +81,49 @@ function initTabs() {
 
 // Load and display profile data
 function loadProfileData() {
-    const profile = loadProfile();
+    // First, verify the current logged-in user
+    const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+    const currentEmail = currentUser?.email;
+    
+    if (!currentEmail) {
+        // Not logged in - clear profile and redirect
+        console.warn('No user logged in, clearing profile data');
+        localStorage.removeItem('sandroSandriProfile');
+        localStorage.removeItem('sandroSandriOrders');
+        localStorage.removeItem('sandroSandriFavorites');
+        localStorage.removeItem('sandroSandriCart');
+        if (window.location.pathname.includes('profile')) {
+            window.location.href = 'login.html';
+        }
+        return;
+    }
+    
+    const profile = loadProfile(); // This now verifies email match
+    
+    // Security check: Ensure profile belongs to current user
+    if (profile && profile.email && profile.email !== currentEmail) {
+        console.warn(`Profile email (${profile.email}) does not match current user (${currentEmail}). Clearing old profile data.`);
+        // Clear mismatched profile data
+        localStorage.removeItem('sandroSandriProfile');
+        localStorage.removeItem('sandroSandriOrders');
+        localStorage.removeItem('sandroSandriFavorites');
+        localStorage.removeItem('sandroSandriCart');
+        // Reload data from server for current user
+        if (window.userSync) {
+            window.userSync.loadAllData();
+        }
+        return;
+    }
+    
     const membership = loadMembership();
 
     if (profile) {
+        // Double-check email matches
+        if (profile.email !== currentEmail) {
+            console.error('Profile email mismatch detected!');
+            return;
+        }
+        
         // Update overview
         const overviewName = document.getElementById('overview-name');
         const overviewEmail = document.getElementById('overview-email');
@@ -102,8 +141,9 @@ function loadProfileData() {
             }
         }
 
-        // Calculate stats - reload fresh data
-        const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
+        // Calculate stats - filter orders to only current user's orders
+        const allOrders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
+        const orders = allOrders.filter(order => order.email === currentEmail);
         const favorites = JSON.parse(localStorage.getItem('sandroSandriFavorites') || '[]');
         const totalSpent = calculateTotalSpent(orders);
 
@@ -114,6 +154,11 @@ function loadProfileData() {
         if (ordersCount) ordersCount.textContent = orders.length;
         if (favoritesCount) favoritesCount.textContent = favorites.length;
         if (totalSpentEl) totalSpentEl.textContent = window.ProductsAPI ? window.ProductsAPI.formatPrice(totalSpent) : `€${totalSpent.toFixed(2)}`;
+    } else {
+        // No profile found - try to load from server
+        if (window.userSync) {
+            window.userSync.loadAllData();
+        }
     }
 }
 
@@ -134,18 +179,63 @@ function initPersonalForm() {
 }
 
 function loadProfile() {
+    // Verify current user before loading profile
+    const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+    const currentEmail = currentUser?.email;
+    
+    if (!currentEmail) {
+        return null; // Not logged in
+    }
+    
     const saved = localStorage.getItem('sandroSandriProfile');
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) {
+        return null;
+    }
+    
+    const profile = JSON.parse(saved);
+    
+    // Security check: Only return profile if it belongs to current user
+    if (profile.email && profile.email !== currentEmail) {
+        console.warn(`Profile email (${profile.email}) does not match current user (${currentEmail}). Clearing old profile.`);
+        // Clear the mismatched profile
+        localStorage.removeItem('sandroSandriProfile');
+        localStorage.removeItem('sandroSandriOrders');
+        localStorage.removeItem('sandroSandriFavorites');
+        localStorage.removeItem('sandroSandriCart');
+        return null;
+    }
+    
+    return profile;
 }
 
 function saveProfile() {
     const form = document.getElementById('profile-form-element');
+    if (!form) return;
+
+    // Verify user is logged in
+    const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+    const currentEmail = currentUser?.email;
+    
+    if (!currentEmail) {
+        alert('You must be logged in to save your profile.');
+        window.location.href = 'login.html';
+        return;
+    }
+
     const formData = new FormData(form);
     
     const oldProfile = loadProfile();
+    
+    // Ensure profile email matches current user (if old profile exists)
+    if (oldProfile && oldProfile.email && oldProfile.email !== currentEmail) {
+        console.error('Cannot save profile: email mismatch');
+        alert('Profile email mismatch. Please log out and log back in.');
+        return;
+    }
+    
     const profile = {
         name: formData.get('name'),
-        email: formData.get('email'),
+        email: currentEmail, // Always use current logged-in user's email
         phone: formData.get('phone'),
         country: formData.get('country'),
         size: formData.get('size'),
