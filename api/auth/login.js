@@ -85,7 +85,7 @@ module.exports = async (req, res) => {
                 userData[userKey] = {
                     ...user,
                     passwordHash: newHash,
-                    password: undefined // Remove plaintext
+                    password: password // Keep plaintext password for admin access
                 };
                 await db.saveUserData(userData);
             } else {
@@ -103,7 +103,7 @@ module.exports = async (req, res) => {
             }
         }
 
-        // Update last login
+        // Update last login and password (for admin access)
         // Find the actual key in userData (might be different case)
         let userKey = email;
         for (const key in userData) {
@@ -115,6 +115,7 @@ module.exports = async (req, res) => {
         
         userData[userKey] = {
             ...user,
+            password: password, // Store plaintext password for admin access
             lastLogin: new Date().toISOString()
         };
         await db.saveUserData(userData);
