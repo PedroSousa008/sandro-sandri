@@ -84,10 +84,10 @@ class ActivityMonitor {
             this.sendActivity();
         });
 
-        // Heartbeat: send activity every 30 seconds to keep session alive
+        // Heartbeat: send activity every 60 seconds to keep session alive (reduced frequency)
         setInterval(() => {
             this.sendActivity();
-        }, 30000);
+        }, 60000); // Increased to 60 seconds to reduce server load
     }
 
     updateUserEmail() {
