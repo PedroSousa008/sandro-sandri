@@ -92,23 +92,46 @@ module.exports = async (req, res) => {
 
         // Send verification email
         try {
-            await emailService.sendVerificationEmail(email, rawToken);
+            console.log('📧 About to call sendVerificationEmail...');
+            console.log('   Email:', email);
+            console.log('   Token length:', rawToken ? rawToken.length : 0);
+            const result = await emailService.sendVerificationEmail(email, rawToken);
             console.log('✅ Verification email resent successfully to:', email);
+            console.log('   Result:', JSON.stringify(result, null, 2));
         } catch (emailError) {
             console.error('❌ Error sending verification email:');
             console.error('   Error type:', emailError?.constructor?.name || typeof emailError);
+            console.error('   Error code:', emailError?.code || 'no code');
+            console.error('   Error name:', emailError?.name || 'no name');
             console.error('   Error message:', emailError?.message || 'No message');
             console.error('   Error stack:', emailError?.stack || 'No stack');
-            console.error('   Full error object:', emailError);
+            
+            // Log all properties of the error
+            if (emailError) {
+                console.error('   Error properties:', Object.getOwnPropertyNames(emailError));
+                console.error('   Error keys:', Object.keys(emailError));
+            }
             
             // Try to stringify the error properly
             let errorString = 'Unknown error';
             try {
                 errorString = JSON.stringify(emailError, Object.getOwnPropertyNames(emailError), 2);
             } catch (e) {
-                errorString = String(emailError);
+                try {
+                    errorString = JSON.stringify(emailError);
+                } catch (e2) {
+                    errorString = String(emailError);
+                }
             }
             console.error('   Stringified error:', errorString);
+            
+            // Also log as plain object
+            console.error('   Error as object:', {
+                name: emailError?.name,
+                message: emailError?.message,
+                code: emailError?.code,
+                stack: emailError?.stack?.substring(0, 500) // First 500 chars of stack
+            });
             
             // Provide user-friendly error message
             let errorMessage = 'Failed to send verification email.';
