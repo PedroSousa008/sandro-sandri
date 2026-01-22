@@ -98,15 +98,19 @@ module.exports = async (req, res) => {
             console.error('❌ Error sending verification email:', emailError);
             console.error('   Full error:', JSON.stringify(emailError, null, 2));
             
-            // Provide user-friendly error message (don't mention RESEND_FROM_EMAIL)
-            let errorMessage = 'Failed to send verification email. Please try again later.';
-            if (emailError.message && !emailError.message.includes('RESEND_FROM_EMAIL')) {
+            // Provide user-friendly error message
+            let errorMessage = 'Failed to send verification email.';
+            
+            // Check if it's a configuration issue
+            if (emailError.message && emailError.message.includes('RESEND_API_KEY')) {
+                errorMessage = 'Email service is not configured. Please contact support.';
+            } else if (emailError.message && !emailError.message.includes('RESEND_FROM_EMAIL')) {
                 errorMessage = emailError.message;
             }
             
             return res.status(500).json({
                 error: errorMessage,
-                message: 'Please check your email service configuration or try again later.'
+                message: 'Please try again later or contact support if the issue persists.'
             });
         }
 
