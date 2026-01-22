@@ -393,8 +393,19 @@ function populateForm(profile) {
 
 // Orders
 function loadOrders() {
+    // Verify current user
+    const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+    const currentEmail = currentUser?.email;
+    
+    if (!currentEmail) {
+        return; // Not logged in
+    }
+    
     const saved = localStorage.getItem('sandroSandriOrders');
-    const orders = saved ? JSON.parse(saved) : [];
+    const allOrders = saved ? JSON.parse(saved) : [];
+    
+    // Filter orders to only show current user's orders
+    const orders = allOrders.filter(order => order.email === currentEmail);
     
     displayOrders(orders);
     return orders;
