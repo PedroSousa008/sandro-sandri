@@ -483,6 +483,14 @@ function calculateTotalSpent(orders) {
 
 // Favorites/Wishlist
 function loadFavorites() {
+    // Verify current user
+    const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+    const currentEmail = currentUser?.email;
+    
+    if (!currentEmail) {
+        return []; // Not logged in
+    }
+    
     // Load from localStorage first for instant display
     const saved = localStorage.getItem('sandroSandriFavorites');
     const favorites = saved ? JSON.parse(saved) : [];
