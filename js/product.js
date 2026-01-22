@@ -625,12 +625,10 @@ function initFavoritesButton(product) {
             window.ActivityTracker.trackRemoveFavorite(product.id, product.name);
         }
         
-        // Trigger immediate sync to server (no debounce)
+        // Trigger immediate sync to server (instant, non-blocking)
         if (window.userSync && window.userSync.userEmail) {
-            console.log('❤️ Favorite removed, syncing to server immediately...');
-            window.userSync.forceSync(); // Use forceSync for immediate sync
-        } else {
-            console.warn('⚠️ UserSync not available, favorite removed locally only');
+            // Fire and forget - instant user feedback, sync happens in background
+            window.userSync.forceSync().catch(() => {}); // Ignore errors for speed
         }
     };
 
