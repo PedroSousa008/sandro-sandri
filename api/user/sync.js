@@ -108,9 +108,9 @@ module.exports = async (req, res) => {
 
             console.log('   Existing favorites:', existingUser.favorites?.length || 0, 'items:', existingUser.favorites || []);
 
-            // Update user data (merge to preserve existing data if not provided)
-            // CRITICAL: Always update favorites if provided (don't merge, replace)
-            userData[email] = {
+            // Optimize: Only update if data actually changed (reduces KV writes)
+            let dataChanged = false;
+            const newUserData = {
                 cart: cart !== undefined ? cart : existingUser.cart,
                 profile: profile !== undefined ? profile : existingUser.profile,
                 favorites: favorites !== undefined ? (Array.isArray(favorites) ? favorites : []) : existingUser.favorites,
@@ -119,8 +119,23 @@ module.exports = async (req, res) => {
                 lastLogin: req.body.lastLogin !== undefined ? req.body.lastLogin : existingUser.lastLogin,
                 updatedAt: new Date().toISOString()
             };
-
-            console.log('   Saved favorites:', userData[email].favorites?.length || 0, 'items:', userData[email].favorites || []);
+            
+            // Check if data actually changed (simple comparison)
+            const existingStr = JSON.stringify(existingUser);
+            const newStr = JSON.stringify(newUserData);
+            dataChanged = existingStr !== newStr;
+            
+            if (dataChanged) {
+                userData[email] = newUserData;
+                console.log('   Saved favorites:', userData[email].favorites?.length || 0, 'items:', userData[email].favorites || []);
+            } else {
+                // No changes, skip save to reduce KV writes
+                console.log('   No data changes detected, skipping save');
+                return res.status(200).json({
+                    success: true,
+                    message: 'User data unchanged, no save needed'
+                });
+            }
 
             // Update atlas data
             if (atlas) {
@@ -131,8 +146,10 @@ module.exports = async (req, res) => {
                 };
             }
 
-            // Save to database
-            await db.saveUserData(userData);
+            // Save to database (only if data changed)
+            if (dataChanged) {
+                await db.saveUserData(userData);
+            }
             if (atlas) {
                 await db.saveAtlasData(atlasData);
             }

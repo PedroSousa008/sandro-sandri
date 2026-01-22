@@ -67,10 +67,15 @@ class ActivityMonitor {
             this.sendActivity();
         }, { passive: true });
 
-        // Track page visibility changes
+        // Track page visibility changes (throttled)
+        let visibilityTimeout = null;
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                this.sendActivity();
+                // Throttle visibility change tracking
+                if (visibilityTimeout) clearTimeout(visibilityTimeout);
+                visibilityTimeout = setTimeout(() => {
+                    this.sendActivity();
+                }, 2000); // Wait 2 seconds after page becomes visible
             }
         });
 
@@ -105,15 +110,18 @@ class ActivityMonitor {
     async sendActivity() {
         const now = Date.now();
         
-        // Throttle: don't send more than once per second to avoid spam
-        if (now - this.lastSendTime < 1000) {
+        // Throttle: don't send more than once per 3 seconds to reduce server load
+        // This still provides real-time tracking while being more efficient
+        const THROTTLE_MS = 3000; // 3 seconds instead of 1 second
+        
+        if (now - this.lastSendTime < THROTTLE_MS) {
             // Queue the send for later
             if (!this.pendingSend) {
                 this.pendingSend = true;
                 setTimeout(() => {
                     this.pendingSend = false;
                     this.sendActivity();
-                }, 1000 - (now - this.lastSendTime));
+                }, THROTTLE_MS - (now - this.lastSendTime));
             }
             return;
         }

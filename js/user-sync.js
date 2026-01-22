@@ -68,13 +68,14 @@ class UserSync {
             }
         });
 
-        // Periodic sync every 3 seconds (very frequent for instant sync)
+        // Periodic sync every 8 seconds (balanced for sync speed and server load)
+        // This still provides near real-time sync while reducing API calls by ~60%
         setInterval(() => {
             this.updateUserEmail(); // Refresh email in case it changed
             if (this.userEmail && !document.hidden && !this.syncInProgress) {
                 this.loadAllData();
             }
-        }, 3000); // Reduced to 3 seconds for faster sync
+        }, 8000); // Increased to 8 seconds to reduce server load while maintaining good sync
 
         // Sync when page becomes visible
         document.addEventListener('visibilitychange', () => {
