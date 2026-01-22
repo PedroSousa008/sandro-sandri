@@ -225,6 +225,26 @@
         </div>
 
         <div class="admin-section">
+            <h2 class="admin-section-title">Size Selection Statistics</h2>
+            <div id="size-stats-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
+                Loading size statistics...
+            </div>
+            <div id="size-stats-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
+            <div id="size-stats-table-container" style="overflow-x: auto; display: none;">
+                <table id="size-stats-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="background: var(--color-gray-light);">
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Size</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Total Customers</th>
+                        </tr>
+                    </thead>
+                    <tbody id="size-stats-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
             <h2 class="admin-section-title">Quick Links</h2>
             <div class="admin-actions">
                 <a href="index.html" class="admin-action-btn admin-action-btn-secondary">Home Page</a>
@@ -498,6 +518,96 @@
                     showCustomerDetails(email);
                 });
             });
+            
+            // Render size statistics table
+            renderSizeStatistics(customers);
+        }
+        
+        function renderSizeStatistics(customers) {
+            const sizeStatsContainer = document.getElementById('size-stats-table-container');
+            const sizeStatsTbody = document.getElementById('size-stats-tbody');
+            const sizeStatsLoading = document.getElementById('size-stats-loading');
+            const sizeStatsError = document.getElementById('size-stats-error');
+            
+            if (!customers || customers.length === 0) {
+                sizeStatsContainer.style.display = 'none';
+                return;
+            }
+            
+            // Count size selections across all customers
+            const sizeCounts = {
+                'XS': 0,
+                'S': 0,
+                'M': 0,
+                'L': 0,
+                'XL': 0
+            };
+            
+            customers.forEach(customer => {
+                const customerSizes = new Set();
+                
+                // Get sizes from profile
+                if (customer.profile && customer.profile.size) {
+                    customerSizes.add(customer.profile.size);
+                }
+                
+                // Get sizes from orders
+                customer.orders.forEach(order => {
+                    if (order.sizesPurchased && Array.isArray(order.sizesPurchased)) {
+                        order.sizesPurchased.forEach(size => customerSizes.add(size));
+                    } else if (order.cart) {
+                        order.cart.forEach(item => {
+                            if (item.size) customerSizes.add(item.size);
+                        });
+                    }
+                });
+                
+                // Count each size for this customer
+                customerSizes.forEach(size => {
+                    const normalizedSize = size.toUpperCase();
+                    if (sizeCounts.hasOwnProperty(normalizedSize)) {
+                        sizeCounts[normalizedSize]++;
+                    }
+                });
+            });
+            
+            // Render table
+            const sizes = ['XS', 'S', 'M', 'L', 'XL'];
+            let html = '';
+            
+            sizes.forEach((size, index) => {
+                const count = sizeCounts[size] || 0;
+                const rowClass = index % 2 === 0 ? 'style="background: var(--color-white);"' : 'style="background: var(--color-gray-light);"';
+                
+                html += `
+                    <tr ${rowClass}>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 500;">
+                            ${size}
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            ${count}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            // Add total row
+            const totalCustomers = Object.values(sizeCounts).reduce((sum, count) => sum + count, 0);
+            html += `
+                <tr style="background: var(--color-navy); color: white; font-weight: 600;">
+                    <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                        <strong>TOTAL</strong>
+                    </td>
+                    <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                        <strong>${totalCustomers}</strong>
+                    </td>
+                </tr>
+            `;
+            
+            sizeStatsTbody.innerHTML = html;
+            sizeStatsContainer.style.display = 'block';
+            sizeStatsLoading.style.display = 'none';
+            sizeStatsError.style.display = 'none';
         }
 
         function showCustomerDetails(email) {
