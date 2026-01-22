@@ -112,6 +112,13 @@
                     <button class="profile-tab" data-tab="favorites">Favorites</button>
                     <button class="profile-tab" data-tab="settings">Settings</button>
                 </div>
+                
+                <!-- Log Out Button - Always Visible -->
+                <div class="profile-logout-section" style="margin: var(--space-md) 0; text-align: center; padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-gray);">
+                    <button id="profile-logout-btn" class="secondary-button" style="padding: 10px 24px; font-family: var(--font-sans); font-size: 0.875rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid var(--color-navy); color: var(--color-navy); background: transparent; cursor: pointer; border-radius: 2px; transition: all 0.2s ease;">
+                        Log Out
+                    </button>
+                </div>
 
                 <!-- Overview Tab -->
                 <div class="profile-tab-content active" id="overview-tab">
@@ -134,12 +141,6 @@
                                     <span class="membership-tier" id="membership-tier"></span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="profile-logout-section" style="margin-top: var(--space-md); margin-bottom: var(--space-lg); text-align: center;">
-                            <button id="profile-logout-btn" class="secondary-button" style="padding: var(--space-sm) var(--space-lg); font-family: var(--font-sans); font-size: 0.875rem; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid var(--color-navy); color: var(--color-navy); background: transparent; cursor: pointer; border-radius: 2px; transition: all var(--transition-fast);">
-                                Log Out
-                            </button>
                         </div>
 
                         <div class="profile-stats">
