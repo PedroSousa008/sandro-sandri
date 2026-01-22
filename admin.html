@@ -628,9 +628,15 @@
                     </div>
                 </div>
 
-                <div>
+                <div style="margin-bottom: var(--space-lg);">
                     <h3 style="margin-bottom: var(--space-sm);">Order History (${customer.orders.length})</h3>
                     ${ordersHtml || '<p>No orders yet</p>'}
+                </div>
+                
+                <div style="margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 2px solid var(--color-gray); text-align: right;">
+                    <button class="delete-customer-btn" data-email="${customer.email}" style="padding: var(--space-sm) var(--space-lg); background: #d32f2f; color: white; border: none; cursor: pointer; border-radius: 4px; font-family: var(--font-sans); font-size: 0.875rem; font-weight: 500; letter-spacing: 0.05em;">
+                        Delete Customer
+                    </button>
                 </div>
             `;
 
@@ -646,6 +652,52 @@
                     document.body.removeChild(modal);
                 }
             });
+            
+            // Delete customer handler
+            const deleteBtn = modal.querySelector('.delete-customer-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const customerEmail = deleteBtn.dataset.email;
+                    const customerName = customer.profile?.name || customerEmail;
+                    
+                    if (!confirm(`Are you sure you want to delete customer "${customerName}" (${customerEmail})?\n\nThis will permanently delete:\n- All customer data\n- All orders\n- All favorites\n- Profile information\n\nThis action cannot be undone!`)) {
+                        return;
+                    }
+                    
+                    // Double confirmation
+                    if (!confirm(`FINAL CONFIRMATION: Delete "${customerName}"?\n\nThis action is PERMANENT and CANNOT be undone!`)) {
+                        return;
+                    }
+                    
+                    deleteBtn.disabled = true;
+                    deleteBtn.textContent = 'Deleting...';
+                    
+                    try {
+                        const response = await fetch(`/api/admin?endpoint=customers&email=${encodeURIComponent(customerEmail)}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            alert(`Customer "${customerName}" has been deleted successfully.`);
+                            document.body.removeChild(modal);
+                            // Reload customers table
+                            loadCustomers();
+                        } else {
+                            throw new Error(data.error || 'Failed to delete customer');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting customer:', error);
+                        alert(`Error deleting customer: ${error.message}`);
+                        deleteBtn.disabled = false;
+                        deleteBtn.textContent = 'Delete Customer';
+                    }
+                });
+            }
         }
 
         function exportToCSV() {

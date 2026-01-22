@@ -8,7 +8,7 @@ const db = require('../../lib/storage');
 module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -118,7 +118,7 @@ module.exports = async (req, res) => {
             }
         }
     } else if (endpoint === 'customers') {
-        // Customers endpoint (GET only)
+        // Customers endpoint (GET and DELETE)
         if (req.method === 'GET') {
             try {
                 await db.initDb();
@@ -167,13 +167,87 @@ module.exports = async (req, res) => {
 
                 res.status(200).json({
                     success: true,
-                    customers: customersWithDetails
+                    customers: customersWithDetails,
+                    totalCustomers: customersWithDetails.length
                 });
             } catch (error) {
                 console.error('Error fetching customers:', error);
                 res.status(500).json({
                     success: false,
                     error: 'Failed to fetch customers',
+                    message: error.message
+                });
+            }
+        } else if (req.method === 'DELETE') {
+            // Delete customer endpoint
+            try {
+                const { email } = req.query;
+                
+                if (!email) {
+                    return res.status(400).json({ 
+                        success: false,
+                        error: 'Email is required' 
+                    });
+                }
+                
+                // Prevent deleting the owner account
+                if (email === 'sandrosandri.bysousa@gmail.com') {
+                    return res.status(403).json({ 
+                        success: false,
+                        error: 'Cannot delete owner account' 
+                    });
+                }
+                
+                await db.initDb();
+                
+                // Get user data
+                const userData = await db.getUserData();
+                
+                if (!userData[email]) {
+                    return res.status(404).json({ 
+                        success: false,
+                        error: 'Customer not found' 
+                    });
+                }
+                
+                // Delete user from userData
+                delete userData[email];
+                await db.saveUserData(userData);
+                console.log(`✅ Customer deleted: ${email}`);
+                
+                // Also delete user's orders (optional - you may want to keep orders for records)
+                // For now, we'll keep orders but they won't be associated with the user
+                // If you want to delete orders too, uncomment this:
+                /*
+                const allOrders = await db.getAllOrders();
+                const remainingOrders = allOrders.filter(order => order.email !== email);
+                await db.saveAllOrders(remainingOrders);
+                console.log(`✅ Deleted ${allOrders.length - remainingOrders.length} orders for ${email}`);
+                */
+                
+                // Delete user's activity data
+                const activityData = await db.getActivityData() || {};
+                let deletedActivityCount = 0;
+                Object.keys(activityData).forEach(key => {
+                    if (activityData[key].email === email) {
+                        delete activityData[key];
+                        deletedActivityCount++;
+                    }
+                });
+                if (deletedActivityCount > 0) {
+                    await db.saveActivityData(activityData);
+                    console.log(`✅ Deleted ${deletedActivityCount} activity records for ${email}`);
+                }
+                
+                res.status(200).json({
+                    success: true,
+                    message: `Customer ${email} deleted successfully`
+                });
+            } catch (error) {
+                console.error('Error deleting customer:', error);
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to delete customer',
                     message: error.message
                 });
             }
