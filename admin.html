@@ -312,8 +312,18 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        document.getElementById('dashboard-online-count').textContent = data.onlineUsers || 0;
-                        document.getElementById('dashboard-checkout-count').textContent = data.checkoutUsers || 0;
+                        const onlineCount = data.onlineUsers || 0;
+                        const checkoutCount = data.checkoutUsers || 0;
+                        
+                        // Update dashboard stats
+                        document.getElementById('dashboard-online-count').textContent = onlineCount;
+                        document.getElementById('dashboard-checkout-count').textContent = checkoutCount;
+                        
+                        // Update header admin bar counter (same tracking method)
+                        const adminOnlineCount = document.getElementById('admin-online-count');
+                        if (adminOnlineCount) {
+                            adminOnlineCount.textContent = `${onlineCount} user${onlineCount !== 1 ? 's' : ''} online`;
+                        }
                     }
                 }
             } catch (error) {
