@@ -897,6 +897,163 @@
         // Bind buttons
         document.getElementById('load-customers-btn').addEventListener('click', loadCustomers);
         document.getElementById('export-customers-btn').addEventListener('click', exportToCSV);
+
+        // Purchases Table Management
+        async function loadPurchases() {
+            const loadingEl = document.getElementById('purchases-loading');
+            const errorEl = document.getElementById('purchases-error');
+            const tableContainer = document.getElementById('purchases-table-container');
+            const tbody = document.getElementById('purchases-tbody');
+
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            tableContainer.style.display = 'none';
+
+            try {
+                // Fetch inventory and orders
+                const [inventoryResponse, customersResponse] = await Promise.all([
+                    fetch('/api/inventory/stock'),
+                    fetch('/api/admin?endpoint=customers')
+                ]);
+
+                if (!inventoryResponse.ok) {
+                    throw new Error('Failed to load inventory');
+                }
+
+                const inventoryData = await inventoryResponse.json();
+                const customersData = await customersResponse.json();
+
+                if (!customersData.success) {
+                    throw new Error('Failed to load customers/orders');
+                }
+
+                // Get all orders from customers
+                const allOrders = [];
+                if (customersData.customers) {
+                    customersData.customers.forEach(customer => {
+                        if (customer.orders && Array.isArray(customer.orders)) {
+                            allOrders.push(...customer.orders);
+                        }
+                    });
+                }
+
+                // Get products from window.ProductsAPI
+                const products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
+                const tshirtProducts = products.filter(p => p.category === 'tshirts');
+
+                // Calculate sold quantities for each product
+                const purchasesData = tshirtProducts.map(product => {
+                    const sold = {
+                        XS: 0,
+                        S: 0,
+                        M: 0,
+                        L: 0,
+                        XL: 0
+                    };
+
+                    // Calculate from orders
+                    allOrders.forEach(order => {
+                        if (order.cart && Array.isArray(order.cart)) {
+                            order.cart.forEach(item => {
+                                if (item.productId === product.id && item.size && sold.hasOwnProperty(item.size)) {
+                                    sold[item.size] += (item.quantity || 1);
+                                }
+                            });
+                        }
+                    });
+
+                    // Calculate total sold
+                    const totalSold = sold.XS + sold.S + sold.M + sold.L + sold.XL;
+
+                    return {
+                        productId: product.id,
+                        name: product.name,
+                        sold: sold,
+                        totalSold: totalSold
+                    };
+                });
+
+                // Render table
+                let html = '';
+                let grandTotalXS = 0, grandTotalS = 0, grandTotalM = 0, grandTotalL = 0, grandTotalXL = 0, grandTotalAll = 0;
+
+                purchasesData.forEach((purchase, index) => {
+                    grandTotalXS += purchase.sold.XS;
+                    grandTotalS += purchase.sold.S;
+                    grandTotalM += purchase.sold.M;
+                    grandTotalL += purchase.sold.L;
+                    grandTotalXL += purchase.sold.XL;
+                    grandTotalAll += purchase.totalSold;
+
+                    const rowClass = index % 2 === 0 ? 'style="background: var(--color-white);"' : 'style="background: var(--color-gray-light);"';
+                    
+                    html += `
+                        <tr ${rowClass}>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); position: sticky; left: 0; background: inherit; font-weight: 500;">
+                                ${purchase.name}
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                                ${purchase.sold.XS}
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                                ${purchase.sold.S}
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                                ${purchase.sold.M}
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                                ${purchase.sold.L}
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                                ${purchase.sold.XL}
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
+                                ${purchase.totalSold}
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                // Add total row
+                html += `
+                    <tr style="background: var(--color-navy); color: white; font-weight: 600;">
+                        <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">
+                            <strong>TOTAL:</strong>
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            <strong>${grandTotalXS}</strong>
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            <strong>${grandTotalS}</strong>
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            <strong>${grandTotalM}</strong>
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            <strong>${grandTotalL}</strong>
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            <strong>${grandTotalXL}</strong>
+                        </td>
+                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                            <strong>${grandTotalAll}</strong>
+                        </td>
+                    </tr>
+                `;
+
+                tbody.innerHTML = html;
+                tableContainer.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading purchases:', error);
+                errorEl.textContent = `Error: ${error.message}`;
+                errorEl.style.display = 'block';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        document.getElementById('load-purchases-btn').addEventListener('click', loadPurchases);
     </script>
 </body>
 </html>
