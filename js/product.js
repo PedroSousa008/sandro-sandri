@@ -90,12 +90,21 @@ function populateProduct(product) {
     // Update form product ID
     document.getElementById('add-to-cart-form').dataset.productId = product.id;
     
-    // Update main product image
+    // Update main product image - OPTIMIZED: Preload all images and keep in DOM for instant switching
     const mainImageContainer = document.getElementById('product-image');
     if (mainImageContainer && product.images && product.images.length > 0) {
-        // Show first image (front) as main, or back if only one image
-        const mainImage = product.images[0];
-        mainImageContainer.innerHTML = `<img src="${mainImage}" alt="${product.name}">`;
+        // Preload all images for instant switching
+        product.images.forEach((imgSrc, index) => {
+            const img = new Image();
+            img.src = imgSrc;
+            img.alt = `${product.name} view ${index + 1}`;
+            img.style.display = index === 0 ? 'block' : 'none';
+            img.style.width = '100%';
+            img.style.height = 'auto';
+            img.style.transition = 'opacity 0.15s ease-in-out';
+            img.loading = 'eager'; // Load immediately
+            mainImageContainer.appendChild(img);
+        });
     }
     
     // Update thumbnails
@@ -677,7 +686,7 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Switch to a specific image index
+// Switch to a specific image index - OPTIMIZED for instant response
 function switchToImage(imageIndex, product) {
     if (!product || !product.images || product.images.length === 0) return;
     
@@ -688,21 +697,36 @@ function switchToImage(imageIndex, product) {
     const mainImageContainer = document.getElementById('product-image');
     const thumbnailsContainer = document.querySelector('.product-thumbnails');
     
-    if (mainImageContainer) {
-        mainImageContainer.innerHTML = `<img src="${product.images[imageIndex]}" alt="${product.name}">`;
-    }
-    
-    // Update thumbnails
-    if (thumbnailsContainer) {
-        const thumbnails = thumbnailsContainer.querySelectorAll('.thumbnail');
-        thumbnails.forEach((thumb, index) => {
-            if (index === imageIndex) {
-                thumb.classList.add('active');
-            } else {
-                thumb.classList.remove('active');
-            }
-        });
-    }
+    // OPTIMIZED: Use requestAnimationFrame for instant visual update
+    requestAnimationFrame(() => {
+        if (mainImageContainer) {
+            // Get all preloaded images
+            const images = mainImageContainer.querySelectorAll('img');
+            images.forEach((img, index) => {
+                if (index === imageIndex) {
+                    // Show target image instantly
+                    img.style.display = 'block';
+                    img.style.opacity = '1';
+                } else {
+                    // Hide other images instantly
+                    img.style.display = 'none';
+                    img.style.opacity = '0';
+                }
+            });
+        }
+        
+        // Update thumbnails
+        if (thumbnailsContainer) {
+            const thumbnails = thumbnailsContainer.querySelectorAll('.thumbnail');
+            thumbnails.forEach((thumb, index) => {
+                if (index === imageIndex) {
+                    thumb.classList.add('active');
+                } else {
+                    thumb.classList.remove('active');
+                }
+            });
+        }
+    });
     
     // Update current image index
     if (!window.currentProductImageIndex) {
@@ -711,11 +735,8 @@ function switchToImage(imageIndex, product) {
     window.currentProductImageIndex[product.id] = imageIndex;
 }
 
-// Initialize swipe navigation on mobile
+// Initialize swipe navigation - OPTIMIZED for instant response (mobile + desktop)
 function initSwipeNavigation(product) {
-    // Only enable on mobile devices
-    if (window.innerWidth > 768) return;
-    
     if (!product || !product.images || product.images.length <= 1) return;
     
     const gallery = document.querySelector('.product-gallery');
@@ -728,9 +749,65 @@ function initSwipeNavigation(product) {
     let touchEndX = 0;
     let touchEndY = 0;
     let isSwiping = false;
-    const minSwipeDistance = 50; // Minimum distance for a swipe
+    const minSwipeDistance = 30; // REDUCED from 50px to 30px for faster response
     
-    // Touch start
+    // Desktop: Mouse wheel support for instant scrolling
+    let wheelTimeout = null;
+    gallery.addEventListener('wheel', (e) => {
+        // Only handle horizontal scrolling
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+            e.preventDefault();
+            
+            // Clear any pending wheel event
+            if (wheelTimeout) clearTimeout(wheelTimeout);
+            
+            // Instant response - no debounce for maximum speed
+            const currentIndex = window.currentProductImageIndex[product.id] || 0;
+            let newIndex = currentIndex;
+            
+            // Scroll right (positive deltaX) = next image
+            if (e.deltaX > 10) {
+                newIndex = currentIndex + 1;
+                if (newIndex >= product.images.length) {
+                    newIndex = 0; // Loop to first
+                }
+            }
+            // Scroll left (negative deltaX) = previous image
+            else if (e.deltaX < -10) {
+                newIndex = currentIndex - 1;
+                if (newIndex < 0) {
+                    newIndex = product.images.length - 1; // Loop to last
+                }
+            }
+            
+            if (newIndex !== currentIndex) {
+                switchToImage(newIndex, product);
+            }
+        }
+    }, { passive: false });
+    
+    // Desktop: Keyboard arrow keys for instant navigation
+    document.addEventListener('keydown', (e) => {
+        // Only handle if gallery is visible and user is on product page
+        if (!gallery || !mainImageContainer || !document.getElementById('product-title')) return;
+        
+        const currentIndex = window.currentProductImageIndex[product.id] || 0;
+        let newIndex = currentIndex;
+        
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            newIndex = currentIndex + 1;
+            if (newIndex >= product.images.length) newIndex = 0;
+            switchToImage(newIndex, product);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            newIndex = currentIndex - 1;
+            if (newIndex < 0) newIndex = product.images.length - 1;
+            switchToImage(newIndex, product);
+        }
+    });
+    
+    // Touch start - OPTIMIZED for instant response
     gallery.addEventListener('touchstart', (e) => {
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
@@ -764,7 +841,7 @@ function initSwipeNavigation(product) {
         const absDeltaX = Math.abs(deltaX);
         const absDeltaY = Math.abs(deltaY);
         
-        // Only process swipe if horizontal movement is greater than vertical
+        // OPTIMIZED: Process swipe instantly with reduced threshold
         if (absDeltaX > absDeltaY && absDeltaX > minSwipeDistance) {
             const currentIndex = window.currentProductImageIndex[product.id] || 0;
             let newIndex = currentIndex;
@@ -784,6 +861,7 @@ function initSwipeNavigation(product) {
                 }
             }
             
+            // Instant switch - no delay
             if (newIndex !== currentIndex) {
                 switchToImage(newIndex, product);
             }
