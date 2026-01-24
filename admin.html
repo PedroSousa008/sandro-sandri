@@ -187,16 +187,16 @@
         </div>
 
         <div class="admin-section">
-            <h2 class="admin-section-title">Purchases</h2>
+            <h2 class="admin-section-title">Stock</h2>
             <div style="margin-bottom: var(--space-md);">
-                <button class="admin-action-btn admin-action-btn-primary" id="load-purchases-btn">Load Purchases Data</button>
+                <button class="admin-action-btn admin-action-btn-primary" id="load-stock-btn">Load Stock Data</button>
             </div>
-            <div id="purchases-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
-                Loading purchases data...
+            <div id="stock-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
+                Loading stock data...
             </div>
-            <div id="purchases-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
-            <div id="purchases-table-container" style="overflow-x: auto; display: none;">
-                <table id="purchases-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+            <div id="stock-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
+            <div id="stock-table-container" style="overflow-x: auto; display: none;">
+                <table id="stock-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
                     <thead>
                         <tr style="background: var(--color-gray-light);">
                             <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-gray-light); z-index: 10;">T-Shirt</th>
@@ -208,7 +208,7 @@
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Total</th>
                         </tr>
                     </thead>
-                    <tbody id="purchases-tbody">
+                    <tbody id="stock-tbody">
                     </tbody>
                 </table>
             </div>
@@ -898,52 +898,35 @@
         document.getElementById('load-customers-btn').addEventListener('click', loadCustomers);
         document.getElementById('export-customers-btn').addEventListener('click', exportToCSV);
 
-        // Purchases Table Management
-        async function loadPurchases() {
-            const loadingEl = document.getElementById('purchases-loading');
-            const errorEl = document.getElementById('purchases-error');
-            const tableContainer = document.getElementById('purchases-table-container');
-            const tbody = document.getElementById('purchases-tbody');
+        // Stock Table Management
+        async function loadStock() {
+            const loadingEl = document.getElementById('stock-loading');
+            const errorEl = document.getElementById('stock-error');
+            const tableContainer = document.getElementById('stock-table-container');
+            const tbody = document.getElementById('stock-tbody');
 
             loadingEl.style.display = 'block';
             errorEl.style.display = 'none';
             tableContainer.style.display = 'none';
 
             try {
-                // Fetch inventory and orders
-                const [inventoryResponse, customersResponse] = await Promise.all([
-                    fetch('/api/inventory/stock'),
-                    fetch('/api/admin?endpoint=customers')
-                ]);
+                // Fetch current inventory
+                const inventoryResponse = await fetch('/api/inventory/stock');
 
                 if (!inventoryResponse.ok) {
                     throw new Error('Failed to load inventory');
                 }
 
                 const inventoryData = await inventoryResponse.json();
-                const customersData = await customersResponse.json();
-
-                if (!customersData.success) {
-                    throw new Error('Failed to load customers/orders');
-                }
-
-                // Get all orders from customers
-                const allOrders = [];
-                if (customersData.customers) {
-                    customersData.customers.forEach(customer => {
-                        if (customer.orders && Array.isArray(customer.orders)) {
-                            allOrders.push(...customer.orders);
-                        }
-                    });
-                }
 
                 // Get products from window.ProductsAPI
                 const products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
                 const tshirtProducts = products.filter(p => p.category === 'tshirts');
 
-                // Calculate sold quantities for each product
-                const purchasesData = tshirtProducts.map(product => {
-                    const sold = {
+                // Get stock levels for each product
+                const stockData = tshirtProducts.map(product => {
+                    const productInventory = inventoryData.find(inv => inv.productId === product.id);
+                    const stock = {
                         XS: 0,
                         S: 0,
                         M: 0,
@@ -951,25 +934,23 @@
                         XL: 0
                     };
 
-                    // Calculate from orders
-                    allOrders.forEach(order => {
-                        if (order.cart && Array.isArray(order.cart)) {
-                            order.cart.forEach(item => {
-                                if (item.productId === product.id && item.size && sold.hasOwnProperty(item.size)) {
-                                    sold[item.size] += (item.quantity || 1);
-                                }
-                            });
-                        }
-                    });
+                    // Get stock from inventory API response
+                    if (productInventory && productInventory.sizes) {
+                        productInventory.sizes.forEach(sizeInfo => {
+                            if (stock.hasOwnProperty(sizeInfo.size)) {
+                                stock[sizeInfo.size] = sizeInfo.stock || 0;
+                            }
+                        });
+                    }
 
-                    // Calculate total sold
-                    const totalSold = sold.XS + sold.S + sold.M + sold.L + sold.XL;
+                    // Calculate total stock
+                    const totalStock = stock.XS + stock.S + stock.M + stock.L + stock.XL;
 
                     return {
                         productId: product.id,
                         name: product.name,
-                        sold: sold,
-                        totalSold: totalSold
+                        stock: stock,
+                        totalStock: totalStock
                     };
                 });
 
@@ -977,38 +958,45 @@
                 let html = '';
                 let grandTotalXS = 0, grandTotalS = 0, grandTotalM = 0, grandTotalL = 0, grandTotalXL = 0, grandTotalAll = 0;
 
-                purchasesData.forEach((purchase, index) => {
-                    grandTotalXS += purchase.sold.XS;
-                    grandTotalS += purchase.sold.S;
-                    grandTotalM += purchase.sold.M;
-                    grandTotalL += purchase.sold.L;
-                    grandTotalXL += purchase.sold.XL;
-                    grandTotalAll += purchase.totalSold;
+                stockData.forEach((item, index) => {
+                    grandTotalXS += item.stock.XS;
+                    grandTotalS += item.stock.S;
+                    grandTotalM += item.stock.M;
+                    grandTotalL += item.stock.L;
+                    grandTotalXL += item.stock.XL;
+                    grandTotalAll += item.totalStock;
 
                     const rowClass = index % 2 === 0 ? 'style="background: var(--color-white);"' : 'style="background: var(--color-gray-light);"';
+                    
+                    // Highlight low stock (less than 5) in red
+                    const xsStyle = item.stock.XS < 5 ? 'color: #c00; font-weight: 600;' : '';
+                    const sStyle = item.stock.S < 5 ? 'color: #c00; font-weight: 600;' : '';
+                    const mStyle = item.stock.M < 5 ? 'color: #c00; font-weight: 600;' : '';
+                    const lStyle = item.stock.L < 5 ? 'color: #c00; font-weight: 600;' : '';
+                    const xlStyle = item.stock.XL < 5 ? 'color: #c00; font-weight: 600;' : '';
                     
                     html += `
                         <tr ${rowClass}>
                             <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); position: sticky; left: 0; background: inherit; font-weight: 500;">
-                                ${purchase.name}
+                                ${item.name}
                             </td>
-                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                                ${purchase.sold.XS}
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${xsStyle}">
+                                ${item.stock.XS}
                             </td>
-                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                                ${purchase.sold.S}
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${sStyle}">
+                                ${item.stock.S}
                             </td>
-                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                                ${purchase.sold.M}
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${mStyle}">
+                                ${item.stock.M}
                             </td>
-                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                                ${purchase.sold.L}
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${lStyle}">
+                                ${item.stock.L}
                             </td>
-                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                                ${purchase.sold.XL}
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${xlStyle}">
+                                ${item.stock.XL}
                             </td>
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
-                                ${purchase.totalSold}
+                                ${item.totalStock}
                             </td>
                         </tr>
                     `;
@@ -1045,7 +1033,7 @@
                 tableContainer.style.display = 'block';
 
             } catch (error) {
-                console.error('Error loading purchases:', error);
+                console.error('Error loading stock:', error);
                 errorEl.textContent = `Error: ${error.message}`;
                 errorEl.style.display = 'block';
             } finally {
@@ -1053,7 +1041,7 @@
             }
         }
 
-        document.getElementById('load-purchases-btn').addEventListener('click', loadPurchases);
+        document.getElementById('load-stock-btn').addEventListener('click', loadStock);
     </script>
 </body>
 </html>
