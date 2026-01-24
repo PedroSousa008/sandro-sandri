@@ -238,12 +238,21 @@
                                 Last Login
                                 <span id="last-login-sort-indicator" style="margin-left: 4px; font-size: 0.75rem;">↕</span>
                             </th>
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Total Orders</th>
-                            <th style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray); font-weight: 600;">Total Spent</th>
+                            <th id="total-orders-header" style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; cursor: pointer; user-select: none; position: relative;" title="Click to sort by Total Orders">
+                                Total Orders
+                                <span id="total-orders-sort-indicator" style="margin-left: 4px; font-size: 0.75rem;">↕</span>
+                            </th>
+                            <th id="total-spent-header" style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray); font-weight: 600; cursor: pointer; user-select: none; position: relative;" title="Click to sort by Total Spent">
+                                Total Spent
+                                <span id="total-spent-sort-indicator" style="margin-left: 4px; font-size: 0.75rem;">↕</span>
+                            </th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Last Order</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Sizes</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Chapters</th>
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Favorites</th>
+                            <th id="favorites-header" style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; cursor: pointer; user-select: none; position: relative;" title="Click to sort by Favorites">
+                                Favorites
+                                <span id="favorites-sort-indicator" style="margin-left: 4px; font-size: 0.75rem;">↕</span>
+                            </th>
                             <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Address</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Payment Methods</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Actions</th>
@@ -336,6 +345,9 @@
         let allCustomersData = null;
         let originalCustomersOrder = null; // Store original order
         let lastLoginSortState = 0; // 0 = original, 1 = newest first, 2 = oldest first
+        let totalOrdersSortState = 0; // 0 = original, 1 = highest first, 2 = lowest first
+        let totalSpentSortState = 0; // 0 = original, 1 = highest first, 2 = lowest first
+        let favoritesSortState = 0; // 0 = original, 1 = highest first, 2 = lowest first
 
         async function loadCustomers() {
             const loadingEl = document.getElementById('customers-loading');
@@ -373,8 +385,11 @@
                 tableContainer.style.display = 'block';
                 document.getElementById('export-customers-btn').style.display = 'inline-block';
                 
-                // Setup Last Login column sorting
+                // Setup all sortable columns
                 setupLastLoginSorting();
+                setupTotalOrdersSorting();
+                setupTotalSpentSorting();
+                setupFavoritesSorting();
 
             } catch (error) {
                 console.error('Error loading customers:', error);
@@ -926,6 +941,12 @@
             document.getElementById('last-login-header').addEventListener('click', () => {
                 if (!allCustomersData || allCustomersData.length === 0) return;
                 
+                // Reset other sort states
+                totalOrdersSortState = 0;
+                totalSpentSortState = 0;
+                favoritesSortState = 0;
+                resetSortIndicators(['total-orders', 'total-spent', 'favorites']);
+                
                 // Cycle through sort states: 0 -> 1 -> 2 -> 0
                 lastLoginSortState = (lastLoginSortState + 1) % 3;
                 
@@ -962,6 +983,146 @@
                 
                 // Re-render table with sorted data
                 renderCustomersTable(sortedCustomers);
+            });
+        }
+
+        // Total Orders Column Sorting
+        function setupTotalOrdersSorting() {
+            const header = document.getElementById('total-orders-header');
+            const indicator = document.getElementById('total-orders-sort-indicator');
+            
+            if (!header) return;
+            
+            const newHeader = header.cloneNode(true);
+            header.parentNode.replaceChild(newHeader, header);
+            
+            document.getElementById('total-orders-header').addEventListener('click', () => {
+                if (!allCustomersData || allCustomersData.length === 0) return;
+                
+                // Reset other sort states
+                lastLoginSortState = 0;
+                totalSpentSortState = 0;
+                favoritesSortState = 0;
+                resetSortIndicators(['last-login', 'total-spent', 'favorites']);
+                
+                totalOrdersSortState = (totalOrdersSortState + 1) % 3;
+                
+                let sortedCustomers;
+                
+                if (totalOrdersSortState === 0) {
+                    sortedCustomers = originalCustomersOrder ? [...originalCustomersOrder] : [...allCustomersData];
+                    indicator.textContent = '↕';
+                    indicator.style.color = '';
+                } else if (totalOrdersSortState === 1) {
+                    // Highest first
+                    sortedCustomers = [...allCustomersData].sort((a, b) => (b.totalOrders || 0) - (a.totalOrders || 0));
+                    indicator.textContent = '↓';
+                    indicator.style.color = 'var(--color-navy)';
+                } else {
+                    // Lowest first
+                    sortedCustomers = [...allCustomersData].sort((a, b) => (a.totalOrders || 0) - (b.totalOrders || 0));
+                    indicator.textContent = '↑';
+                    indicator.style.color = 'var(--color-navy)';
+                }
+                
+                renderCustomersTable(sortedCustomers);
+            });
+        }
+
+        // Total Spent Column Sorting
+        function setupTotalSpentSorting() {
+            const header = document.getElementById('total-spent-header');
+            const indicator = document.getElementById('total-spent-sort-indicator');
+            
+            if (!header) return;
+            
+            const newHeader = header.cloneNode(true);
+            header.parentNode.replaceChild(newHeader, header);
+            
+            document.getElementById('total-spent-header').addEventListener('click', () => {
+                if (!allCustomersData || allCustomersData.length === 0) return;
+                
+                // Reset other sort states
+                lastLoginSortState = 0;
+                totalOrdersSortState = 0;
+                favoritesSortState = 0;
+                resetSortIndicators(['last-login', 'total-orders', 'favorites']);
+                
+                totalSpentSortState = (totalSpentSortState + 1) % 3;
+                
+                let sortedCustomers;
+                
+                if (totalSpentSortState === 0) {
+                    sortedCustomers = originalCustomersOrder ? [...originalCustomersOrder] : [...allCustomersData];
+                    indicator.textContent = '↕';
+                    indicator.style.color = '';
+                } else if (totalSpentSortState === 1) {
+                    // Highest first
+                    sortedCustomers = [...allCustomersData].sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0));
+                    indicator.textContent = '↓';
+                    indicator.style.color = 'var(--color-navy)';
+                } else {
+                    // Lowest first
+                    sortedCustomers = [...allCustomersData].sort((a, b) => (a.totalSpent || 0) - (b.totalSpent || 0));
+                    indicator.textContent = '↑';
+                    indicator.style.color = 'var(--color-navy)';
+                }
+                
+                renderCustomersTable(sortedCustomers);
+            });
+        }
+
+        // Favorites Column Sorting
+        function setupFavoritesSorting() {
+            const header = document.getElementById('favorites-header');
+            const indicator = document.getElementById('favorites-sort-indicator');
+            
+            if (!header) return;
+            
+            const newHeader = header.cloneNode(true);
+            header.parentNode.replaceChild(newHeader, header);
+            
+            document.getElementById('favorites-header').addEventListener('click', () => {
+                if (!allCustomersData || allCustomersData.length === 0) return;
+                
+                // Reset other sort states
+                lastLoginSortState = 0;
+                totalOrdersSortState = 0;
+                totalSpentSortState = 0;
+                resetSortIndicators(['last-login', 'total-orders', 'total-spent']);
+                
+                favoritesSortState = (favoritesSortState + 1) % 3;
+                
+                let sortedCustomers;
+                
+                if (favoritesSortState === 0) {
+                    sortedCustomers = originalCustomersOrder ? [...originalCustomersOrder] : [...allCustomersData];
+                    indicator.textContent = '↕';
+                    indicator.style.color = '';
+                } else if (favoritesSortState === 1) {
+                    // Highest first
+                    sortedCustomers = [...allCustomersData].sort((a, b) => (b.favorites?.length || 0) - (a.favorites?.length || 0));
+                    indicator.textContent = '↓';
+                    indicator.style.color = 'var(--color-navy)';
+                } else {
+                    // Lowest first
+                    sortedCustomers = [...allCustomersData].sort((a, b) => (a.favorites?.length || 0) - (b.favorites?.length || 0));
+                    indicator.textContent = '↑';
+                    indicator.style.color = 'var(--color-navy)';
+                }
+                
+                renderCustomersTable(sortedCustomers);
+            });
+        }
+
+        // Helper function to reset sort indicators
+        function resetSortIndicators(columnIds) {
+            columnIds.forEach(colId => {
+                const indicator = document.getElementById(`${colId}-sort-indicator`);
+                if (indicator) {
+                    indicator.textContent = '↕';
+                    indicator.style.color = '';
+                }
             });
         }
 
