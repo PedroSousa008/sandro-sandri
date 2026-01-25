@@ -1341,6 +1341,13 @@
         align-items: flex-start;
     }
     
+    /* Center the grid for "What is Sandro Sandri?" section on mobile */
+    #read-our-story .about-grid {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        align-items: center;
+    }
+    
     .about-content {
         max-width: none;
         min-width: 0;
@@ -1353,6 +1360,8 @@
     #read-our-story .about-content {
         text-align: center;
         align-items: center;
+        width: 100%;
+        max-width: 100%;
     }
     
     #read-our-story .about-label,
@@ -1366,6 +1375,12 @@
     /* Ensure about-text paragraphs are centered */
     #read-our-story .about-text {
         text-align: center !important;
+    }
+    
+    /* Center the image in read-our-story section */
+    #read-our-story .about-image {
+        margin: 0 auto;
+        align-self: center;
     }
     
     .about-image {
