@@ -886,13 +886,13 @@ function initPasswordChangeForm() {
         // SECURITY: Password storage removed - passwords should never be stored in localStorage
         const storedPassword = null; // Always null - password management is server-side only
         
-        // Also check against owner password if it's the owner account
+        // SECURITY: Owner password verification is now handled server-side only
+        // No password checks in frontend for security
         let passwordValid = false;
         if (userEmail === 'sandrosandri.bysousa@gmail.com') {
-            const ownerPassword = 'pmpcsousa10';
-            if (currentPassword === ownerPassword || (storedPassword && storedPassword === currentPassword)) {
-                passwordValid = true;
-            }
+            // Owner password verification happens server-side
+            // Skip frontend validation - server will verify on password change
+            passwordValid = true; // Let server handle verification
         } else {
             // For regular users, check stored password
             if (storedPassword && storedPassword === currentPassword) {
