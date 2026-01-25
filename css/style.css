@@ -1544,6 +1544,7 @@ img {
     
     .story-content {
         padding-right: 0;
+        text-align: center;
     }
     
     /* Hero Section - Mobile */
@@ -1568,6 +1569,10 @@ img {
     :root {
         --space-lg: 2rem;
         --space-xl: 4rem;
+    }
+    
+    .story-content {
+        text-align: center;
     }
     
     .footer-bottom {
