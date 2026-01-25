@@ -138,7 +138,8 @@ const PRODUCTS = [
         images: [
             "images/tshirt-4a.png",
             "images/tshirt-4b.png",
-            "images/tshirt-4c.png"
+            "images/tshirt-4c.png",
+            "images/tshirt-4d.png"
         ],
         collection: {
             title: "L'Italia per un viaggio indimenticabile Signature",
@@ -176,7 +177,8 @@ const PRODUCTS = [
         images: [
             "images/tshirt-5a.png",
             "images/tshirt-5b.png",
-            "images/tshirt-5c.png"
+            "images/tshirt-5c.png",
+            "images/tshirt-5d.png"
         ],
         collection: {
             title: "Rinascimento Couture Signature",
