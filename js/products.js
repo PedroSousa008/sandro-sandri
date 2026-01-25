@@ -24,7 +24,8 @@ const PRODUCTS = [
         images: [
             "images/tshirt-1a.png",
             "images/tshirt-1b.png",
-            "images/tshirt-1c.png"
+            "images/tshirt-1c.png",
+            "images/tshirt-1d.png"
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
