@@ -51,22 +51,19 @@ function initProductPage() {
         return;
     }
 
-    // Load commerce mode first, then initialize page
-    loadCommerceMode().then(() => {
-        // Populate page with product data
-        populateProduct(product);
-        
-        // Initialize interactions
-        initSizeSelection(product);
-        initColorSelection(product);
-        initQuantitySelector();
-        initAccordions();
-        initAddToCartForm(product);
-        initFavoritesButton(product);
-        
-        // Update button based on commerce mode
-        updateProductButtonForMode(product);
-    });
+    // Populate page with product data
+    populateProduct(product);
+    
+    // Initialize interactions
+    initSizeSelection(product);
+    initColorSelection(product);
+    initQuantitySelector();
+    initAccordions();
+    initAddToCartForm(product);
+    initFavoritesButton(product);
+    
+    // Update button - always show "Join the Waitlist" for t-shirts
+    updateProductButtonForMode(product);
     
     // Listen for favorites sync events to update button state
     window.addEventListener('favoritesSynced', (e) => {
@@ -480,12 +477,13 @@ function initAccordions() {
     }
 }
 
-// Update product button based on commerce mode
+// Update product button - always show "Join the Waitlist" for t-shirts
 function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
     
-    if (currentCommerceMode === 'WAITLIST') {
+    // Always show "Join the Waitlist" for t-shirts (products 1-5)
+    if (product.id >= 1 && product.id <= 5) {
         submitBtn.textContent = 'Join the Waitlist';
         submitBtn.classList.add('waitlist-btn');
     } else {
@@ -536,47 +534,91 @@ function initAddToCartForm(product) {
             return;
         }
         
-        // Handle WAITLIST mode
-        if (currentCommerceMode === 'WAITLIST') {
-            submitBtn.textContent = 'Submitting...';
-            
-            // Submit to Formspree waitlist
-            try {
-                const userEmail = window.auth?.currentUser?.email || '';
-                const waitlistData = {
-                    _subject: `Waitlist Request - ${product.name}`,
-                    product_id: product.id,
-                    product_name: product.name,
-                    size: size,
-                    color: color || 'Navy',
-                    quantity: quantity,
-                    customer_email: userEmail || 'Not provided',
-                    timestamp: new Date().toISOString(),
-                    _replyto: userEmail || undefined
-                };
-                
-                const response = await fetch('https://formspree.io/f/meoyldeq', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(waitlistData)
-                });
-                
-                if (response.ok) {
-                    showNotification('You joined the waiting list for Chapter I.', 'success');
-                } else {
-                    throw new Error('Failed to submit waitlist request');
+        // Handle t-shirt products (always show waitlist form)
+        if (product.id >= 1 && product.id <= 5) {
+            // First, add to cart (same as normal flow)
+            // Check inventory before adding to cart
+            if (window.InventoryAPI) {
+                const inStock = window.InventoryAPI.isInStock(product.id, size);
+                if (!inStock) {
+                    showNotification('This size is sold out');
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
                 }
-            } catch (error) {
-                console.error('Error submitting waitlist:', error);
-                showNotification('Error joining waitlist. Please try again.');
-            } finally {
+                
+                const availableStock = window.InventoryAPI.get(product.id, size);
+                if (quantity > availableStock) {
+                    showNotification(`Only ${availableStock} available in this size. Please reduce quantity.`);
+                    if (quantityInput) {
+                        quantityInput.value = availableStock;
+                    }
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                }
+                
+                if (quantity > availableStock) {
+                    quantity = availableStock;
+                    if (quantityInput) {
+                        quantityInput.value = quantity;
+                    }
+                }
+            }
+            
+            // Ensure quantity is valid
+            if (quantity < 1) {
+                console.error('Invalid quantity:', quantity);
+                showNotification('Please enter a valid quantity');
                 isSubmitting = false;
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
+                return;
             }
+            
+            console.log('Adding to cart:', { productId: product.id, size, color, quantity, quantityValue });
+            
+            // Add to cart
+            if (window.cart) {
+                const added = window.cart.addItem(product.id, size, color, quantity);
+                if (added) {
+                    // Update button state after adding
+                    if (window.updateAddToCartButton) {
+                        window.updateAddToCartButton(product.id, size);
+                    }
+                    // Update quantity max after adding
+                    const updateQuantityMax = window.updateQuantityMax || function(productId, size) {
+                        const quantityInput = document.querySelector('.quantity-input');
+                        if (quantityInput && window.InventoryAPI) {
+                            const availableStock = window.InventoryAPI.get(productId, size);
+                            quantityInput.max = availableStock;
+                            quantityInput.setAttribute('max', availableStock);
+                        }
+                    };
+                    updateQuantityMax(product.id, size);
+                }
+            } else {
+                console.error('Cart not initialized');
+            }
+            
+            // Re-enable button
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            isSubmitting = false;
+            
+            // Open cart drawer
+            const cartDrawer = document.querySelector('.cart-drawer');
+            const cartOverlay = document.querySelector('.cart-overlay');
+            if (cartDrawer) {
+                cartDrawer.classList.add('open');
+                cartOverlay?.classList.add('visible');
+                document.body.classList.add('cart-open');
+            }
+            
+            // Show email form modal for waitlist
+            showWaitlistEmailForm(product, size, color, quantity);
             return;
         }
         
