@@ -4,18 +4,30 @@
    ======================================== */
 
 const db = require('../../lib/storage');
+const auth = require('../../lib/auth');
 
 module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Token');
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
 
     const { endpoint } = req.query;
+    
+    // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
+    if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {
+        const adminCheck = auth.requireAdmin(req);
+        if (!adminCheck.authorized) {
+            return res.status(adminCheck.statusCode).json({
+                success: false,
+                error: adminCheck.error
+            });
+        }
+    }
 
     if (endpoint === 'activity') {
         // Activity tracking endpoint
@@ -170,13 +182,14 @@ module.exports = async (req, res) => {
                         }
                     }
 
+                    // SECURITY: Do not expose password (even if it exists in DB)
                     customersWithDetails.push({
                         email: email,
                         profile: profile,
                         cart: user.cart || [],
                         favorites: user.favorites || [],
                         orders: userOrders,
-                        password: user.password || null,
+                        // password: REMOVED - never expose passwords
                         lastLogin: user.lastLogin || null,
                         totalOrders: userOrders.length,
                         totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0),
@@ -202,7 +215,7 @@ module.exports = async (req, res) => {
                 });
             }
         } else if (req.method === 'DELETE') {
-            // Delete customer endpoint
+            // Delete customer endpoint - SECURITY: Already protected by requireAdmin above
             try {
                 const { email } = req.query;
                 
@@ -214,7 +227,7 @@ module.exports = async (req, res) => {
                 }
                 
                 // Prevent deleting the owner account
-                if (email === 'sandrosandri.bysousa@gmail.com') {
+                if (email.toLowerCase() === auth.OWNER_EMAIL.toLowerCase()) {
                     return res.status(403).json({ 
                         success: false,
                         error: 'Cannot delete owner account' 

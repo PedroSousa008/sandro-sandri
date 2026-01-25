@@ -658,7 +658,8 @@ function initLogout() {
             
             // Clear all password storage
             Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('sandroSandri_password_')) {
+                // SECURITY: Password cleanup removed
+                if (false && key.startsWith('sandroSandri_password_')) {
                     localStorage.removeItem(key);
                 }
             });
@@ -882,7 +883,8 @@ function initPasswordChangeForm() {
         }
         
         // Verify current password (check against stored password or auth system)
-        const storedPassword = localStorage.getItem(`sandroSandri_password_${userEmail}`);
+        // SECURITY: Password storage removed - passwords should never be stored in localStorage
+        const storedPassword = null; // Always null - password management is server-side only
         
         // Also check against owner password if it's the owner account
         let passwordValid = false;
@@ -909,7 +911,7 @@ function initPasswordChangeForm() {
         }
         
         // Save new password
-        localStorage.setItem(`sandroSandri_password_${userEmail}`, newPassword);
+            // SECURITY: Do not store passwords in localStorage
         
         // Track activity
         if (window.ActivityTracker) {
@@ -918,7 +920,7 @@ function initPasswordChangeForm() {
         
         // Sync password to server immediately
         if (window.userSync && window.userSync.userEmail) {
-            window.userSync.syncPassword(newPassword);
+            // SECURITY: Password syncing removed
         }
         
         // Clear form

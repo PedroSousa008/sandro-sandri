@@ -11,26 +11,7 @@ class UserSync {
         this.init();
     }
 
-    // Sync password to server
-    async syncPassword(password) {
-        if (!this.userEmail || !password) return;
-
-        try {
-            await fetch('/api/user/sync', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: this.userEmail,
-                    password: password,
-                    lastLogin: new Date().toISOString()
-                })
-            });
-        } catch (error) {
-            console.error('Error syncing password:', error);
-        }
-    }
+    // SECURITY: Password syncing removed - passwords should never be synced
 
     init() {
         // Wait a bit for auth system to initialize
@@ -368,8 +349,7 @@ class UserSync {
                 const atlasMemories = localStorage.getItem('sandroSandri_atlasMemories');
                 const atlasChapters = localStorage.getItem('sandroSandri_atlasChapters');
                 
-                // Get password from localStorage (stored per email)
-                const password = localStorage.getItem(`sandroSandri_password_${this.userEmail}`);
+                // SECURITY: Password removed - never sync passwords
                 
                 // Get last login from auth system
                 const userData = localStorage.getItem('sandroSandri_user');
@@ -383,13 +363,14 @@ class UserSync {
                     }
                 }
 
+                // SECURITY: Do not include password in sync payload
                 const payload = {
                     email: this.userEmail,
                     cart: cart,
                     profile: profile ? JSON.parse(profile) : null,
                     favorites: favorites,
                     orders: orders,
-                    password: password,
+                    // password: REMOVED - never sync passwords
                     lastLogin: lastLogin,
                     atlas: {
                         memories: atlasMemories ? JSON.parse(atlasMemories) : {},

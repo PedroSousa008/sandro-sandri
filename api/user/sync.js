@@ -32,15 +32,12 @@ module.exports = async (req, res) => {
                 profile: null,
                 favorites: [],
                 orders: [],
-                password: null,
                 lastLogin: null,
                 updatedAt: null
             };
             
-            // Get password and last login from request if provided
-            if (req.body && req.body.password) {
-                user.password = req.body.password;
-            }
+            // SECURITY: Do not return or accept passwords
+            // Get last login from request if provided
             if (req.body && req.body.lastLogin) {
                 user.lastLogin = req.body.lastLogin;
             }
@@ -101,13 +98,13 @@ module.exports = async (req, res) => {
                 profile: null,
                 favorites: [],
                 orders: [],
-                password: null,
                 lastLogin: null,
                 updatedAt: null
             };
 
             console.log('   Existing favorites:', existingUser.favorites?.length || 0, 'items:', existingUser.favorites || []);
 
+            // SECURITY: Do not accept or store passwords in sync endpoint
             // Optimize: Only update if data actually changed (reduces KV writes)
             let dataChanged = false;
             const newUserData = {
@@ -115,10 +112,15 @@ module.exports = async (req, res) => {
                 profile: profile !== undefined ? profile : existingUser.profile,
                 favorites: favorites !== undefined ? (Array.isArray(favorites) ? favorites : []) : existingUser.favorites,
                 orders: orders !== undefined ? orders : existingUser.orders,
-                password: req.body.password !== undefined ? req.body.password : existingUser.password,
+                // password: REMOVED - never store passwords in sync
                 lastLogin: req.body.lastLogin !== undefined ? req.body.lastLogin : existingUser.lastLogin,
                 updatedAt: new Date().toISOString()
             };
+            
+            // Preserve passwordHash if it exists (but don't allow it to be set via sync)
+            if (existingUser.passwordHash) {
+                newUserData.passwordHash = existingUser.passwordHash;
+            }
             
             // Check if data actually changed (simple comparison)
             const existingStr = JSON.stringify(existingUser);

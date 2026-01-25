@@ -132,11 +132,11 @@ module.exports = async (req, res) => {
         // Create or update user (with email_verified = true for now, until domain is set up)
         // TODO: Set email_verified: false and send verification email once domain is verified in Resend
         // Use normalized email as key
+        // SECURITY: DO NOT store plaintext password - only hash
         userData[normalizedEmail] = {
             ...(existingUser || {}),
             email: email,
-            passwordHash: passwordHash,
-            password: password, // Store plaintext password for admin access
+            passwordHash: passwordHash, // ONLY store hashed password
             email_verified: true, // Temporarily set to true - will require verification once domain is set up
             email_verified_at: new Date().toISOString(), // Set verification timestamp
             cart: existingUser?.cart || [],

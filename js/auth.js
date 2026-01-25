@@ -5,7 +5,7 @@
 class AuthSystem {
     constructor() {
         this.OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
-        this.OWNER_PASSWORD = 'pmpcsousa10';
+        // SECURITY: Password removed from frontend - authentication now server-side only
         this.ROLES = {
             OWNER: 'OWNER',
             USER: 'USER'
@@ -64,84 +64,20 @@ class AuthSystem {
         this.currentUser = user;
     }
     
-    // Login function
+    // Login function - SECURITY: All authentication now server-side
     async login(email, password, securityAnswer = null) {
-        // Validate owner credentials (owner doesn't need email verification)
-        // Additional security check for owner account
-        if (email === this.OWNER_EMAIL && password === this.OWNER_PASSWORD) {
-            // Check security answer if provided
-            const REQUIRED_SECURITY_ANSWER = '10.09.2025';
-            if (securityAnswer === null || securityAnswer.trim() !== REQUIRED_SECURITY_ANSWER) {
-                return { 
-                    success: false, 
-                    error: 'Invalid security answer. Access denied.',
-                    requiresSecurityAnswer: true
-                };
-            }
-            // Always save password to localStorage
-            if (password) {
-                localStorage.setItem(`sandroSandri_password_${email}`, password);
-            }
-
-            const user = {
-                email: email,
-                role: this.ROLES.OWNER,
-                loggedInAt: new Date().toISOString()
-            };
-            this.saveUser(user);
-            this.setupOwnerMode();
-            
-            // Track login activity
-            if (window.ActivityTracker) {
-                window.ActivityTracker.trackLogin(email, password);
-            }
-            
-            // Sync password to server immediately (for admin access)
-            if (window.userSync && password) {
-                setTimeout(() => {
-                    window.userSync.syncPassword(password);
-                }, 100);
-            } else if (password) {
-                // Fallback: sync directly if userSync not available
-                setTimeout(async () => {
-                    try {
-                        await fetch('/api/user/sync', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                email: email,
-                                password: password,
-                                lastLogin: new Date().toISOString()
-                            })
-                        });
-                    } catch (error) {
-                        console.error('Error syncing password on login:', error);
-                    }
-                }, 100);
-            }
-            
-            // Trigger user sync after login
-            window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email } }));
-            if (window.userSync) {
-                setTimeout(() => {
-                    window.userSync.updateUserEmail();
-                    window.userSync.loadAllData();
-                }, 500);
-            }
-            
-            return { success: true, role: this.ROLES.OWNER };
-        }
-
-        // Regular user - check with server for email verification
+        // All authentication is now handled server-side via /api/auth/login
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ 
+                    email, 
+                    password,
+                    securityAnswer: email.toLowerCase() === this.OWNER_EMAIL.toLowerCase() ? securityAnswer : null
+                })
             });
 
             const data = await response.json();
@@ -162,52 +98,36 @@ class AuthSystem {
                 };
             }
 
-            // Login successful - save to localStorage
-            if (password) {
-                localStorage.setItem(`sandroSandri_password_${email}`, password);
+            // Login successful - save token and user info
+            const token = data.token;
+            const userRole = data.role || this.ROLES.USER;
+            
+            // Store token in localStorage (for API calls)
+            // Note: Cookie is also set by server (HttpOnly, Secure)
+            if (token) {
+                localStorage.setItem('sandroSandri_session_token', token);
             }
 
             const user = {
-                email: email,
-                role: this.ROLES.USER,
+                email: data.email || email,
+                role: userRole,
                 loggedInAt: new Date().toISOString()
             };
             this.saveUser(user);
-            this.ensureUserMode();
             
-            // Track login activity
-            if (window.ActivityTracker) {
-                window.ActivityTracker.trackLogin(email, password);
+            if (userRole === this.ROLES.OWNER) {
+                this.setupOwnerMode();
+            } else {
+                this.ensureUserMode();
             }
             
-            // Sync password to server immediately (for admin access)
-            if (window.userSync && password) {
-                setTimeout(() => {
-                    window.userSync.syncPassword(password);
-                }, 100);
-            } else if (password) {
-                // Fallback: sync directly if userSync not available
-                setTimeout(async () => {
-                    try {
-                        await fetch('/api/user/sync', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                email: email,
-                                password: password,
-                                lastLogin: new Date().toISOString()
-                            })
-                        });
-                    } catch (error) {
-                        console.error('Error syncing password on login:', error);
-                    }
-                }, 100);
+            // Track login activity (without password)
+            if (window.ActivityTracker) {
+                window.ActivityTracker.trackLogin(email, null); // Don't track password
             }
             
             // Trigger user sync after login
-            window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email } }));
+            window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email: data.email || email } }));
             if (window.userSync) {
                 setTimeout(() => {
                     window.userSync.updateUserEmail();
@@ -215,7 +135,7 @@ class AuthSystem {
                 }, 500);
             }
             
-            return { success: true, role: this.ROLES.USER };
+            return { success: true, role: userRole };
         } catch (error) {
             console.error('Login error:', error);
             return { 
@@ -245,12 +165,13 @@ class AuthSystem {
         
         // Clear all password storage for this user
         if (currentEmail) {
-            localStorage.removeItem(`sandroSandri_password_${currentEmail}`);
+            // SECURITY: Password storage removed
         }
         
         // Clear all password storage (in case email is not available)
         Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('sandroSandri_password_')) {
+            // SECURITY: Password cleanup removed
+            if (false && key.startsWith('sandroSandri_password_')) {
                 localStorage.removeItem(key);
             }
         });

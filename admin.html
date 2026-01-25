@@ -251,7 +251,7 @@
                         <tr style="background: var(--color-gray-light);">
                             <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-gray-light); z-index: 10;">Email</th>
                             <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Name</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Password</th>
+                            <!-- SECURITY: Password column removed -->
                             <th id="last-login-header" style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; cursor: pointer; user-select: none; position: relative;" title="Click to sort by Last Login">
                                 Last Login
                                 <span id="last-login-sort-indicator" style="margin-left: 4px; font-size: 0.75rem;">↕</span>
@@ -393,16 +393,23 @@
             }
 
             try {
-                const ownerEmail = window.auth?.currentUser?.email || 'sandrosandri.bysousa@gmail.com';
+                // Get JWT token from localStorage
+                const token = localStorage.getItem('sandroSandri_session_token');
+                if (!token) {
+                    alert('You must be logged in to change commerce mode.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
                 const response = await fetch('/api/site-settings/commerce-mode', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Owner-Email': ownerEmail
+                        'Authorization': `Bearer ${token}`,
+                        'X-Session-Token': token
                     },
                     body: JSON.stringify({
-                        commerce_mode: mode,
-                        ownerEmail: ownerEmail
+                        commerce_mode: mode
                     })
                 });
 
@@ -457,7 +464,20 @@
             summaryEl.style.display = 'none';
 
             try {
-                const response = await fetch('/api/admin?endpoint=customers');
+                // Get JWT token for authentication
+                const token = localStorage.getItem('sandroSandri_session_token');
+                if (!token) {
+                    alert('You must be logged in to view customer data.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const response = await fetch('/api/admin?endpoint=customers', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-Session-Token': token
+                    }
+                });
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
@@ -517,7 +537,7 @@
             let html = '';
             customers.forEach((customer, index) => {
                 const name = customer.profile?.name || customer.email.split('@')[0];
-                const password = customer.password || 'Not set';
+                // SECURITY: Password removed - never display passwords
                 const lastLogin = customer.lastLogin 
                     ? new Date(customer.lastLogin).toLocaleString()
                     : 'Never';
@@ -596,9 +616,7 @@
                         <td style="padding: var(--space-sm); border: 1px solid var(--color-gray);">
                             ${name}
                         </td>
-                        <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem; font-family: monospace;">
-                            ${password}
-                        </td>
+                        <!-- SECURITY: Password column removed -->
                         <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-size: 0.75rem;">
                             ${lastLogin}
                         </td>
@@ -850,7 +868,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); font-size: 0.875rem;">
                         <div><strong>Name:</strong> ${customer.profile?.name || 'N/A'}</div>
                         <div><strong>Email:</strong> ${customer.email}</div>
-                        <div><strong>Password:</strong> <span style="font-family: monospace;">${customer.password || 'Not set'}</span></div>
+                        <!-- SECURITY: Password removed - never display passwords -->
                         <div><strong>Last Login:</strong> ${customer.lastLogin ? new Date(customer.lastLogin).toLocaleString() : 'Never'}</div>
                         <div><strong>Total Orders:</strong> ${customer.totalOrders}</div>
                         <div><strong>Total Spent:</strong> €${customer.totalSpent.toFixed(2)}</div>
@@ -934,7 +952,19 @@
                     deleteBtn.textContent = 'Deleting...';
                     
                     try {
+                        // Get JWT token for authentication
+                        const token = localStorage.getItem('sandroSandri_session_token');
+                        if (!token) {
+                            alert('You must be logged in to delete customers.');
+                            return;
+                        }
+
                         const response = await fetch(`/api/admin?endpoint=customers&email=${encodeURIComponent(customerEmail)}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'X-Session-Token': token
+                            },
                             method: 'DELETE',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -968,11 +998,12 @@
             }
 
             // Create CSV content
-            let csv = 'Email,Name,Password,Last Login,Total Orders,Total Spent,Last Order Date,Sizes Purchased,Chapters Purchased,Favorites Count,Payment Methods\n';
+            // SECURITY: Password removed from CSV export
+            let csv = 'Email,Name,Last Login,Total Orders,Total Spent,Last Order Date,Sizes Purchased,Chapters Purchased,Favorites Count,Payment Methods\n';
             
             allCustomersData.forEach(customer => {
                 const name = customer.profile?.name || customer.email.split('@')[0];
-                const password = customer.password || 'Not set';
+                // SECURITY: Password removed from CSV export
                 const lastLogin = customer.lastLogin ? new Date(customer.lastLogin).toLocaleString() : 'Never';
                 const lastOrderDate = customer.lastOrderDate || 'Never';
                 
@@ -1002,7 +1033,8 @@
                 });
                 const paymentMethodsStr = Array.from(paymentMethods).join('; ') || 'None';
                 
-                csv += `"${customer.email}","${name}","${password}","${lastLogin}",${customer.totalOrders},${customer.totalSpent.toFixed(2)},"${lastOrderDate}","${sizesStr}","${chaptersStr}",${customer.favorites.length},"${paymentMethodsStr}"\n`;
+                // SECURITY: Password removed from CSV export
+                csv += `"${customer.email}","${name}","${lastLogin}",${customer.totalOrders},${customer.totalSpent.toFixed(2)},"${lastOrderDate}","${sizesStr}","${chaptersStr}",${customer.favorites.length},"${paymentMethodsStr}"\n`;
             });
 
             // Download CSV

@@ -4,34 +4,13 @@
    ======================================== */
 
 const db = require('../../lib/storage');
-
-const OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
-
-// Helper to verify owner authentication
-function verifyOwner(req) {
-    // Get email from request headers or body
-    // In a real app, this would come from a session token
-    // For now, we'll check if the request includes owner email
-    // This should be enhanced with proper session/auth tokens
-    
-    // Check if owner is logged in via localStorage (client-side check)
-    // Server-side: we'll accept a header or body field for owner email
-    // This is a simplified approach - in production, use proper JWT/session tokens
-    
-    const ownerEmail = req.headers['x-owner-email'] || req.body?.ownerEmail;
-    
-    if (!ownerEmail || ownerEmail.toLowerCase() !== OWNER_EMAIL.toLowerCase()) {
-        return false;
-    }
-    
-    return true;
-}
+const auth = require('../../lib/auth');
 
 module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Owner-Email');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Token');
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -51,11 +30,12 @@ module.exports = async (req, res) => {
                 updatedAt: settings.updatedAt
             });
         } else if (req.method === 'POST') {
-            // Update commerce mode (owner-only)
-            if (!verifyOwner(req)) {
-                return res.status(403).json({
+            // SECURITY: Update commerce mode requires admin authentication
+            const adminCheck = auth.requireAdmin(req);
+            if (!adminCheck.authorized) {
+                return res.status(adminCheck.statusCode).json({
                     success: false,
-                    error: 'Unauthorized. Only the owner can change commerce mode.'
+                    error: adminCheck.error || 'Unauthorized. Only the owner can change commerce mode.'
                 });
             }
 
