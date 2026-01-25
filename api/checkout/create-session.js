@@ -45,7 +45,7 @@ function calculateShipping(cart, countryCode) {
 const db = require('../../lib/storage');
 
 // Validate cart items against inventory
-async function validateCartInventory(cart) {
+async function validateCartInventory(cart, commerceMode = 'LIVE') {
     const inventory = await db.getInventory();
     const errors = [];
     
@@ -54,7 +54,29 @@ async function validateCartInventory(cart) {
         const size = item.size;
         const quantity = item.quantity;
         
-        const availableStock = inventory[productId]?.[size] || 0;
+        // Get stock based on commerce mode
+        let availableStock = 0;
+        const productInventory = inventory[productId];
+        
+        if (!productInventory) {
+            availableStock = 0;
+        } else if (commerceMode === 'EARLY_ACCESS') {
+            // Use early_access_stock
+            if (productInventory.early_access_stock) {
+                availableStock = productInventory.early_access_stock[size] || 0;
+            } else if (productInventory[size]) {
+                // Legacy format - assume it's early_access if no live_stock
+                availableStock = productInventory[size] || 0;
+            }
+        } else {
+            // LIVE mode - use live_stock
+            if (productInventory.live_stock) {
+                availableStock = productInventory.live_stock[size] || 0;
+            } else if (productInventory[size]) {
+                // Legacy format - assume it's live_stock
+                availableStock = productInventory[size] || 0;
+            }
+        }
         
         if (availableStock < quantity) {
             errors.push({
@@ -76,6 +98,19 @@ module.exports = async (req, res) => {
     }
     
     try {
+        // Check commerce mode - block checkout in WAITLIST mode
+        const db = require('../../lib/storage');
+        await db.initDb();
+        const settings = await db.getSiteSettings();
+        const commerceMode = settings.commerce_mode || 'LIVE';
+        
+        if (commerceMode === 'WAITLIST') {
+            return res.status(403).json({
+                error: 'CHECKOUT_DISABLED',
+                message: 'Chapter I is not available yet. Join the waitlist to be notified.'
+            });
+        }
+        
         const { cart, customerInfo } = req.body;
         
         if (!cart || !Array.isArray(cart) || cart.length === 0) {
@@ -86,8 +121,8 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'MISSING_CUSTOMER_INFO', message: 'Customer email is required' });
         }
         
-        // Validate inventory (soft check at checkout creation)
-        const inventoryErrors = await validateCartInventory(cart);
+        // Validate inventory (soft check at checkout creation) - use correct stock based on mode
+        const inventoryErrors = await validateCartInventory(cart, commerceMode);
         if (inventoryErrors.length > 0) {
             return res.status(400).json({
                 error: 'OUT_OF_STOCK',

@@ -195,7 +195,23 @@ if (window.ProductsAPI) {
 async function syncInventoryFromServer() {
     try {
         console.log('🔄 Syncing inventory from server...');
-        const response = await fetch('/api/inventory/stock');
+        
+        // First get commerce mode
+        let commerceMode = 'LIVE';
+        try {
+            const modeResponse = await fetch('/api/site-settings/commerce-mode');
+            if (modeResponse.ok) {
+                const modeData = await modeResponse.json();
+                if (modeData.success) {
+                    commerceMode = modeData.commerce_mode || 'LIVE';
+                }
+            }
+        } catch (error) {
+            console.warn('Could not fetch commerce mode, defaulting to LIVE:', error);
+        }
+        
+        // Fetch inventory with commerce mode
+        const response = await fetch(`/api/inventory/stock?mode=${commerceMode}`);
         
         if (!response.ok) {
             console.warn('⚠️ Failed to fetch inventory from server:', response.status);
@@ -220,7 +236,7 @@ async function syncInventoryFromServer() {
         // Update localStorage with server inventory (server is source of truth)
         localStorage.setItem('sandroSandriInventory', JSON.stringify(serverInventory));
         
-        console.log('✅ Inventory synced from server:', serverInventory);
+        console.log('✅ Inventory synced from server (Mode:', commerceMode, '):', serverInventory);
         
         // Trigger UI update if products are displayed
         // Dispatch custom event so product pages can refresh

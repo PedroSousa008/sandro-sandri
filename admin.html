@@ -182,6 +182,24 @@
             </div>
         </div>
 
+        <!-- Site Commerce Mode Control -->
+        <div class="admin-section" style="margin-top: var(--space-xl);">
+            <h2 class="admin-section-title">Site Commerce Mode</h2>
+            <div style="margin-bottom: var(--space-md); padding: var(--space-md); background: var(--color-gray-light); border-radius: 4px;">
+                <div style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-sm);">
+                    <strong>Current Store Mode:</strong> <span id="current-commerce-mode" style="color: var(--color-navy); font-weight: 600;">Loading...</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--color-text-light);">
+                    Control how customers interact with the storefront
+                </div>
+            </div>
+            <div class="admin-actions">
+                <button class="admin-action-btn admin-action-btn-primary" id="set-live-mode-btn" style="background: #4caf50;">Switch to Add to Cart</button>
+                <button class="admin-action-btn admin-action-btn-primary" id="set-waitlist-mode-btn" style="background: #ff9800;">Switch to Join the Waitlist</button>
+                <button class="admin-action-btn admin-action-btn-primary" id="set-early-access-mode-btn" style="background: #2196f3;">Switch to Early Access</button>
+            </div>
+        </div>
+
         <div class="admin-actions">
             <button class="admin-action-btn admin-action-btn-secondary" id="reset-inventory-btn" style="background: #4caf50; color: white;">Reset Inventory to Full Stock</button>
         </div>
@@ -350,6 +368,73 @@
             updateDashboard();
         }, 3000);
         updateDashboard();
+
+        // Site Commerce Mode Management
+        let currentCommerceMode = 'LIVE';
+
+        async function loadCommerceMode() {
+            try {
+                const response = await fetch('/api/site-settings/commerce-mode');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        currentCommerceMode = data.commerce_mode || 'LIVE';
+                        document.getElementById('current-commerce-mode').textContent = currentCommerceMode;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading commerce mode:', error);
+            }
+        }
+
+        async function setCommerceMode(mode) {
+            if (!confirm(`Are you sure you want to switch to ${mode} mode?`)) {
+                return;
+            }
+
+            try {
+                const ownerEmail = window.auth?.currentUser?.email || 'sandrosandri.bysousa@gmail.com';
+                const response = await fetch('/api/site-settings/commerce-mode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Owner-Email': ownerEmail
+                    },
+                    body: JSON.stringify({
+                        commerce_mode: mode,
+                        ownerEmail: ownerEmail
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    currentCommerceMode = mode;
+                    document.getElementById('current-commerce-mode').textContent = mode;
+                    
+                    // Show success message
+                    alert(`Commerce mode successfully set to ${mode}`);
+                    
+                    // Reload to ensure all pages reflect the change
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert(`Error: ${data.error || 'Failed to update commerce mode'}`);
+                }
+            } catch (error) {
+                console.error('Error setting commerce mode:', error);
+                alert('Error updating commerce mode. Please try again.');
+            }
+        }
+
+        // Bind commerce mode buttons
+        document.getElementById('set-live-mode-btn').addEventListener('click', () => setCommerceMode('LIVE'));
+        document.getElementById('set-waitlist-mode-btn').addEventListener('click', () => setCommerceMode('WAITLIST'));
+        document.getElementById('set-early-access-mode-btn').addEventListener('click', () => setCommerceMode('EARLY_ACCESS'));
+
+        // Load current mode on page load
+        loadCommerceMode();
 
         // Customer Information Management
         let allCustomersData = null;

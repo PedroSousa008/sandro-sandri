@@ -96,8 +96,11 @@ async function handleCheckoutCompleted(session) {
     
     // IMPORTANT: Only decrement inventory AFTER payment is confirmed
     // All products start with full stock, and quantities are only updated here
-    console.log('💰 Payment confirmed, decrementing inventory for:', cart.length, 'items');
-    const inventoryResult = await decrementInventoryAtomic(cart);
+    // Get commerce mode from site settings (or from order metadata if stored)
+    const settings = await db.getSiteSettings();
+    const commerceMode = settings.commerce_mode || 'LIVE';
+    console.log('💰 Payment confirmed, decrementing inventory for:', cart.length, 'items', 'Mode:', commerceMode);
+    const inventoryResult = await decrementInventoryAtomic(cart, commerceMode);
     
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const userId = customerEmail; // Using email as user ID
@@ -179,13 +182,14 @@ async function handleCheckoutCompleted(session) {
 // Atomic inventory decrement with transaction
 // IMPORTANT: This is the ONLY place where inventory quantities are decremented
 // All products start with full stock, and quantities are only reduced here after payment
-async function decrementInventoryAtomic(cart) {
+async function decrementInventoryAtomic(cart, commerceMode = 'LIVE') {
     // Load current inventory (starts with full stock for all products)
     const inventory = await db.getInventory();
     const errors = [];
     const updates = {};
     
     console.log('📦 Current inventory before decrement:', JSON.stringify(inventory, null, 2));
+    console.log('📦 Commerce mode:', commerceMode);
     
     // First pass: validate all items have sufficient stock
     for (const item of cart) {
@@ -193,9 +197,31 @@ async function decrementInventoryAtomic(cart) {
         const size = item.size;
         const quantity = item.quantity;
         
-        const currentStock = inventory[productId]?.[size] || 0;
+        // Get stock based on commerce mode
+        let currentStock = 0;
+        const productInventory = inventory[productId];
         
-        console.log(`   Checking: Product ${productId}, Size ${size} - Requested: ${quantity}, Available: ${currentStock}`);
+        if (!productInventory) {
+            currentStock = 0;
+        } else if (commerceMode === 'EARLY_ACCESS') {
+            // Use early_access_stock
+            if (productInventory.early_access_stock) {
+                currentStock = productInventory.early_access_stock[size] || 0;
+            } else if (productInventory[size]) {
+                // Legacy format
+                currentStock = productInventory[size] || 0;
+            }
+        } else {
+            // LIVE mode - use live_stock
+            if (productInventory.live_stock) {
+                currentStock = productInventory.live_stock[size] || 0;
+            } else if (productInventory[size]) {
+                // Legacy format
+                currentStock = productInventory[size] || 0;
+            }
+        }
+        
+        console.log(`   Checking: Product ${productId}, Size ${size} - Requested: ${quantity}, Available: ${currentStock} (Mode: ${commerceMode})`);
         
         if (currentStock < quantity) {
             errors.push({
@@ -205,12 +231,34 @@ async function decrementInventoryAtomic(cart) {
                 available: currentStock
             });
         } else {
-            // Prepare update - decrement quantity
+            // Prepare update - decrement quantity in the correct stock
             if (!updates[productId]) {
-                updates[productId] = { ...inventory[productId] };
+                updates[productId] = { ...productInventory };
+                // Ensure structure exists
+                if (commerceMode === 'EARLY_ACCESS') {
+                    if (!updates[productId].early_access_stock) {
+                        updates[productId].early_access_stock = { ...(productInventory.early_access_stock || {}) };
+                    }
+                } else {
+                    if (!updates[productId].live_stock) {
+                        updates[productId].live_stock = { ...(productInventory.live_stock || {}) };
+                    }
+                }
             }
-            updates[productId][size] = currentStock - quantity;
-            console.log(`   ✅ Will decrement: ${currentStock} - ${quantity} = ${updates[productId][size]}`);
+            
+            if (commerceMode === 'EARLY_ACCESS') {
+                if (!updates[productId].early_access_stock) {
+                    updates[productId].early_access_stock = {};
+                }
+                updates[productId].early_access_stock[size] = currentStock - quantity;
+                console.log(`   ✅ Will decrement early_access: ${currentStock} - ${quantity} = ${updates[productId].early_access_stock[size]}`);
+            } else {
+                if (!updates[productId].live_stock) {
+                    updates[productId].live_stock = {};
+                }
+                updates[productId].live_stock[size] = currentStock - quantity;
+                console.log(`   ✅ Will decrement live: ${currentStock} - ${quantity} = ${updates[productId].live_stock[size]}`);
+            }
         }
     }
     

@@ -17,6 +17,26 @@ if (document.readyState === 'loading') {
     waitForProductsAPI();
 }
 
+// Global commerce mode
+let currentCommerceMode = 'LIVE';
+
+// Load commerce mode from server
+async function loadCommerceMode() {
+    try {
+        const response = await fetch('/api/site-settings/commerce-mode');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                currentCommerceMode = data.commerce_mode || 'LIVE';
+                return currentCommerceMode;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading commerce mode:', error);
+    }
+    return 'LIVE';
+}
+
 function initProductPage() {
     // Get product ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -31,16 +51,22 @@ function initProductPage() {
         return;
     }
 
-    // Populate page with product data
-    populateProduct(product);
-    
-    // Initialize interactions
-    initSizeSelection(product);
-    initColorSelection(product);
-    initQuantitySelector();
-    initAccordions();
-    initAddToCartForm(product);
-    initFavoritesButton(product);
+    // Load commerce mode first, then initialize page
+    loadCommerceMode().then(() => {
+        // Populate page with product data
+        populateProduct(product);
+        
+        // Initialize interactions
+        initSizeSelection(product);
+        initColorSelection(product);
+        initQuantitySelector();
+        initAccordions();
+        initAddToCartForm(product);
+        initFavoritesButton(product);
+        
+        // Update button based on commerce mode
+        updateProductButtonForMode(product);
+    });
     
     // Listen for favorites sync events to update button state
     window.addEventListener('favoritesSynced', (e) => {
@@ -454,6 +480,20 @@ function initAccordions() {
     }
 }
 
+// Update product button based on commerce mode
+function updateProductButtonForMode(product) {
+    const submitBtn = document.querySelector('.add-to-cart-btn');
+    if (!submitBtn) return;
+    
+    if (currentCommerceMode === 'WAITLIST') {
+        submitBtn.textContent = 'Join the Waitlist';
+        submitBtn.classList.add('waitlist-btn');
+    } else {
+        submitBtn.textContent = 'Add to Cart';
+        submitBtn.classList.remove('waitlist-btn');
+    }
+}
+
 function initAddToCartForm(product) {
     const form = document.getElementById('add-to-cart-form');
     if (!form) return;
@@ -468,7 +508,7 @@ function initAddToCartForm(product) {
     let isSubmitting = false;
     
     // Remove any existing submit listeners by using a named function we can remove
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         e.stopImmediatePropagation();
         
@@ -481,7 +521,6 @@ function initAddToCartForm(product) {
         
         const originalText = submitBtn.textContent;
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Adding...';
         
         const size = sizeInput ? sizeInput.value : null;
         const color = colorInput ? colorInput.value : null;
@@ -496,6 +535,53 @@ function initAddToCartForm(product) {
             submitBtn.textContent = originalText;
             return;
         }
+        
+        // Handle WAITLIST mode
+        if (currentCommerceMode === 'WAITLIST') {
+            submitBtn.textContent = 'Submitting...';
+            
+            // Submit to Formspree waitlist
+            try {
+                const userEmail = window.auth?.currentUser?.email || '';
+                const waitlistData = {
+                    _subject: `Waitlist Request - ${product.name}`,
+                    product_id: product.id,
+                    product_name: product.name,
+                    size: size,
+                    color: color || 'Navy',
+                    quantity: quantity,
+                    customer_email: userEmail || 'Not provided',
+                    timestamp: new Date().toISOString(),
+                    _replyto: userEmail || undefined
+                };
+                
+                const response = await fetch('https://formspree.io/f/meoyldeq', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(waitlistData)
+                });
+                
+                if (response.ok) {
+                    showNotification('You joined the waiting list for Chapter I.', 'success');
+                } else {
+                    throw new Error('Failed to submit waitlist request');
+                }
+            } catch (error) {
+                console.error('Error submitting waitlist:', error);
+                showNotification('Error joining waitlist. Please try again.');
+            } finally {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+            return;
+        }
+        
+        // LIVE or EARLY_ACCESS mode - normal add to cart flow
+        submitBtn.textContent = 'Adding...';
         
         // Check inventory before adding to cart
         if (window.InventoryAPI) {
@@ -665,7 +751,7 @@ function initFavoritesButton(product) {
     });
 }
 
-function showNotification(message) {
+function showNotification(message, type = 'info') {
     const existingToast = document.querySelector('.toast');
     if (existingToast) {
         existingToast.remove();
@@ -673,6 +759,10 @@ function showNotification(message) {
 
     const toast = document.createElement('div');
     toast.className = 'toast';
+    if (type === 'success') {
+        toast.style.background = '#4caf50';
+        toast.style.color = 'white';
+    }
     toast.textContent = message;
     document.body.appendChild(toast);
 

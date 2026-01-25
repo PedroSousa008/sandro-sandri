@@ -45,7 +45,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Global commerce mode
+let currentCommerceMode = 'LIVE';
+
+// Load commerce mode from server
+async function loadCommerceMode() {
+    try {
+        const response = await fetch('/api/site-settings/commerce-mode');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                currentCommerceMode = data.commerce_mode || 'LIVE';
+                return currentCommerceMode;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading commerce mode:', error);
+    }
+    return 'LIVE';
+}
+
 function initCheckout() {
+    // Check commerce mode first
+    loadCommerceMode().then(() => {
+        if (currentCommerceMode === 'WAITLIST') {
+            // Block checkout in WAITLIST mode
+            const checkoutContainer = document.querySelector('.checkout-container') || document.body;
+            checkoutContainer.innerHTML = `
+                <div style="max-width: 600px; margin: 100px auto; padding: var(--space-xl); text-align: center;">
+                    <h1 style="font-family: var(--font-serif); font-size: 2rem; color: var(--color-navy); margin-bottom: var(--space-md);">
+                        Chapter I is not available yet
+                    </h1>
+                    <p style="font-family: var(--font-sans); font-size: 1rem; color: var(--color-text); margin-bottom: var(--space-lg);">
+                        Join the waitlist to be notified when Chapter I becomes available.
+                    </p>
+                    <a href="collection.html" style="display: inline-block; padding: var(--space-sm) var(--space-lg); background: var(--color-navy); color: white; text-decoration: none; font-family: var(--font-sans); font-size: 0.875rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px;">
+                        Back to Collection
+                    </a>
+                </div>
+            `;
+            return;
+        }
+        
+        // Continue with normal checkout initialization
+        initCheckoutNormal();
+    });
+}
+
+function initCheckoutNormal() {
     // Redirect if cart is empty
     const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
     if (cart.length === 0) {
