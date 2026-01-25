@@ -1626,8 +1626,33 @@ img {
         --space-xl: 4rem;
     }
     
+    .story-section .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
     .story-content {
         text-align: center;
+        padding-left: 0;
+        padding-right: 0;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
+    .story-label,
+    .story-title,
+    .story-text {
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .story-link {
+        text-align: center;
+        display: inline-block;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     .footer-bottom {
