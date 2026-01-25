@@ -1362,16 +1362,27 @@
         align-items: center;
         width: 100%;
         max-width: 100%;
-        padding-left: 10px;
     }
     
-    #read-our-story .about-label,
-    #read-our-story .about-title {
+    /* Center label and title with full width like the text */
+    #read-our-story .about-label {
+        position: relative;
+        width: 100vw;
+        margin-left: calc(-50vw + 50% + 10px);
+        padding-left: 1rem;
+        padding-right: 1rem;
         text-align: center;
-        margin-left: auto;
-        margin-right: auto;
-        width: 100%;
-        padding-left: 10px;
+        box-sizing: border-box;
+    }
+    
+    #read-our-story .about-title {
+        position: relative;
+        width: 100vw;
+        margin-left: calc(-50vw + 50% + 10px);
+        padding-left: 1rem;
+        padding-right: 1rem;
+        text-align: center;
+        box-sizing: border-box;
     }
     
     /* Ensure about-text paragraphs are centered */
