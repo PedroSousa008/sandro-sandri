@@ -1349,6 +1349,19 @@
         flex-direction: column;
     }
     
+    /* Center content for "What is Sandro Sandri?" section on mobile */
+    #read-our-story .about-content {
+        text-align: center;
+        align-items: center;
+    }
+    
+    #read-our-story .about-label,
+    #read-our-story .about-title {
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
     .about-image {
         max-width: 100%;
         aspect-ratio: 4/5;
