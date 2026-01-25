@@ -938,8 +938,49 @@ img {
 }
 
 @media (max-width: 768px) {
+    .story-section .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
     .story-grid {
         grid-template-columns: 1fr;
+        justify-items: center;
+    }
+    
+    .story-content {
+        padding-right: 0;
+        padding-left: 0;
+        text-align: center;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
+    .story-label {
+        text-align: center;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .story-title {
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .story-text {
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .story-link {
+        text-align: center;
+        display: inline-block;
+        margin-left: auto;
+        margin-right: auto;
     }
 }
 
@@ -1544,7 +1585,21 @@ img {
     
     .story-content {
         padding-right: 0;
+        padding-left: 0;
         text-align: center;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .story-label,
+    .story-title,
+    .story-text {
+        text-align: center;
+    }
+    
+    .story-link {
+        text-align: center;
+        display: inline-block;
     }
     
     /* Hero Section - Mobile */
