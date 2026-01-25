@@ -1362,6 +1362,7 @@
         align-items: center;
         width: 100%;
         max-width: 100%;
+        padding-left: 10px;
     }
     
     #read-our-story .about-label,
@@ -1370,6 +1371,7 @@
         margin-left: auto;
         margin-right: auto;
         width: 100%;
+        padding-left: 10px;
     }
     
     /* Ensure about-text paragraphs are centered */
@@ -1447,7 +1449,7 @@
     /* Center the about-text paragraphs for "What is Sandro Sandri?" section */
     #read-our-story .about-content .about-text,
     #story .about-content .about-text {
-        margin-left: calc(-50vw + 50%);
+        margin-left: calc(-50vw + 50% + 10px);
         padding-left: 1rem;
         padding-right: 1rem;
         text-align: center !important;
