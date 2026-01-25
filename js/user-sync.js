@@ -112,7 +112,7 @@ class UserSync {
 
         try {
             console.log('🔄 Loading all user data for:', this.userEmail);
-            const response = await fetch(`/api/user?action=sync&email=${encodeURIComponent(this.userEmail)}`);
+            const response = await fetch(`/api/user/sync?email=${encodeURIComponent(this.userEmail)}`);
             
             console.log('API response status:', response.status);
             
@@ -388,7 +388,7 @@ class UserSync {
                     atlasMemories: Object.keys(payload.atlas.memories).length
                 });
 
-                const response = await fetch('/api/user?action=sync', {
+                const response = await fetch('/api/user/sync', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

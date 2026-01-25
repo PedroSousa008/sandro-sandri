@@ -68,7 +68,7 @@ class AuthSystem {
     async login(email, password, securityAnswer = null) {
         // All authentication is now handled server-side via /api/auth/login
         try {
-            const response = await fetch('/api/auth?action=login', {
+            const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

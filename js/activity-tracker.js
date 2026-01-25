@@ -72,7 +72,7 @@ class ActivityTracker {
 
         // Sync to server
         try {
-            await fetch('/api/user?action=activity', {
+            await fetch('/api/user/activity', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

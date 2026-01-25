@@ -203,7 +203,7 @@
             button.textContent = 'Creating Account...';
             
             try {
-                const response = await fetch('/api/auth?action=signup', {
+                const response = await fetch('/api/auth/signup', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
