@@ -448,7 +448,7 @@
                         <li>Exclusive updates</li>
                         <li>Member serial number priority</li>
                     </ul>
-                    <a href="membership-checkout.html?tier=essenza" class="tier-btn">Join Essenza</a>
+                    <a href="#" class="tier-btn waitlist-btn">Join the Waitlist</a>
                 </div>
 
                 <!-- Tier 2: Élite (Featured) -->
@@ -465,7 +465,7 @@
                         <li>Free worldwide shipping</li>
                         <li>Priority customer service</li>
                     </ul>
-                    <a href="membership-checkout.html?tier=elite" class="tier-btn">Join Élite</a>
+                    <a href="#" class="tier-btn waitlist-btn">Join the Waitlist</a>
                 </div>
             </div>
         </section>
@@ -644,6 +644,52 @@
                 document.getElementById('info-modal').classList.remove('active');
                 document.body.style.overflow = '';
             }
+        });
+
+        // Waitlist button functionality - show "Coming Soon" message
+        document.querySelectorAll('.waitlist-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Create and show "Coming Soon" message
+                const message = document.createElement('div');
+                message.textContent = 'Coming Soon';
+                message.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: var(--color-navy);
+                    color: #fff;
+                    padding: 30px 60px;
+                    font-family: 'Arapey', serif;
+                    font-size: 1.5rem;
+                    z-index: 10000;
+                    border-radius: 4px;
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                    animation: fadeIn 0.3s ease;
+                `;
+                
+                // Add fade in animation
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+                        to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                document.body.appendChild(message);
+                
+                // Remove message after 2 seconds
+                setTimeout(() => {
+                    message.style.animation = 'fadeIn 0.3s ease reverse';
+                    setTimeout(() => {
+                        document.body.removeChild(message);
+                    }, 300);
+                }, 2000);
+            });
         });
     </script>
 </body>
