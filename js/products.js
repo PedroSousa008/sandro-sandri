@@ -101,7 +101,8 @@ const PRODUCTS = [
         images: [
             "images/tshirt-3a.png",
             "images/tshirt-3b.png",
-            "images/tshirt-3c.png"
+            "images/tshirt-3c.png",
+            "images/tshirt-3d.png"
         ],
         collection: {
             title: "Connoisseur Signature",
