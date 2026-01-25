@@ -101,7 +101,7 @@ function initCollection() {
                         <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                     </div>
                 </a>
-                <button class="quick-add" data-product-id="${product.id}">Add to Cart</button>
+                <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
             </article>
         `).join('');
 
@@ -205,17 +205,50 @@ function initCollection() {
     function initQuickAdd() {
         const quickAddButtons = productsGrid.querySelectorAll('.quick-add');
         quickAddButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const productId = parseInt(btn.dataset.productId);
                 const product = window.ProductsAPI.getById(productId);
-                if (product && window.cart) {
-                    // Get default size from product or use 'M'
-                    const defaultSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M';
-                    window.cart.addItem(productId, defaultSize, null, 1);
+                if (!product) return;
+                
+                // Get default size from product or use 'M'
+                const defaultSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M';
+                
+                // Check if in WAITLIST mode
+                if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+                    // Check if user is logged in
+                    const isLoggedIn = window.CommerceMode.isUserLoggedIn();
+                    
+                    if (!isLoggedIn) {
+                        // Show email form first, then add to cart after email is submitted
+                        if (window.showWaitlistEmailForm) {
+                            window.showWaitlistEmailForm(product, defaultSize, null, 1, true); // true = add to cart after email
+                        } else {
+                            // Fallback: show email form from product.js
+                            showWaitlistEmailFormForQuickAdd(product, defaultSize);
+                        }
+                    } else {
+                        // User is logged in - add to cart directly
+                        if (window.cart) {
+                            window.cart.addItem(productId, defaultSize, null, 1);
+                            showNotification('Item added to cart!', 'success');
+                        }
+                    }
+                } else {
+                    // Normal mode - add to cart directly
+                    if (window.cart) {
+                        window.cart.addItem(productId, defaultSize, null, 1);
+                    }
                 }
             });
         });
+    }
+    
+    // Helper function to show email form for quick-add (collection page)
+    function showWaitlistEmailFormForQuickAdd(product, size) {
+        if (window.showWaitlistEmailForm) {
+            window.showWaitlistEmailForm(product, size, null, 1, true);
+        }
     }
 }

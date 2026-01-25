@@ -477,13 +477,13 @@ function initAccordions() {
     }
 }
 
-// Update product button - always show "Join the Waitlist" for t-shirts
+// Update product button based on commerce mode
 function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
     
-    // Always show "Join the Waitlist" for t-shirts (products 1-5)
-    if (product.id >= 1 && product.id <= 5) {
+    // Check commerce mode - show "Join the Waitlist" in WAITLIST mode
+    if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
         submitBtn.textContent = 'Join the Waitlist';
         submitBtn.classList.add('waitlist-btn');
     } else {
@@ -534,91 +534,98 @@ function initAddToCartForm(product) {
             return;
         }
         
-        // Handle t-shirt products (always show waitlist form)
-        if (product.id >= 1 && product.id <= 5) {
-            // First, add to cart (same as normal flow)
-            // Check inventory before adding to cart
-            if (window.InventoryAPI) {
-                const inStock = window.InventoryAPI.isInStock(product.id, size);
-                if (!inStock) {
-                    showNotification('This size is sold out');
-                    isSubmitting = false;
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                    return;
-                }
-                
-                const availableStock = window.InventoryAPI.get(product.id, size);
-                if (quantity > availableStock) {
-                    showNotification(`Only ${availableStock} available in this size. Please reduce quantity.`);
-                    if (quantityInput) {
-                        quantityInput.value = availableStock;
-                    }
-                    isSubmitting = false;
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                    return;
-                }
-                
-                if (quantity > availableStock) {
-                    quantity = availableStock;
-                    if (quantityInput) {
-                        quantityInput.value = quantity;
-                    }
-                }
-            }
+        // Handle WAITLIST mode - show email form if not logged in, then add to cart
+        if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+            // Check if user is logged in
+            const isLoggedIn = window.CommerceMode.isUserLoggedIn();
             
-            // Ensure quantity is valid
-            if (quantity < 1) {
-                console.error('Invalid quantity:', quantity);
-                showNotification('Please enter a valid quantity');
-                isSubmitting = false;
+            if (!isLoggedIn) {
+                // Show email form FIRST, then add to cart after email is submitted
+                showWaitlistEmailForm(product, size, color, quantity, true); // true = add to cart after email
+            } else {
+                // User is logged in - add to cart directly (same as normal flow)
+                // Check inventory before adding to cart
+                if (window.InventoryAPI) {
+                    const inStock = window.InventoryAPI.isInStock(product.id, size);
+                    if (!inStock) {
+                        showNotification('This size is sold out');
+                        isSubmitting = false;
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        return;
+                    }
+                    
+                    const availableStock = window.InventoryAPI.get(product.id, size);
+                    if (quantity > availableStock) {
+                        showNotification(`Only ${availableStock} available in this size. Please reduce quantity.`);
+                        if (quantityInput) {
+                            quantityInput.value = availableStock;
+                        }
+                        isSubmitting = false;
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        return;
+                    }
+                    
+                    if (quantity > availableStock) {
+                        quantity = availableStock;
+                        if (quantityInput) {
+                            quantityInput.value = quantity;
+                        }
+                    }
+                }
+                
+                // Ensure quantity is valid
+                if (quantity < 1) {
+                    console.error('Invalid quantity:', quantity);
+                    showNotification('Please enter a valid quantity');
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                }
+                
+                console.log('Adding to cart:', { productId: product.id, size, color, quantity, quantityValue });
+                
+                // Add to cart
+                if (window.cart) {
+                    const added = window.cart.addItem(product.id, size, color, quantity);
+                    if (added) {
+                        // Update button state after adding
+                        if (window.updateAddToCartButton) {
+                            window.updateAddToCartButton(product.id, size);
+                        }
+                        // Update quantity max after adding
+                        const updateQuantityMax = window.updateQuantityMax || function(productId, size) {
+                            const quantityInput = document.querySelector('.quantity-input');
+                            if (quantityInput && window.InventoryAPI) {
+                                const availableStock = window.InventoryAPI.get(productId, size);
+                                quantityInput.max = availableStock;
+                                quantityInput.setAttribute('max', availableStock);
+                            }
+                        };
+                        updateQuantityMax(product.id, size);
+                    }
+                } else {
+                    console.error('Cart not initialized');
+                }
+                
+                // Re-enable button
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
-                return;
-            }
-            
-            console.log('Adding to cart:', { productId: product.id, size, color, quantity, quantityValue });
-            
-            // Add to cart
-            if (window.cart) {
-                const added = window.cart.addItem(product.id, size, color, quantity);
-                if (added) {
-                    // Update button state after adding
-                    if (window.updateAddToCartButton) {
-                        window.updateAddToCartButton(product.id, size);
-                    }
-                    // Update quantity max after adding
-                    const updateQuantityMax = window.updateQuantityMax || function(productId, size) {
-                        const quantityInput = document.querySelector('.quantity-input');
-                        if (quantityInput && window.InventoryAPI) {
-                            const availableStock = window.InventoryAPI.get(productId, size);
-                            quantityInput.max = availableStock;
-                            quantityInput.setAttribute('max', availableStock);
-                        }
-                    };
-                    updateQuantityMax(product.id, size);
+                isSubmitting = false;
+                
+                // Open cart drawer
+                const cartDrawer = document.querySelector('.cart-drawer');
+                const cartOverlay = document.querySelector('.cart-overlay');
+                if (cartDrawer) {
+                    cartDrawer.classList.add('open');
+                    cartOverlay?.classList.add('visible');
+                    document.body.classList.add('cart-open');
                 }
-            } else {
-                console.error('Cart not initialized');
+                
+                showNotification('Item added to cart!', 'success');
             }
-            
-            // Re-enable button
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
-            isSubmitting = false;
-            
-            // Open cart drawer
-            const cartDrawer = document.querySelector('.cart-drawer');
-            const cartOverlay = document.querySelector('.cart-overlay');
-            if (cartDrawer) {
-                cartDrawer.classList.add('open');
-                cartOverlay?.classList.add('visible');
-                document.body.classList.add('cart-open');
-            }
-            
-            // Show email form modal for waitlist
-            showWaitlistEmailForm(product, size, color, quantity);
             return;
         }
         
@@ -1039,9 +1046,214 @@ function loadRelatedProducts(currentProduct) {
                     <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                 </div>
             </a>
-            <button class="quick-add" data-product-id="${product.id}">Add to Cart</button>
+            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
         </article>
     `).join('');
 }
 
+// Show waitlist email form modal
+// addToCartAfterEmail: if true, add to cart after email is submitted (for quick-add buttons)
+function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEmail = false) {
+    // Check if modal already exists
+    let modal = document.getElementById('waitlist-email-modal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    // Create modal
+    modal = document.createElement('div');
+    modal.id = 'waitlist-email-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-lg);
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: white;
+        max-width: 500px;
+        width: 100%;
+        padding: var(--space-xl);
+        border-radius: 4px;
+        position: relative;
+    `;
+    
+    modalContent.innerHTML = `
+        <button class="close-waitlist-modal" style="position: absolute; top: var(--space-md); right: var(--space-md); background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-light); line-height: 1;">&times;</button>
+        <h2 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--color-navy); margin-bottom: var(--space-md);">
+            Join the Waitlist
+        </h2>
+        <p style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-lg);">
+            ${addToCartAfterEmail ? 'Please provide your email to join the waitlist. Your item will be added to your cart after you submit.' : 'Your item has been added to your cart. Please provide your email to join the waitlist and be notified when Chapter I becomes available.'}
+        </p>
+        <form id="waitlist-email-form" style="margin-top: var(--space-lg);">
+            <div class="form-group" style="margin-bottom: var(--space-md);">
+                <label class="form-label" for="waitlist-email" style="display: block; font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-xs);">
+                    Email Address *
+                </label>
+                <input 
+                    type="email" 
+                    id="waitlist-email" 
+                    name="email" 
+                    required 
+                    autocomplete="email"
+                    style="width: 100%; padding: var(--space-sm); font-family: var(--font-sans); font-size: 0.875rem; border: 1px solid var(--color-gray); border-radius: 2px; box-sizing: border-box;"
+                    placeholder="your.email@example.com"
+                >
+            </div>
+            <div id="waitlist-error" style="display: none; padding: var(--space-sm); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 2px; margin-bottom: var(--space-md); font-size: 0.875rem;"></div>
+            <div id="waitlist-success" style="display: none; padding: var(--space-sm); background: #efe; border: 1px solid #cfc; color: #0c0; border-radius: 2px; margin-bottom: var(--space-md); font-size: 0.875rem;"></div>
+            <div style="display: flex; gap: var(--space-sm); justify-content: flex-end;">
+                <button type="button" class="cancel-waitlist-btn" style="padding: var(--space-sm) var(--space-lg); font-family: var(--font-sans); font-size: 0.875rem; background: var(--color-white); color: var(--color-navy); border: 1px solid var(--color-navy); border-radius: 2px; cursor: pointer;">
+                    Skip
+                </button>
+                <button type="submit" id="waitlist-submit-btn" style="padding: var(--space-sm) var(--space-lg); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; background: var(--color-navy); color: white; border: none; border-radius: 2px; cursor: pointer;">
+                    Join Waitlist
+                </button>
+            </div>
+        </form>
+    `;
+    
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+    
+    // Store product info for later use
+    modal.dataset.productId = product.id;
+    modal.dataset.size = size;
+    modal.dataset.color = color || '';
+    modal.dataset.quantity = quantity;
+    modal.dataset.addToCartAfter = addToCartAfterEmail ? 'true' : 'false';
+    
+    // Close modal handlers
+    const closeBtn = modal.querySelector('.close-waitlist-modal');
+    const cancelBtn = modal.querySelector('.cancel-waitlist-btn');
+    const closeModal = () => {
+        modal.remove();
+    };
+    
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // Form submission
+    const form = document.getElementById('waitlist-email-form');
+    const emailInput = document.getElementById('waitlist-email');
+    const errorEl = document.getElementById('waitlist-error');
+    const successEl = document.getElementById('waitlist-success');
+    const submitBtn = document.getElementById('waitlist-submit-btn');
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = emailInput.value.trim();
+        
+        if (!email) {
+            errorEl.textContent = 'Please enter your email address';
+            errorEl.style.display = 'block';
+            successEl.style.display = 'none';
+            return;
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            errorEl.textContent = 'Please enter a valid email address';
+            errorEl.style.display = 'block';
+            successEl.style.display = 'none';
+            return;
+        }
+        
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        errorEl.style.display = 'none';
+        successEl.style.display = 'none';
+        
+        try {
+            // Submit to Formspree
+            const waitlistData = {
+                _subject: `Waitlist Request - ${product.name}`,
+                product_id: product.id,
+                product_name: product.name,
+                size: size,
+                color: color || 'Navy',
+                quantity: quantity,
+                customer_email: email,
+                timestamp: new Date().toISOString(),
+                _replyto: email
+            };
+            
+            const response = await fetch('https://formspree.io/f/meoyldeq', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(waitlistData)
+            });
+            
+            if (response.ok) {
+                successEl.textContent = 'Successfully joined the waitlist! You will be notified when Chapter I becomes available.';
+                successEl.style.display = 'block';
+                
+                // Add to cart after email is submitted (if flag is set)
+                if (addToCartAfterEmail && window.cart) {
+                    // Check inventory before adding
+                    if (window.InventoryAPI) {
+                        const inStock = window.InventoryAPI.isInStock(product.id, size);
+                        if (inStock) {
+                            window.cart.addItem(product.id, size, color, quantity);
+                            
+                            // Open cart drawer
+                            const cartDrawer = document.querySelector('.cart-drawer');
+                            const cartOverlay = document.querySelector('.cart-overlay');
+                            if (cartDrawer) {
+                                cartDrawer.classList.add('open');
+                                cartOverlay?.classList.add('visible');
+                                document.body.classList.add('cart-open');
+                            }
+                        }
+                    } else {
+                        window.cart.addItem(product.id, size, color, quantity);
+                    }
+                }
+                
+                // Close modal after 2 seconds
+                setTimeout(() => {
+                    closeModal();
+                    showNotification('You joined the waiting list for Chapter I.', 'success');
+                }, 2000);
+            } else {
+                throw new Error('Failed to submit waitlist request');
+            }
+        } catch (error) {
+            console.error('Error submitting waitlist:', error);
+            errorEl.textContent = 'Error joining waitlist. Please try again.';
+            errorEl.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Join Waitlist';
+        }
+    });
+    
+    // Focus email input
+    setTimeout(() => {
+        emailInput.focus();
+    }, 100);
+}
+
+// Make function globally accessible
+window.showWaitlistEmailForm = showWaitlistEmailForm;
 

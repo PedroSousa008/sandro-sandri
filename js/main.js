@@ -523,17 +523,39 @@ function createInlineSizeSelector(button, product) {
         sizeBtn.textContent = size;
         sizeBtn.dataset.size = size;
         
-        sizeBtn.addEventListener('click', function(e) {
+        sizeBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             e.stopPropagation();
             
-            // Add to cart with selected size
-            if (window.cart) {
-                window.cart.addItem(product.id, size, null, 1);
+            // Check if in WAITLIST mode
+            if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+                // Check if user is logged in
+                const isLoggedIn = window.CommerceMode.isUserLoggedIn();
+                
+                if (!isLoggedIn) {
+                    // Show email form first, then add to cart after email is submitted
+                    if (window.showWaitlistEmailForm) {
+                        window.showWaitlistEmailForm(product, size, null, 1, true); // true = add to cart after email
+                    }
+                    // Remove size selector
+                    sizeSelector.remove();
+                } else {
+                    // User is logged in - add to cart directly
+                    if (window.cart) {
+                        window.cart.addItem(product.id, size, null, 1);
+                        showNotification('Item added to cart!', 'success');
+                    }
+                    // Remove size selector
+                    sizeSelector.remove();
+                }
+            } else {
+                // Normal mode - add to cart directly
+                if (window.cart) {
+                    window.cart.addItem(product.id, size, null, 1);
+                }
+                // Remove size selector
+                sizeSelector.remove();
             }
-            
-            // Remove size selector
-            sizeSelector.remove();
         });
         
         sizeSelector.appendChild(sizeBtn);
