@@ -67,8 +67,12 @@ module.exports = async (req, res) => {
             
             if (email === auth.OWNER_EMAIL.toLowerCase()) {
                 isOwner = true;
+                console.log('🔐 Owner login attempt detected');
+                console.log('   Email:', email);
+                console.log('   Security Answer provided:', securityAnswer ? 'Yes' : 'No');
                 // Verify owner credentials (including security answer)
                 const ownerCheck = await auth.verifyOwnerCredentials(email, password, securityAnswer);
+                console.log('   Owner check result:', ownerCheck.valid ? 'Valid' : 'Invalid', ownerCheck.error || '');
                 if (!ownerCheck.valid) {
                     return res.status(401).json({ 
                         error: ownerCheck.error || 'Invalid credentials' 
