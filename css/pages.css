@@ -1426,6 +1426,7 @@
         text-align: center;
         margin-left: auto;
         margin-right: auto;
+        width: 100%;
     }
     
     /* Center the about-text paragraphs for "What is Sandro Sandri?" section */
@@ -1434,7 +1435,7 @@
         margin-left: calc(-50vw + 50%);
         padding-left: 1rem;
         padding-right: 1rem;
-        text-align: center;
+        text-align: center !important;
         width: 100vw;
         box-sizing: border-box;
     }
