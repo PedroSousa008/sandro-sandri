@@ -945,42 +945,43 @@ img {
     
     .story-grid {
         grid-template-columns: 1fr;
-        justify-items: center;
+        justify-items: flex-end;
     }
     
     .story-content {
         padding-right: 0;
-        padding-left: 0;
-        text-align: center;
+        padding-left: 2rem;
+        text-align: right;
         width: 100%;
         max-width: 100%;
-        margin: 0 auto;
+        margin-left: auto;
+        margin-right: 0;
     }
     
     .story-label {
-        text-align: center;
+        text-align: right;
         display: block;
         margin-left: auto;
-        margin-right: auto;
+        margin-right: 0;
     }
     
     .story-title {
-        text-align: center;
+        text-align: right;
         margin-left: auto;
-        margin-right: auto;
+        margin-right: 0;
     }
     
     .story-text {
-        text-align: center;
+        text-align: right;
         margin-left: auto;
-        margin-right: auto;
+        margin-right: 0;
     }
     
     .story-link {
-        text-align: center;
+        text-align: right;
         display: inline-block;
         margin-left: auto;
-        margin-right: auto;
+        margin-right: 0;
     }
 }
 
@@ -1631,28 +1632,33 @@ img {
         padding-right: 1rem;
     }
     
+    .story-grid {
+        justify-items: flex-end;
+    }
+    
     .story-content {
-        text-align: center;
-        padding-left: 0;
+        text-align: right;
+        padding-left: 1.5rem;
         padding-right: 0;
         width: 100%;
         max-width: 100%;
-        margin: 0 auto;
+        margin-left: auto;
+        margin-right: 0;
     }
     
     .story-label,
     .story-title,
     .story-text {
-        text-align: center;
+        text-align: right;
         margin-left: auto;
-        margin-right: auto;
+        margin-right: 0;
     }
     
     .story-link {
-        text-align: center;
+        text-align: right;
         display: inline-block;
         margin-left: auto;
-        margin-right: auto;
+        margin-right: 0;
     }
     
     .footer-bottom {
