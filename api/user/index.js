@@ -4,6 +4,9 @@
    ======================================== */
 
 const db = require('../../lib/storage');
+const auth = require('../../lib/auth');
+const validation = require('../../lib/validation');
+const securityLog = require('../../lib/security-log');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -87,13 +90,43 @@ module.exports = async (req, res) => {
 
         // USER SYNC (GET and POST)
         if (action === 'sync' || !action) {
+            // SECURITY: Require authentication for user sync
+            const authCheck = auth.requireAuth(req);
+            if (!authCheck.authorized) {
+                return res.status(authCheck.statusCode).json({
+                    success: false,
+                    error: authCheck.error || 'Authentication required'
+                });
+            }
+
             if (req.method === 'GET') {
                 // Load user data
-                const { email } = req.query;
+                const { email: rawEmail } = req.query;
 
-                if (!email) {
+                if (!rawEmail) {
                     return res.status(400).json({ error: 'Email is required' });
                 }
+
+                // SECURITY: Validate email
+                const emailValidation = validation.validateEmail(rawEmail);
+                if (!emailValidation.valid) {
+                    await securityLog.logUnauthorizedAccess(req, '/api/user?action=sync', 'Invalid email format');
+                    return res.status(400).json({ error: emailValidation.error });
+                }
+                const email = emailValidation.sanitized;
+
+                // SECURITY: Verify that authenticated user can only access their own data
+                const tokenEmail = authCheck.user?.email?.toLowerCase();
+                if (tokenEmail !== email) {
+                    await securityLog.logUnauthorizedAccess(req, '/api/user?action=sync', `Attempted to access ${email} data`);
+                    return res.status(403).json({
+                        success: false,
+                        error: 'You can only access your own data'
+                    });
+                }
+
+                // SECURITY: Log data access
+                await securityLog.logDataAccess(req, 'user_sync', email);
 
                 await db.initDb();
 
@@ -132,10 +165,57 @@ module.exports = async (req, res) => {
                 return;
             } else if (req.method === 'POST') {
                 // Save user data
-                const { email, cart, profile, favorites, orders, atlas, lastLogin } = req.body;
+                const { email: rawEmail, cart, profile, favorites, orders, atlas, lastLogin } = req.body;
 
-                if (!email) {
+                if (!rawEmail) {
                     return res.status(400).json({ error: 'Email is required' });
+                }
+
+                // SECURITY: Validate email
+                const emailValidation = validation.validateEmail(rawEmail);
+                if (!emailValidation.valid) {
+                    await securityLog.logUnauthorizedAccess(req, '/api/user?action=sync', 'Invalid email format');
+                    return res.status(400).json({ error: emailValidation.error });
+                }
+                const email = emailValidation.sanitized;
+
+                // SECURITY: Verify that authenticated user can only save their own data
+                // Note: authCheck is already defined above in the sync block
+                const tokenEmail = authCheck.user?.email?.toLowerCase();
+                if (tokenEmail !== email) {
+                    await securityLog.logUnauthorizedAccess(req, '/api/user?action=sync', `Attempted to save ${email} data`);
+                    return res.status(403).json({
+                        success: false,
+                        error: 'You can only save your own data'
+                    });
+                }
+
+                // SECURITY: Validate and sanitize inputs
+                let sanitizedCart = cart;
+                if (cart !== undefined) {
+                    const cartValidation = validation.validateCart(cart);
+                    if (!cartValidation.valid) {
+                        return res.status(400).json({ error: cartValidation.error });
+                    }
+                    sanitizedCart = cartValidation.sanitized;
+                }
+
+                let sanitizedFavorites = favorites;
+                if (favorites !== undefined) {
+                    const favoritesValidation = validation.validateFavorites(favorites);
+                    if (!favoritesValidation.valid) {
+                        return res.status(400).json({ error: favoritesValidation.error });
+                    }
+                    sanitizedFavorites = favoritesValidation.sanitized;
+                }
+
+                let sanitizedProfile = profile;
+                if (profile !== undefined) {
+                    const profileValidation = validation.validateProfile(profile);
+                    if (!profileValidation.valid) {
+                        return res.status(400).json({ error: profileValidation.error });
+                    }
+                    sanitizedProfile = profileValidation.sanitized;
                 }
 
                 await db.initDb();
@@ -153,9 +233,9 @@ module.exports = async (req, res) => {
                 };
 
                 const newUserData = {
-                    cart: cart !== undefined ? cart : existingUser.cart,
-                    profile: profile !== undefined ? profile : existingUser.profile,
-                    favorites: favorites !== undefined ? (Array.isArray(favorites) ? favorites : []) : existingUser.favorites,
+                    cart: sanitizedCart !== undefined ? sanitizedCart : existingUser.cart,
+                    profile: sanitizedProfile !== undefined ? sanitizedProfile : existingUser.profile,
+                    favorites: sanitizedFavorites !== undefined ? sanitizedFavorites : existingUser.favorites,
                     orders: orders !== undefined ? orders : existingUser.orders,
                     lastLogin: req.body.lastLogin !== undefined ? req.body.lastLogin : existingUser.lastLogin,
                     updatedAt: new Date().toISOString()

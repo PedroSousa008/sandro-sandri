@@ -8,6 +8,9 @@ const bcrypt = require('bcryptjs');
 const auth = require('../../lib/auth');
 const crypto = require('crypto');
 const emailService = require('../../lib/email');
+const rateLimit = require('../../lib/rate-limit');
+const validation = require('../../lib/validation');
+const securityLog = require('../../lib/security-log');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -74,6 +77,9 @@ module.exports = async (req, res) => {
                 const ownerCheck = await auth.verifyOwnerCredentials(email, password, securityAnswer);
                 console.log('   Owner check result:', ownerCheck.valid ? 'Valid' : 'Invalid', ownerCheck.error || '');
                 if (!ownerCheck.valid) {
+                    // SECURITY: Record failed login attempt and log
+                    await rateLimit.recordFailedAttempt(req, 'login', email);
+                    await securityLog.logFailedLogin(req, email, ownerCheck.error || 'Invalid owner credentials');
                     return res.status(401).json({ 
                         error: ownerCheck.error || 'Invalid credentials' 
                     });
@@ -88,6 +94,9 @@ module.exports = async (req, res) => {
                 user = userData[email] || userData[email.toLowerCase()] || userData[email.toUpperCase()];
 
                 if (!user) {
+                    // SECURITY: Record failed login attempt and log
+                    await rateLimit.recordFailedAttempt(req, 'login', email);
+                    await securityLog.logFailedLogin(req, email, 'User not found');
                     return res.status(401).json({ 
                         error: 'Invalid email or password' 
                     });
@@ -96,6 +105,9 @@ module.exports = async (req, res) => {
                 // Verify password - SECURITY: Only use hashed passwords
                 const passwordHash = user.passwordHash;
                 if (!passwordHash) {
+                    // SECURITY: Record failed login attempt and log
+                    await rateLimit.recordFailedAttempt(req, 'login', email);
+                    await securityLog.logFailedLogin(req, email, 'Account has no password hash');
                     return res.status(401).json({ 
                         error: 'Account needs password reset. Please contact support.' 
                     });
@@ -104,6 +116,9 @@ module.exports = async (req, res) => {
                 // Verify hashed password
                 const isValid = await bcrypt.compare(password, passwordHash);
                 if (!isValid) {
+                    // SECURITY: Record failed login attempt and log
+                    await rateLimit.recordFailedAttempt(req, 'login', email);
+                    await securityLog.logFailedLogin(req, email, 'Invalid password');
                     return res.status(401).json({ 
                         error: 'Invalid email or password' 
                     });
@@ -135,6 +150,12 @@ module.exports = async (req, res) => {
                 role: isOwner ? 'OWNER' : 'USER'
             });
 
+            // SECURITY: Clear rate limit on successful login
+            await rateLimit.clearRateLimit(req, 'login', email);
+            
+            // SECURITY: Log successful login
+            await securityLog.logSuccessfulLogin(req, userKey, isOwner);
+
             // Set HTTP-only cookie (more secure than localStorage)
             res.setHeader('Set-Cookie', `session_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${24 * 60 * 60}`);
 
@@ -150,41 +171,54 @@ module.exports = async (req, res) => {
 
         // SIGNUP (POST with action=signup)
         if (req.method === 'POST' && action === 'signup') {
-            const { email, password } = req.body;
+            const { email: rawEmail, password: rawPassword } = req.body;
 
-            // Validation
-            if (!email || !password) {
+            // SECURITY: Validate and sanitize inputs
+            if (!rawEmail || !rawPassword) {
+                await securityLog.logSignupAttempt(req, rawEmail || 'unknown', false);
                 return res.status(400).json({ 
                     error: 'Email and password are required' 
                 });
             }
 
-            // Email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
+            // Validate email
+            const emailValidation = validation.validateEmail(rawEmail);
+            if (!emailValidation.valid) {
+                await securityLog.logSignupAttempt(req, rawEmail, false);
                 return res.status(400).json({ 
-                    error: 'Invalid email format' 
+                    error: emailValidation.error 
                 });
             }
+            const normalizedEmail = emailValidation.sanitized;
 
-            // Password validation
-            if (password.length < 6) {
+            // Validate password
+            const passwordValidation = validation.validatePassword(rawPassword);
+            if (!passwordValidation.valid) {
+                await securityLog.logSignupAttempt(req, normalizedEmail, false);
                 return res.status(400).json({ 
-                    error: 'Password must be at least 6 characters' 
+                    error: passwordValidation.error 
+                });
+            }
+            const password = rawPassword; // Password is validated but not sanitized (will be hashed)
+
+            // SECURITY: Rate limiting for signup attempts
+            const rateLimitCheck = await rateLimit.checkRateLimit(req, 'signup', normalizedEmail);
+            if (!rateLimitCheck.allowed) {
+                await securityLog.logRateLimitExceeded(req, 'signup', normalizedEmail);
+                return res.status(429).json({
+                    error: rateLimitCheck.error || 'Too many signup attempts. Please try again later.'
                 });
             }
 
             await db.initDb();
-
-            // Normalize email for consistency
-            const normalizedEmail = email.toLowerCase().trim();
             
             // Check if user already exists
             const userData = await db.getUserData();
-            const existingUser = userData[normalizedEmail] || userData[email];
+            const existingUser = userData[normalizedEmail];
 
             // If user exists and is already verified, return error
             if (existingUser && existingUser.email_verified === true) {
+                await securityLog.logSignupAttempt(req, normalizedEmail, false);
                 return res.status(400).json({ 
                     error: 'An account with this email already exists' 
                 });
@@ -229,7 +263,7 @@ module.exports = async (req, res) => {
             // Create or update user (SECURITY: DO NOT store plaintext password)
             userData[normalizedEmail] = {
                 ...(existingUser || {}),
-                email: email,
+                email: normalizedEmail,
                 passwordHash: passwordHash, // ONLY store hashed password
                 email_verified: true, // Temporarily set to true
                 email_verified_at: new Date().toISOString(),

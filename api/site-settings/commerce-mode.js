@@ -5,6 +5,7 @@
 
 const db = require('../../lib/storage');
 const auth = require('../../lib/auth');
+const securityLog = require('../../lib/security-log');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -33,6 +34,7 @@ module.exports = async (req, res) => {
             // SECURITY: Update commerce mode requires admin authentication
             const adminCheck = auth.requireAdmin(req);
             if (!adminCheck.authorized) {
+                await securityLog.logUnauthorizedAccess(req, '/api/site-settings/commerce-mode', adminCheck.error);
                 return res.status(adminCheck.statusCode).json({
                     success: false,
                     error: adminCheck.error || 'Unauthorized. Only the owner can change commerce mode.'
@@ -49,10 +51,18 @@ module.exports = async (req, res) => {
             }
 
             const settings = await db.getSiteSettings();
+            const previousMode = settings.commerce_mode || 'LIVE';
             settings.commerce_mode = commerce_mode;
             settings.updatedAt = new Date().toISOString();
 
             await db.saveSiteSettings(settings);
+
+            // SECURITY: Log admin action
+            req.user = adminCheck.user;
+            await securityLog.logAdminAction(req, 'CHANGE_COMMERCE_MODE', {
+                previousMode: previousMode,
+                newMode: commerce_mode
+            });
 
             console.log(`✅ Commerce mode updated to: ${commerce_mode}`);
 

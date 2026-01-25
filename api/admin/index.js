@@ -5,6 +5,7 @@
 
 const db = require('../../lib/storage');
 const auth = require('../../lib/auth');
+const securityLog = require('../../lib/security-log');
 
 module.exports = async (req, res) => {
     // Enable CORS
@@ -22,11 +23,15 @@ module.exports = async (req, res) => {
     if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {
         const adminCheck = auth.requireAdmin(req);
         if (!adminCheck.authorized) {
+            // SECURITY: Log unauthorized access attempt
+            await securityLog.logUnauthorizedAccess(req, `/api/admin?endpoint=${endpoint}`, adminCheck.error);
             return res.status(adminCheck.statusCode).json({
                 success: false,
                 error: adminCheck.error
             });
         }
+        // Store user in request for logging
+        req.user = adminCheck.user;
     }
 
     if (endpoint === 'activity') {
@@ -228,6 +233,7 @@ module.exports = async (req, res) => {
                 
                 // Prevent deleting the owner account
                 if (email.toLowerCase() === auth.OWNER_EMAIL.toLowerCase()) {
+                    await securityLog.logAdminAction(req, 'DELETE_CUSTOMER', { email, blocked: true, reason: 'Owner account protection' });
                     return res.status(403).json({ 
                         success: false,
                         error: 'Cannot delete owner account' 
@@ -235,6 +241,9 @@ module.exports = async (req, res) => {
                 }
                 
                 await db.initDb();
+                
+                // SECURITY: Log admin action before deletion
+                await securityLog.logAdminAction(req, 'DELETE_CUSTOMER', { email });
                 
                 // Get user data
                 const userData = await db.getUserData();

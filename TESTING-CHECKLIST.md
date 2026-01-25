@@ -1,140 +1,249 @@
-# Testing Checklist - Payment & Inventory System
+# ✅ Testing Checklist - Security Implementation
 
-## ✅ Pre-Deployment Checks
+## 🎯 Final Verification Steps
 
-### 1. Environment Variables
-- [ ] `STRIPE_SECRET_KEY` set in Vercel Dashboard (test key: `sk_test_...`)
-- [ ] `STRIPE_WEBHOOK_SECRET` set in Vercel Dashboard (from Stripe webhook setup)
-- [ ] `SITE_URL` set to your Vercel domain
-- [ ] `SHIPPING_FLAT_RATE` set (optional, defaults to 20.00)
+Now that the deployment is working, let's test all the security features to make sure everything is properly secured.
 
-### 2. Stripe Configuration
-- [ ] Stripe account created and activated
-- [ ] Test API keys obtained from Stripe Dashboard
-- [ ] Webhook endpoint configured in Stripe Dashboard:
-  - URL: `https://your-domain.vercel.app/api/webhooks/stripe`
-  - Event: `checkout.session.completed`
-  - Webhook secret copied to Vercel env vars
+---
 
-### 3. Code Verification
-- [ ] All files committed and pushed to GitHub
-- [ ] Vercel deployment successful
-- [ ] No build errors in Vercel logs
+## Test 1: Owner Login ✅
 
-## 🧪 Testing Steps
+**What to test:** Owner can login with security answer
 
-### Test 1: Checkout Session Creation
-1. Add items to cart
-2. Go to checkout page
-3. Fill in customer information
-4. Click "Place Order"
-5. **Expected**: Redirected to Stripe Checkout page
-6. **If fails**: Check browser console and Vercel function logs
+**Steps:**
+1. Go to: `https://seu-site.vercel.app/login.html`
+2. Enter:
+   - Email: `sandrosandri.bysousa@gmail.com`
+   - Password: (your password)
+   - Security Answer: `10.09.2025`
+3. Click "Login"
 
-### Test 2: Payment Processing
-1. On Stripe Checkout page, use test card: `4242 4242 4242 4242`
-2. Use any future expiry date (e.g., 12/25)
-3. Use any 3-digit CVC (e.g., 123)
-4. Complete payment
-5. **Expected**: Redirected to `order-success.html`
-6. **If fails**: Check Stripe Dashboard for payment status
+**Expected Result:**
+- ✅ Login successful
+- ✅ Redirected to homepage or profile
+- ✅ You see "Logged In" in the header
 
-### Test 3: Inventory Decrement
-1. Place a test order (use test card)
-2. Wait 5-10 seconds for webhook processing
-3. Check `.data/inventory.json` (if accessible) or verify product shows reduced stock
-4. **Expected**: Inventory decreased by ordered quantities
-5. **If fails**: Check Vercel function logs for webhook errors
+**If it fails:**
+- Check browser console (F12) for errors
+- Verify JWT_SECRET is set in Vercel
 
-### Test 4: Free Shipping
-1. Add 2+ items to cart (total quantity >= 2)
-2. Go to checkout
-3. **Expected**: Shipping shows as "Free"
-4. Complete order
-5. **Expected**: No shipping charge in Stripe Checkout
+---
 
-### Test 5: Paid Shipping
-1. Add only 1 item to cart
-2. Go to checkout
-3. Select a country (e.g., Portugal)
-4. **Expected**: Shipping shows country-specific fee
-5. Complete order
-6. **Expected**: Shipping charge included in Stripe Checkout
+## Test 2: Regular User Login ✅
 
-### Test 6: Sold Out Prevention
-1. Order all available stock of a size (e.g., 10 XS items)
-2. Try to add more XS items to cart
-3. **Expected**: Size shows as "Sold Out" or prevents adding
-4. Try to checkout with sold-out items
-5. **Expected**: Error message about insufficient stock
+**What to test:** Regular users can login
 
-### Test 7: Webhook Idempotency
-1. Place a test order
-2. Manually trigger the same webhook event from Stripe Dashboard
-3. **Expected**: Event processed only once, inventory not double-decremented
-4. Check `.data/webhook-events.json` for duplicate event IDs
+**Steps:**
+1. Go to: `https://seu-site.vercel.app/login.html`
+2. Enter credentials of a regular user account
+3. Click "Login"
 
-### Test 8: Error Handling
-1. Try checkout with empty cart
-2. **Expected**: Error message, no redirect
-3. Try checkout with invalid email
-4. **Expected**: Validation error
-5. Use declined test card: `4000 0000 0000 0002`
-6. **Expected**: Payment fails, no inventory decrement
+**Expected Result:**
+- ✅ Login successful
+- ✅ No security answer required
 
-## 🔍 Debugging
+**If it fails:**
+- Check if user exists
+- Check browser console for errors
 
-### Check Vercel Function Logs
-1. Go to Vercel Dashboard → Your Project → Functions
-2. Click on function name (e.g., `api/checkout/create-session`)
-3. View logs for errors
+---
 
-### Check Stripe Dashboard
-1. Go to Stripe Dashboard → Payments
-2. View test payments
-3. Check webhook events: Developers → Webhooks → Your endpoint → Events
+## Test 3: Admin Page Protection ✅
 
-### Common Issues
+**What to test:** Admin page is protected (can't access without login)
 
-**Issue**: "Failed to create checkout session"
-- **Check**: Stripe secret key is correct
-- **Check**: Cart items have valid `productId`, `price`, `quantity`
-- **Check**: Vercel function logs for specific error
+**Steps:**
+1. **Make sure you're logged out** (or use incognito/private window)
+2. Try to access: `https://seu-site.vercel.app/admin.html`
+3. Or try: `https://seu-site.vercel.app/api/admin?endpoint=customers`
 
-**Issue**: Webhook not receiving events
-- **Check**: Webhook URL is correct in Stripe Dashboard
-- **Check**: Webhook secret matches in Vercel env vars
-- **Check**: Event type is `checkout.session.completed`
-- **Check**: Vercel function logs for webhook attempts
+**Expected Result:**
+- ✅ Redirected to login page, OR
+- ✅ Shows error 401/403 Unauthorized
+- ✅ **DOES NOT** show customer data
 
-**Issue**: Inventory not decrementing
-- **Check**: Webhook is being received (Stripe Dashboard → Webhooks → Events)
-- **Check**: Webhook handler is processing successfully (Vercel logs)
-- **Check**: Database files are writable (`.data/` directory)
-- **Check**: Payment status is `paid` (Stripe Dashboard)
+**If it fails:**
+- Admin page should be protected - if you can see it without login, there's a security issue
 
-**Issue**: "Webhook signature verification failed"
-- **Check**: Webhook secret is correct
-- **Check**: Raw body is being passed correctly (Vercel handles this automatically)
-- **Check**: Webhook endpoint URL matches exactly
+---
 
-## ✅ Success Criteria
+## Test 4: Admin Access (When Logged In) ✅
 
-All tests pass when:
-- ✅ Checkout redirects to Stripe
-- ✅ Payment processes successfully
-- ✅ Inventory decrements after payment
-- ✅ Free shipping works for 2+ items
-- ✅ Paid shipping works for 1 item
-- ✅ Sold out items are prevented
-- ✅ Webhooks are idempotent
-- ✅ Orders are saved correctly
+**What to test:** Owner can access admin when logged in
+
+**Steps:**
+1. Login as owner (Test 1)
+2. Go to: `https://seu-site.vercel.app/admin.html`
+3. Try to view customer data
+
+**Expected Result:**
+- ✅ Admin page loads
+- ✅ Customer table shows data
+- ✅ **NO passwords visible** in the table
+- ✅ Commerce mode controls work
+
+**If it fails:**
+- Check browser console
+- Verify you're logged in as owner
+
+---
+
+## Test 5: Commerce Mode Protection ✅
+
+**What to test:** Only owner can change commerce mode
+
+**Steps:**
+1. Login as owner
+2. Go to admin page
+3. Try to change commerce mode (LIVE/WAITLIST/EARLY_ACCESS)
+4. Logout
+5. Try to change commerce mode via API directly (use browser console or Postman)
+
+**Expected Result:**
+- ✅ Owner can change mode (in admin page)
+- ✅ Non-owner gets 403 error when trying via API
+
+**If it fails:**
+- Commerce mode should be protected - verify API returns 403 for non-owners
+
+---
+
+## Test 6: Customer Data Security ✅
+
+**What to test:** Passwords are not exposed
+
+**Steps:**
+1. Login as owner
+2. Go to admin page
+3. View customer table
+4. Click "View Details" on any customer
+5. Export to CSV
+
+**Expected Result:**
+- ✅ **NO password column** in the table
+- ✅ **NO password** in customer details modal
+- ✅ **NO password** in CSV export
+
+**If it fails:**
+- This is a critical security issue - passwords should never be visible
+
+---
+
+## Test 7: API Endpoints Protection ✅
+
+**What to test:** Admin APIs require authentication
+
+**Steps:**
+1. **Without being logged in**, open browser console (F12)
+2. Try to fetch: `fetch('https://seu-site.vercel.app/api/admin?endpoint=customers')`
+3. Check the response
+
+**Expected Result:**
+- ✅ Returns 401 or 403 error
+- ✅ **DOES NOT** return customer data
+
+**If it fails:**
+- This is a critical security issue - API should be protected
+
+---
+
+## Test 8: Delete Customer Protection ✅
+
+**What to test:** Only owner can delete customers
+
+**Steps:**
+1. Login as owner
+2. Go to admin page
+3. Try to delete a customer (use a test account, not real data!)
+4. Logout
+5. Try to delete via API: `fetch('https://seu-site.vercel.app/api/admin?endpoint=customers&email=test@test.com', {method: 'DELETE'})`
+
+**Expected Result:**
+- ✅ Owner can delete (with confirmation)
+- ✅ Non-owner gets 403 error
+
+**If it fails:**
+- Delete should be protected - verify API returns 403
+
+---
+
+## Test 9: Site Functionality ✅
+
+**What to test:** Regular site features still work
+
+**Steps:**
+1. Browse products
+2. Add to cart
+3. View collection
+4. Check favorites (if logged in)
+
+**Expected Result:**
+- ✅ All features work normally
+- ✅ No errors in console
+- ✅ Site feels fast and responsive
+
+**If it fails:**
+- Check browser console for errors
+- Verify API routes are working
+
+---
+
+## Test 10: JWT Token Expiration ✅
+
+**What to test:** Tokens expire after 24 hours (optional - hard to test immediately)
+
+**Steps:**
+1. Login
+2. Wait 24 hours (or modify token expiration for testing)
+3. Try to access admin page
+
+**Expected Result:**
+- ✅ After expiration, user needs to login again
+
+**Note:** This is hard to test immediately, but the system is configured for 24-hour expiration.
+
+---
+
+## 🎉 Success Criteria
+
+All tests should pass. If any test fails, note which one and we'll fix it.
+
+### Critical Tests (Must Pass):
+- ✅ Test 3: Admin page protection
+- ✅ Test 6: No passwords exposed
+- ✅ Test 7: API endpoints protected
+
+### Important Tests (Should Pass):
+- ✅ Test 1: Owner login
+- ✅ Test 4: Admin access works
+- ✅ Test 5: Commerce mode protection
+
+### Nice to Have:
+- ✅ Test 2: Regular user login
+- ✅ Test 8: Delete protection
+- ✅ Test 9: Site functionality
+
+---
 
 ## 📝 Notes
 
-- Test with Stripe test mode first
-- Switch to live mode only after all tests pass
-- Monitor Stripe Dashboard for any failed payments
-- Check Vercel logs regularly during initial testing
-- Keep `.data/` directory backed up (contains inventory and orders)
+- If you find any issues, note them down and we'll fix them
+- All security features should work seamlessly
+- The site should feel the same to regular users (no changes in UX)
 
+---
+
+## ✅ Final Checklist
+
+- [ ] Test 1: Owner login works
+- [ ] Test 2: Regular user login works
+- [ ] Test 3: Admin page is protected
+- [ ] Test 4: Admin access works when logged in
+- [ ] Test 5: Commerce mode is protected
+- [ ] Test 6: No passwords visible
+- [ ] Test 7: API endpoints protected
+- [ ] Test 8: Delete customer protected
+- [ ] Test 9: Site functionality works
+- [ ] All critical tests pass
+
+**When all tests pass, your site is secure! 🎉**
