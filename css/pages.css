@@ -1458,7 +1458,15 @@
     }
     
     /* Center the about-text paragraphs for "What is Sandro Sandri?" section */
-    #read-our-story .about-content .about-text,
+    #read-our-story .about-content .about-text {
+        margin-left: calc(-50vw + 50% + 20px);
+        padding-left: 1rem;
+        padding-right: 1rem;
+        text-align: center !important;
+        width: 100vw;
+        box-sizing: border-box;
+    }
+    
     #story .about-content .about-text {
         margin-left: calc(-50vw + 50% + 10px);
         padding-left: 1rem;
