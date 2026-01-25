@@ -646,49 +646,171 @@
             }
         });
 
-        // Waitlist button functionality - show "Coming Soon" message
+        // Waitlist button functionality - show form and send to Formspree
         document.querySelectorAll('.waitlist-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 
-                // Create and show "Coming Soon" message
-                const message = document.createElement('div');
-                message.textContent = 'Coming Soon';
-                message.style.cssText = `
+                // Get the tier name from the card
+                const tierCard = btn.closest('.tier-card');
+                const tierName = tierCard.querySelector('.tier-name').textContent;
+                const tierPrice = tierCard.querySelector('.tier-price').textContent.trim();
+                
+                // Create waitlist form modal
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
                     position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: var(--color-navy);
-                    color: #fff;
-                    padding: 30px 60px;
-                    font-family: 'Arapey', serif;
-                    font-size: 1.5rem;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.5);
                     z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                `;
+                
+                const formModal = document.createElement('div');
+                formModal.style.cssText = `
+                    background: #fff;
+                    padding: 40px;
                     border-radius: 4px;
-                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-                    animation: fadeIn 0.3s ease;
+                    max-width: 500px;
+                    width: 100%;
+                    position: relative;
                 `;
                 
-                // Add fade in animation
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes fadeIn {
-                        from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-                        to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                formModal.innerHTML = `
+                    <button class="waitlist-close" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--color-navy);">&times;</button>
+                    <h3 style="font-family: 'Allura', cursive; font-size: 2rem; color: var(--color-navy); margin-bottom: 1rem; text-align: center;">Join the Waitlist</h3>
+                    <p style="font-family: 'Arapey', serif; color: var(--color-text-light); text-align: center; margin-bottom: 2rem;">${tierName} Membership</p>
+                    <form id="waitlist-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-family: 'Arapey', serif; color: var(--color-navy); margin-bottom: 0.5rem;">Name</label>
+                            <input type="text" id="waitlist-name" required style="width: 100%; padding: 12px; border: 1px solid rgba(26, 43, 60, 0.2); font-family: 'Arapey', serif; font-size: 1rem; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-family: 'Arapey', serif; color: var(--color-navy); margin-bottom: 0.5rem;">Email</label>
+                            <input type="email" id="waitlist-email" required style="width: 100%; padding: 12px; border: 1px solid rgba(26, 43, 60, 0.2); font-family: 'Arapey', serif; font-size: 1rem; box-sizing: border-box;">
+                        </div>
+                        <button type="submit" id="waitlist-submit" style="padding: 16px 30px; font-family: 'Arapey', serif; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase; border: 1px solid var(--color-navy); background: var(--color-navy); color: #fff; cursor: pointer; transition: all 0.3s ease;">Submit</button>
+                        <div id="waitlist-message" style="display: none; text-align: center; padding: 10px; font-family: 'Arapey', serif;"></div>
+                    </form>
+                `;
+                
+                overlay.appendChild(formModal);
+                document.body.appendChild(overlay);
+                document.body.style.overflow = 'hidden';
+                
+                // Close modal handlers
+                const closeBtn = formModal.querySelector('.waitlist-close');
+                closeBtn.addEventListener('click', () => {
+                    document.body.removeChild(overlay);
+                    document.body.style.overflow = '';
+                });
+                
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        document.body.removeChild(overlay);
+                        document.body.style.overflow = '';
                     }
-                `;
-                document.head.appendChild(style);
+                });
                 
-                document.body.appendChild(message);
+                // Form submission
+                const form = formModal.querySelector('#waitlist-form');
+                const submitBtn = formModal.querySelector('#waitlist-submit');
+                const messageEl = formModal.querySelector('#waitlist-message');
                 
-                // Remove message after 2 seconds
-                setTimeout(() => {
-                    message.style.animation = 'fadeIn 0.3s ease reverse';
-                    setTimeout(() => {
-                        document.body.removeChild(message);
-                    }, 300);
-                }, 2000);
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const name = formModal.querySelector('#waitlist-name').value.trim();
+                    const email = formModal.querySelector('#waitlist-email').value.trim();
+                    
+                    if (!name || !email) {
+                        messageEl.textContent = 'Please fill in all fields';
+                        messageEl.style.color = '#d32f2f';
+                        messageEl.style.display = 'block';
+                        return;
+                    }
+                    
+                    // Update button state
+                    const originalText = submitBtn.textContent;
+                    submitBtn.textContent = 'Submitting...';
+                    submitBtn.disabled = true;
+                    messageEl.style.display = 'none';
+                    
+                    try {
+                        // Send to Formspree
+                        const waitlistData = {
+                            _subject: `Membership Waitlist Request - ${tierName}`,
+                            _replyto: email,
+                            membership_tier: tierName,
+                            membership_price: tierPrice,
+                            customer_name: name,
+                            customer_email: email,
+                            timestamp: new Date().toISOString(),
+                            source: 'The Exclusive Club - Membership Waitlist'
+                        };
+                        
+                        const response = await fetch('https://formspree.io/f/meoyldeq', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(waitlistData)
+                        });
+                        
+                        if (response.ok) {
+                            // Close modal
+                            document.body.removeChild(overlay);
+                            document.body.style.overflow = '';
+                            
+                            // Show "Coming Soon" message
+                            const message = document.createElement('div');
+                            message.textContent = 'Coming Soon';
+                            message.style.cssText = `
+                                position: fixed;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                                background: var(--color-navy);
+                                color: #fff;
+                                padding: 30px 60px;
+                                font-family: 'Arapey', serif;
+                                font-size: 1.5rem;
+                                z-index: 10001;
+                                border-radius: 4px;
+                                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                                animation: fadeIn 0.3s ease;
+                            `;
+                            
+                            document.body.appendChild(message);
+                            
+                            // Remove message after 2 seconds
+                            setTimeout(() => {
+                                message.style.animation = 'fadeIn 0.3s ease reverse';
+                                setTimeout(() => {
+                                    if (document.body.contains(message)) {
+                                        document.body.removeChild(message);
+                                    }
+                                }, 300);
+                            }, 2000);
+                        } else {
+                            throw new Error('Submission failed');
+                        }
+                    } catch (error) {
+                        console.error('Error submitting waitlist:', error);
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                        messageEl.textContent = 'Error submitting. Please try again.';
+                        messageEl.style.color = '#d32f2f';
+                        messageEl.style.display = 'block';
+                    }
+                });
             });
         });
     </script>
