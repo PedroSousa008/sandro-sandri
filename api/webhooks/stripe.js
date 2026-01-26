@@ -56,6 +56,7 @@ async function handleCheckoutCompleted(session) {
     
     // Get shipping address from Stripe session
     let shippingAddress = null;
+    let phoneNumber = null;
     if (session.shipping_details && session.shipping_details.address) {
         shippingAddress = {
             street: session.shipping_details.address.line1 || '',
@@ -65,6 +66,13 @@ async function handleCheckoutCompleted(session) {
             country: session.shipping_details.address.country || shippingCountry || '',
             countryName: session.shipping_details.address.country || shippingCountry || ''
         };
+    }
+    
+    // Get phone number from customer details or metadata
+    if (session.customer_details && session.customer_details.phone) {
+        phoneNumber = session.customer_details.phone;
+    } else if (session.metadata && session.metadata.phone) {
+        phoneNumber = session.metadata.phone;
     }
     
     // Calculate totals
@@ -140,8 +148,10 @@ async function handleCheckoutCompleted(session) {
         orderNumber: orderNumber,
         stripeSessionId: session.id,
         status: 'PAID',
+        orderStatus: 'PAID', // New field for order status tracking
         email: customerEmail,
         name: customerName,
+        phoneNumber: phoneNumber || '',
         shippingAddress: shippingAddress,
         shippingCountry: shippingCountry,
         cart: cart,
@@ -152,6 +162,8 @@ async function handleCheckoutCompleted(session) {
         currency: 'eur',
         chaptersPurchased: Array.from(chaptersPurchased),
         sizesPurchased: Array.from(sizesPurchased),
+        confirmationStatus: 'Nothing', // Default: Nothing -> Packed -> Sent -> Delivered
+        trackingNumber: '', // Will be added by admin
         createdAt: new Date().toISOString()
     });
     

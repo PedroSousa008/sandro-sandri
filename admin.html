@@ -303,6 +303,44 @@
         </div>
 
         <div class="admin-section">
+            <h2 class="admin-section-title">Orders Management</h2>
+            <div style="margin-bottom: var(--space-md);">
+                <button class="admin-action-btn admin-action-btn-primary" id="load-orders-btn">Load All Orders</button>
+            </div>
+            <div id="orders-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
+                Loading orders data...
+            </div>
+            <div id="orders-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
+            <div id="orders-summary" style="display: none; margin-bottom: var(--space-md); padding: var(--space-md); background: var(--color-gray-light); border-radius: 4px;">
+                <strong>Total Orders:</strong> <span id="total-orders-count">0</span>
+            </div>
+            <div id="orders-table-container" style="overflow-x: auto; display: none;">
+                <table id="orders-table" style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
+                    <thead>
+                        <tr style="background: var(--color-gray-light);">
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-gray-light); z-index: 10;">Confirmation</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Order ID</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Name</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Email</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Phone</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Address</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">House</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">City</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Postal Code</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Country</th>
+                            <th style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray); font-weight: 600;">Total Received</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Items Purchased</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Order Status</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Tracking Number</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
             <h2 class="admin-section-title">Quick Links</h2>
             <div class="admin-actions">
                 <a href="index.html" class="admin-action-btn admin-action-btn-secondary">Home Page</a>
@@ -1397,6 +1435,229 @@
         }
 
         document.getElementById('load-stock-btn').addEventListener('click', loadStock);
+
+        // Orders Management
+        async function loadOrders() {
+            const loadingEl = document.getElementById('orders-loading');
+            const errorEl = document.getElementById('orders-error');
+            const tableContainer = document.getElementById('orders-table-container');
+            const summaryEl = document.getElementById('orders-summary');
+            const tbody = document.getElementById('orders-tbody');
+
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            tableContainer.style.display = 'none';
+            summaryEl.style.display = 'none';
+
+            try {
+                // Get JWT token
+                const token = localStorage.getItem('sandroSandri_session_token');
+                if (!token) {
+                    throw new Error('Not authenticated');
+                }
+
+                const response = await fetch('/api/admin/orders', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-Session-Token': token
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load orders');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load orders');
+                }
+
+                const orders = data.orders || [];
+                
+                // Update summary
+                document.getElementById('total-orders-count').textContent = orders.length;
+                summaryEl.style.display = 'block';
+
+                // Build table
+                tbody.innerHTML = '';
+                if (orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; padding: var(--space-lg); color: var(--color-text-light);">No orders found</td></tr>';
+                } else {
+                    orders.forEach(order => {
+                        const address = order.shippingAddress || {};
+                        const confirmationStatus = order.confirmationStatus || 'Nothing';
+                        const orderStatus = order.orderStatus || order.status || 'PAID';
+                        const trackingNumber = order.trackingNumber || '';
+                        
+                        // Format items purchased
+                        const itemsPurchased = (order.cart || []).map(item => {
+                            return `${item.quantity}x ${item.size || 'N/A'} - Model ${item.productId || 'N/A'}`;
+                        }).join(', ') || 'N/A';
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); position: sticky; left: 0; background: white; z-index: 5;">
+                                <select class="confirmation-status-select" data-order-id="${order.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px;">
+                                    <option value="Nothing" ${confirmationStatus === 'Nothing' ? 'selected' : ''}>Nothing</option>
+                                    <option value="Packed" ${confirmationStatus === 'Packed' ? 'selected' : ''}>Packed</option>
+                                    <option value="Sent" ${confirmationStatus === 'Sent' ? 'selected' : ''}>Sent</option>
+                                    <option value="Delivered" ${confirmationStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                </select>
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${order.orderNumber || order.id || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${order.name || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${order.email || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${order.phoneNumber || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.street || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.apartment || '-'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.city || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.postalCode || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.country || address.countryName || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">€${(order.total || 0).toFixed(2)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); max-width: 200px; word-wrap: break-word;">${itemsPurchased}</td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
+                                <select class="order-status-select" data-order-id="${order.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px;">
+                                    <option value="PAID" ${orderStatus === 'PAID' ? 'selected' : ''}>Paid</option>
+                                    <option value="PROCESSING" ${orderStatus === 'PROCESSING' ? 'selected' : ''}>Processing</option>
+                                    <option value="SHIPPED" ${orderStatus === 'SHIPPED' ? 'selected' : ''}>Shipped</option>
+                                    <option value="DELIVERED" ${orderStatus === 'DELIVERED' ? 'selected' : ''}>Delivered</option>
+                                </select>
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">
+                                <input type="text" class="tracking-number-input" data-order-id="${order.id}" value="${trackingNumber}" placeholder="Enter tracking number" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px; width: 150px;">
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+
+                // Add event listeners for confirmation status changes
+                document.querySelectorAll('.confirmation-status-select').forEach(select => {
+                    select.addEventListener('change', async (e) => {
+                        const orderId = e.target.dataset.orderId;
+                        const confirmationStatus = e.target.value;
+                        
+                        try {
+                            const token = localStorage.getItem('sandroSandri_session_token');
+                            const response = await fetch('/api/admin/orders', {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`,
+                                    'X-Session-Token': token
+                                },
+                                body: JSON.stringify({
+                                    orderId: orderId,
+                                    confirmationStatus: confirmationStatus
+                                })
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.success) {
+                                    console.log('Order confirmation status updated');
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error updating confirmation status:', error);
+                            alert('Error updating confirmation status');
+                        }
+                    });
+                });
+
+                // Add event listeners for order status changes
+                document.querySelectorAll('.order-status-select').forEach(select => {
+                    select.addEventListener('change', async (e) => {
+                        const orderId = e.target.dataset.orderId;
+                        const orderStatus = e.target.value;
+                        
+                        try {
+                            const token = localStorage.getItem('sandroSandri_session_token');
+                            const response = await fetch('/api/admin/orders', {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`,
+                                    'X-Session-Token': token
+                                },
+                                body: JSON.stringify({
+                                    orderId: orderId,
+                                    orderStatus: orderStatus
+                                })
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.success) {
+                                    console.log('Order status updated');
+                                    // If status is SHIPPED and tracking number exists, email will be sent automatically
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error updating order status:', error);
+                            alert('Error updating order status');
+                        }
+                    });
+                });
+
+                // Add event listeners for tracking number changes
+                document.querySelectorAll('.tracking-number-input').forEach(input => {
+                    let timeout;
+                    input.addEventListener('input', (e) => {
+                        clearTimeout(timeout);
+                        timeout = setTimeout(async () => {
+                            const orderId = e.target.dataset.orderId;
+                            const trackingNumber = e.target.value.trim();
+                            
+                            try {
+                                const token = localStorage.getItem('sandroSandri_session_token');
+                                const response = await fetch('/api/admin/orders', {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`,
+                                        'X-Session-Token': token
+                                    },
+                                    body: JSON.stringify({
+                                        orderId: orderId,
+                                        trackingNumber: trackingNumber
+                                    })
+                                });
+
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        console.log('Tracking number updated');
+                                        // If tracking number is added and status is SHIPPED, email will be sent automatically
+                                        if (trackingNumber) {
+                                            // Also update order status to SHIPPED if not already
+                                            const orderStatusSelect = document.querySelector(`.order-status-select[data-order-id="${orderId}"]`);
+                                            if (orderStatusSelect && orderStatusSelect.value !== 'SHIPPED') {
+                                                orderStatusSelect.value = 'SHIPPED';
+                                                orderStatusSelect.dispatchEvent(new Event('change'));
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error updating tracking number:', error);
+                                alert('Error updating tracking number');
+                            }
+                        }, 1000); // Debounce 1 second
+                    });
+                });
+
+                loadingEl.style.display = 'none';
+                tableContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                loadingEl.style.display = 'none';
+                errorEl.textContent = 'Error loading orders: ' + error.message;
+                errorEl.style.display = 'block';
+            }
+        }
+
+        document.getElementById('load-orders-btn').addEventListener('click', loadOrders);
     </script>
 </body>
 </html>
