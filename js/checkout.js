@@ -3,36 +3,73 @@
    ======================================== */
 
 // Shipping fees by country (in EUR)
+// Portugal: 5€
+// Europe: 9.5€
+// United States/Canada: 14.5€
+// Africa/Australia/South America: 13.50€
 const SHIPPING_FEES = {
-    // Domestic
-    'PT': 5.00, // Portugal
+    // Portugal: 5€
+    'PT': 5.00,
     
-    // EU Countries
-    'ES': 8.00, // Spain
-    'FR': 8.00, // France
-    'IT': 8.00, // Italy
-    'DE': 10.00, // Germany
-    'NL': 10.00, // Netherlands
-    'BE': 10.00, // Belgium
-    'AT': 10.00, // Austria
-    'CH': 12.00, // Switzerland
+    // Europe: 9.5€
+    'ES': 9.50,   // Spain
+    'FR': 9.50,   // France
+    'IT': 9.50,   // Italy
+    'DE': 9.50,   // Germany
+    'NL': 9.50,   // Netherlands
+    'BE': 9.50,   // Belgium
+    'AT': 9.50,   // Austria
+    'CH': 9.50,   // Switzerland
+    'UK': 9.50,   // United Kingdom
+    'GB': 9.50,   // United Kingdom (ISO code)
+    'IE': 9.50,   // Ireland
+    'DK': 9.50,   // Denmark
+    'SE': 9.50,   // Sweden
+    'NO': 9.50,   // Norway
+    'FI': 9.50,   // Finland
+    'PL': 9.50,   // Poland
+    'CZ': 9.50,   // Czech Republic
+    'GR': 9.50,   // Greece
+    'HU': 9.50,   // Hungary
+    'RO': 9.50,   // Romania
+    'BG': 9.50,   // Bulgaria
+    'HR': 9.50,   // Croatia
+    'SK': 9.50,   // Slovakia
+    'SI': 9.50,   // Slovenia
+    'EE': 9.50,   // Estonia
+    'LV': 9.50,   // Latvia
+    'LT': 9.50,   // Lithuania
+    'LU': 9.50,   // Luxembourg
+    'MT': 9.50,   // Malta
+    'CY': 9.50,   // Cyprus
     
-    // UK
-    'UK': 12.00, // United Kingdom
-    'GB': 12.00, // United Kingdom (ISO code)
+    // United States/Canada: 14.5€
+    'US': 14.50,  // United States
+    'CA': 14.50,  // Canada
     
-    // Rest of Europe
-    'IE': 12.00, // Ireland
-    'DK': 12.00, // Denmark
-    'SE': 12.00, // Sweden
-    'NO': 15.00, // Norway
-    'FI': 12.00, // Finland
-    'PL': 12.00, // Poland
-    'CZ': 12.00, // Czech Republic
-    'GR': 12.00, // Greece
+    // Africa/Australia/South America: 13.50€
+    'AU': 13.50,  // Australia
+    'NZ': 13.50,  // New Zealand
+    'ZA': 13.50,  // South Africa
+    'EG': 13.50,  // Egypt
+    'MA': 13.50,  // Morocco
+    'NG': 13.50,  // Nigeria
+    'KE': 13.50,  // Kenya
+    'GH': 13.50,  // Ghana
+    'AR': 13.50,  // Argentina
+    'BR': 13.50,  // Brazil
+    'CL': 13.50,  // Chile
+    'CO': 13.50,  // Colombia
+    'PE': 13.50,  // Peru
+    'MX': 13.50,  // Mexico
+    'UY': 13.50,  // Uruguay
+    'PY': 13.50,  // Paraguay
+    'BO': 13.50,  // Bolivia
+    'EC': 13.50,  // Ecuador
+    'VE': 13.50,  // Venezuela
     
-    // Rest of World (default)
-    'DEFAULT': 20.00
+    // Default for other countries: 13.50€
+    'DEFAULT': 13.50
 };
 
 const FREE_SHIPPING_THRESHOLD = 100; // €100
