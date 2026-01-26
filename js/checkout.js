@@ -72,7 +72,8 @@ const SHIPPING_FEES = {
     'DEFAULT': 13.50
 };
 
-const FREE_SHIPPING_THRESHOLD = 100; // €100
+const FREE_SHIPPING_MIN_QUANTITY = 2; // Free shipping if cart has 2+ items
+const FREE_SHIPPING_THRESHOLD = 100; // €100 (alternative free shipping threshold)
 
 document.addEventListener('DOMContentLoaded', () => {
     initCheckout();
@@ -200,8 +201,21 @@ function renderCheckoutItems(cart) {
     updateCheckoutTotals();
 }
 
-function calculateShipping(subtotal, country) {
-    // Free shipping if order is over threshold
+function calculateShipping(subtotal, country, cart) {
+    // Get cart if not provided
+    if (!cart) {
+        cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
+    }
+    
+    // Calculate total quantity
+    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Free shipping if cart has 2+ items (t-shirts)
+    if (totalQuantity >= FREE_SHIPPING_MIN_QUANTITY) {
+        return 0;
+    }
+    
+    // Alternative: Free shipping if order is over threshold
     if (subtotal >= FREE_SHIPPING_THRESHOLD) {
         return 0;
     }
@@ -222,8 +236,11 @@ window.updateCheckoutTotals = function() {
     // Calculate subtotal
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
+    // Calculate total quantity
+    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    
     // Calculate shipping
-    const shipping = calculateShipping(subtotal, country);
+    const shipping = calculateShipping(subtotal, country, cart);
     
     // Calculate total
     const total = subtotal + shipping;
@@ -240,8 +257,8 @@ window.updateCheckoutTotals = function() {
         if (!country || country.trim() === '') {
             shippingEl.textContent = 'Select country';
             shippingEl.classList.remove('free-shipping');
-        } else if (shipping === 0 && subtotal >= FREE_SHIPPING_THRESHOLD) {
-            // Only show "Free" if country is selected AND order is over threshold
+        } else if (shipping === 0) {
+            // Show "Free" if shipping is 0 (either 2+ items or over threshold)
             shippingEl.textContent = 'Free';
             shippingEl.classList.add('free-shipping');
         } else {
