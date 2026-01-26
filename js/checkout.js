@@ -2,11 +2,11 @@
    Sandro Sandri - Checkout Page
    ======================================== */
 
-// Shipping fees by country (in EUR)
+// Shipping fees by country (in EUR) organized by continent
 // Portugal: 5€
 // Europe: 9.5€
-// United States/Canada: 14.5€
-// Africa/Australia/South America: 13.50€
+// Americas (North, Central, South): 14.5€
+// Africa/Australia/Asia/Oceania: 13.50€
 const SHIPPING_FEES = {
     // Portugal: 5€
     'PT': 5.00,
@@ -42,33 +42,105 @@ const SHIPPING_FEES = {
     'LU': 9.50,   // Luxembourg
     'MT': 9.50,   // Malta
     'CY': 9.50,   // Cyprus
+    'IS': 9.50,   // Iceland
+    'LI': 9.50,   // Liechtenstein
+    'MC': 9.50,   // Monaco
+    'SM': 9.50,   // San Marino
+    'VA': 9.50,   // Vatican City
+    'AD': 9.50,   // Andorra
+    'RS': 9.50,   // Serbia
+    'ME': 9.50,   // Montenegro
+    'BA': 9.50,   // Bosnia and Herzegovina
+    'MK': 9.50,   // North Macedonia
+    'AL': 9.50,   // Albania
+    'XK': 9.50,   // Kosovo
+    'MD': 9.50,   // Moldova
+    'UA': 9.50,   // Ukraine
+    'BY': 9.50,   // Belarus
+    'RU': 9.50,   // Russia (European part)
     
-    // United States/Canada: 14.5€
+    // Americas (North, Central, South): 14.5€
     'US': 14.50,  // United States
     'CA': 14.50,  // Canada
+    'MX': 14.50,  // Mexico
+    'GT': 14.50,  // Guatemala
+    'BZ': 14.50,  // Belize
+    'SV': 14.50,  // El Salvador
+    'HN': 14.50,  // Honduras
+    'NI': 14.50,  // Nicaragua
+    'CR': 14.50,  // Costa Rica
+    'PA': 14.50,  // Panama
+    'CU': 14.50,  // Cuba
+    'JM': 14.50,  // Jamaica
+    'HT': 14.50,  // Haiti
+    'DO': 14.50,  // Dominican Republic
+    'TT': 14.50,  // Trinidad and Tobago
+    'BB': 14.50,  // Barbados
+    'BS': 14.50,  // Bahamas
+    'AR': 14.50,  // Argentina
+    'BR': 14.50,  // Brazil
+    'CL': 14.50,  // Chile
+    'CO': 14.50,  // Colombia
+    'PE': 14.50,  // Peru
+    'UY': 14.50,  // Uruguay
+    'PY': 14.50,  // Paraguay
+    'BO': 14.50,  // Bolivia
+    'EC': 14.50,  // Ecuador
+    'VE': 14.50,  // Venezuela
+    'GY': 14.50,  // Guyana
+    'SR': 14.50,  // Suriname
+    'GF': 14.50,  // French Guiana
     
-    // Africa/Australia/South America: 13.50€
+    // Africa/Australia/Asia/Oceania: 13.50€
     'AU': 13.50,  // Australia
     'NZ': 13.50,  // New Zealand
+    'FJ': 13.50,  // Fiji
+    'PG': 13.50,  // Papua New Guinea
+    'NC': 13.50,  // New Caledonia
+    'PF': 13.50,  // French Polynesia
     'ZA': 13.50,  // South Africa
     'EG': 13.50,  // Egypt
     'MA': 13.50,  // Morocco
     'NG': 13.50,  // Nigeria
     'KE': 13.50,  // Kenya
     'GH': 13.50,  // Ghana
-    'AR': 13.50,  // Argentina
-    'BR': 13.50,  // Brazil
-    'CL': 13.50,  // Chile
-    'CO': 13.50,  // Colombia
-    'PE': 13.50,  // Peru
-    'MX': 13.50,  // Mexico
-    'UY': 13.50,  // Uruguay
-    'PY': 13.50,  // Paraguay
-    'BO': 13.50,  // Bolivia
-    'EC': 13.50,  // Ecuador
-    'VE': 13.50,  // Venezuela
+    'ET': 13.50,  // Ethiopia
+    'TZ': 13.50,  // Tanzania
+    'UG': 13.50,  // Uganda
+    'DZ': 13.50,  // Algeria
+    'TN': 13.50,  // Tunisia
+    'LY': 13.50,  // Libya
+    'SD': 13.50,  // Sudan
+    'AO': 13.50,  // Angola
+    'MZ': 13.50,  // Mozambique
+    'ZM': 13.50,  // Zambia
+    'ZW': 13.50,  // Zimbabwe
+    'BW': 13.50,  // Botswana
+    'NA': 13.50,  // Namibia
+    'SN': 13.50,  // Senegal
+    'CI': 13.50,  // Ivory Coast
+    'CM': 13.50,  // Cameroon
+    'CN': 13.50,  // China
+    'JP': 13.50,  // Japan
+    'KR': 13.50,  // South Korea
+    'IN': 13.50,  // India
+    'ID': 13.50,  // Indonesia
+    'TH': 13.50,  // Thailand
+    'VN': 13.50,  // Vietnam
+    'PH': 13.50,  // Philippines
+    'MY': 13.50,  // Malaysia
+    'SG': 13.50,  // Singapore
+    'HK': 13.50,  // Hong Kong
+    'TW': 13.50,  // Taiwan
+    'AE': 13.50,  // United Arab Emirates
+    'SA': 13.50,  // Saudi Arabia
+    'IL': 13.50,  // Israel
+    'TR': 13.50,  // Turkey
+    'PK': 13.50,  // Pakistan
+    'BD': 13.50,  // Bangladesh
+    'LK': 13.50,  // Sri Lanka
     
-    // Default for other countries: 13.50€
+    // Default for other countries: 13.50€ (maximum)
     'DEFAULT': 13.50
 };
 
