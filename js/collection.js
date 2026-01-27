@@ -229,7 +229,46 @@ function initCollection() {
                             showWaitlistEmailFormForQuickAdd(product, defaultSize);
                         }
                     } else {
-                        // User is logged in - add to cart directly
+                        // User is logged in - send Formspree and add to cart
+                        // Get user information
+                        const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+                        const userEmail = currentUser?.email || '';
+                        const profile = JSON.parse(localStorage.getItem('sandroSandriProfile') || 'null');
+                        const userName = profile?.name || userEmail.split('@')[0] || 'Customer';
+                        
+                        // Send to Formspree for logged-in users
+                        try {
+                            const waitlistData = {
+                                _subject: `Waitlist Request - ${product.name} (Logged In User)`,
+                                product_id: product.id,
+                                product_name: product.name,
+                                size: defaultSize,
+                                color: null,
+                                quantity: 1,
+                                customer_email: userEmail,
+                                customer_name: userName,
+                                timestamp: new Date().toISOString(),
+                                _replyto: userEmail,
+                                user_status: 'Logged In'
+                            };
+                            
+                            // Send to Formspree (fire and forget - don't wait for response)
+                            fetch('https://formspree.io/f/meoyldeq', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify(waitlistData)
+                            }).catch(err => {
+                                console.error('Error sending waitlist Formspree for logged-in user:', err);
+                                // Don't show error to user - just log it
+                            });
+                        } catch (error) {
+                            console.error('Error preparing waitlist Formspree for logged-in user:', error);
+                        }
+                        
+                        // Add to cart
                         if (window.cart) {
                             window.cart.addItem(productId, defaultSize, null, 1);
                             showNotification('Item added to cart!', 'success');
