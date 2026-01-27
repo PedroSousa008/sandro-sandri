@@ -355,26 +355,52 @@ class ShoppingCart {
             if (emptyCart) emptyCart.style.display = 'none';
             if (cartSummary) cartSummary.style.display = 'block';
 
+            // Ensure all items have complete product data
+            this.items = this.items.map(item => {
+                // If item is missing name, price, or image, fetch from ProductsAPI
+                if (!item.name || !item.price || !item.image) {
+                    const product = window.ProductsAPI?.getById(item.productId);
+                    if (product) {
+                        return {
+                            ...item,
+                            name: item.name || product.name || 'Product',
+                            price: item.price || product.price || 0,
+                            image: item.image || (product.images && product.images.length > 0 ? product.images[0] : null),
+                            sku: item.sku || product.sku || ''
+                        };
+                    }
+                }
+                return item;
+            });
+            
+            // Save updated items back to cart
+            this.saveCart();
+
             cartContainer.innerHTML = this.items.map((item, index) => {
                 const productUrl = `product.html?id=${item.productId}`;
+                const itemName = item.name || 'Product';
+                const itemPrice = item.price || 0;
+                const itemImage = item.image || null;
+                const itemSku = item.sku || '';
+                
                 return `
                 <div class="cart-page-item" data-index="${index}">
                     <a href="${productUrl}" class="cart-page-item-image">
-                        ${item.image ? `<img src="${item.image}" alt="${item.name}">` : `<div class="image-placeholder">${item.sku}</div>`}
+                        ${itemImage ? `<img src="${itemImage}" alt="${itemName}">` : `<div class="image-placeholder">${itemSku || 'Image'}</div>`}
                     </a>
                     <div class="cart-page-item-details">
-                        <a href="${productUrl}" class="cart-page-item-name">${item.name}</a>
-                        <p class="cart-page-item-variant">Size: ${item.size} | Color: ${item.color}</p>
+                        <a href="${productUrl}" class="cart-page-item-name">${itemName}</a>
+                        <p class="cart-page-item-variant">Size: ${item.size || 'N/A'} | Color: ${item.color || 'N/A'}</p>
                         <div class="cart-page-item-quantity">
                             <div class="quantity-selector">
                                 <button class="quantity-btn minus" data-index="${index}">−</button>
-                                <span class="quantity-value">${item.quantity}</span>
+                                <span class="quantity-value">${item.quantity || 1}</span>
                                 <button class="quantity-btn plus" data-index="${index}">+</button>
                             </div>
                         </div>
                     </div>
                     <div class="cart-page-item-price">
-                        <p class="item-total">${window.ProductsAPI.formatPrice(item.price * item.quantity)}</p>
+                        <p class="item-total">${window.ProductsAPI?.formatPrice(itemPrice * (item.quantity || 1)) || '0.00 €'}</p>
                         <div class="cart-page-item-buttons">
                             <button class="remove-item" data-index="${index}">Remove</button>
                             <button class="edit-item" data-index="${index}" data-product-id="${item.productId}">Edit</button>
@@ -387,8 +413,9 @@ class ShoppingCart {
             // Update summary
             const subtotal = document.querySelector('.summary-subtotal');
             const total = document.querySelector('.summary-total');
-            if (subtotal) subtotal.textContent = window.ProductsAPI.formatPrice(this.getTotal());
-            if (total) total.textContent = window.ProductsAPI.formatPrice(this.getTotal());
+            const cartTotal = this.getTotal();
+            if (subtotal) subtotal.textContent = window.ProductsAPI?.formatPrice(cartTotal) || '0.00 €';
+            if (total) total.textContent = window.ProductsAPI?.formatPrice(cartTotal) || '0.00 €';
         }
     }
 
