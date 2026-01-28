@@ -389,12 +389,24 @@ module.exports = async (req, res) => {
         // Unknown action
         return res.status(400).json({ error: 'Invalid action' });
 
+        } catch (error) {
+            // Inner catch for errors in main logic
+            console.error('Auth API Error (inner catch):', error);
+            if (!res.headersSent) {
+                if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
+                    errorHandler.sendSecureError(res, error, 500, 'Authentication failed. Please try again.', 'AUTH_ERROR');
+                } else {
+                    sendError(500, 'Authentication failed. Please try again.');
+                }
+            }
+        }
     } catch (error) {
-        // SECURITY: Don't expose error details to users
-        console.error('Auth API Error:', error);
+        // Outer catch for any errors before inner try-catch (including require errors)
+        console.error('Auth API Error (outer catch):', error);
+        console.error('Error stack:', error.stack);
         // Ensure we always return JSON, even on error
         if (!res.headersSent) {
-            errorHandler.sendSecureError(res, error, 500, 'Authentication failed. Please try again.', 'AUTH_ERROR');
+            sendError(500, 'Authentication service unavailable. Please try again later.');
         }
     }
 };
