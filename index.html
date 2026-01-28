@@ -238,6 +238,7 @@
     <script src="js/user-sync.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/products.js"></script>
+    <script src="js/chapter-mode.js"></script>
     <script src="js/commerce-mode.js"></script>
     <script src="js/active-chapter.js"></script>
     <script src="js/inventory.js"></script>
@@ -246,11 +247,17 @@
     <script src="js/cart.js"></script>
     <script src="js/main.js"></script>
     <script>
-        // Update homepage based on active chapter
+        // Update homepage based on active chapter (NEW SYSTEM)
         async function updateHomepageForChapter() {
-            const chapter = window.ActiveChapter.getChapter();
-            const isChapterII = window.ActiveChapter.isChapterII();
-            const chapterLabel = window.ActiveChapter.getChapterLabel();
+            // Wait for ChapterMode to be initialized
+            if (!window.ChapterMode || !window.ChapterMode.isInitialized) {
+                await window.ChapterMode.loadChapters();
+            }
+            
+            const activeChapterId = window.ChapterMode.activeChapterId || 'chapter_i';
+            const activeChapter = window.ChapterMode.getActiveChapter();
+            const chapterLabel = activeChapter ? activeChapter.name : 'Chapter I';
+            const isChapterII = activeChapterId === 'chapter_ii';
             
             // Update chapter labels
             const heroLabel = document.getElementById('hero-chapter-label');
