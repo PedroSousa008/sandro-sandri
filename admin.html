@@ -1724,8 +1724,14 @@
                     window.currentCommerceMode = mode;
                     const modeDisplayEl = document.getElementById('current-commerce-mode');
                     if (modeDisplayEl) {
-                        modeDisplayEl.textContent = mode;
+                        const modeLabel = mode === 'WAITLIST' ? 'WAITLIST' : (mode === 'EARLY_ACCESS' ? 'EARLY_ACCESS' : 'LIVE');
+                        modeDisplayEl.textContent = modeLabel;
                     }
+                    
+                    // Force reload the page after a short delay to ensure all pages reflect the change
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 }
 
                 const messageEl = document.getElementById('chapter-message');

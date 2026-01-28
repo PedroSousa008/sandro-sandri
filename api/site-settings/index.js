@@ -136,11 +136,12 @@ module.exports = async (req, res) => {
 
                     console.log(`✅ Chapter ${chapter} mode updated to: ${mode}`);
 
-                    // Also update active chapter if this is the current active chapter
-                    if (updatedSettings.active_chapter === chapter) {
-                        // Update global commerce mode to match (for backward compatibility)
-                        updatedSettings.commerce_mode = mode;
-                    }
+                    // IMPORTANT: Always update global commerce_mode when a chapter mode is changed
+                    // This makes the table buttons work exactly like the old "Switch to..." buttons
+                    updatedSettings.commerce_mode = mode;
+                    updatedSettings.updatedAt = new Date().toISOString();
+                    
+                    console.log(`✅ Global commerce_mode updated to: ${mode}`);
                 }
 
                 // Save updated settings
