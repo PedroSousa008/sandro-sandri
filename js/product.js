@@ -566,8 +566,9 @@ function initAddToCartForm(product) {
             return;
         }
         
-        // Handle WAITLIST mode - show email form if not logged in, then add to cart
-        if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+        // Handle WAITLIST mode - only for Chapter II products in Chapter II mode
+        const shouldUseWaitlist = window.CommerceMode && window.CommerceMode.shouldUseWaitlistBehavior(product);
+        if (shouldUseWaitlist) {
             // Check if user is logged in
             const isLoggedIn = window.CommerceMode.isUserLoggedIn();
             
