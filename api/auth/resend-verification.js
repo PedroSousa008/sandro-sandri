@@ -7,12 +7,11 @@ const db = require('../../lib/storage');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const emailService = require('../../lib/email');
+const cors = require('../../lib/cors');
 
 module.exports = async (req, res) => {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    // Set secure CORS headers (restricted to allowed origins)
+    cors.setCORSHeaders(res, req, ['POST', 'OPTIONS']);
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();

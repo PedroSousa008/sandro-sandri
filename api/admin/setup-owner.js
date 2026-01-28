@@ -5,14 +5,13 @@
 
 const db = require('../../lib/storage');
 const bcrypt = require('bcryptjs');
+const cors = require('../../lib/cors');
 
 const OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
 
 module.exports = async (req, res) => {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    // Set secure CORS headers (restricted to allowed origins)
+    cors.setCORSHeaders(res, req, ['POST', 'OPTIONS']);
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();

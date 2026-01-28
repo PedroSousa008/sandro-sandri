@@ -11,12 +11,11 @@ const emailService = require('../../lib/email');
 const rateLimit = require('../../lib/rate-limit');
 const validation = require('../../lib/validation');
 const securityLog = require('../../lib/security-log');
+const cors = require('../../lib/cors');
 
 module.exports = async (req, res) => {
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Token');
+    // Set secure CORS headers (restricted to allowed origins)
+    cors.setCORSHeaders(res, req, ['GET', 'POST', 'OPTIONS']);
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();

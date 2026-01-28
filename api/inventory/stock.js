@@ -2,6 +2,8 @@
    Sandro Sandri - Inventory Stock API
    ======================================== */
 
+const cors = require('../../lib/cors');
+
 // Get current inventory status for all products
 async function getInventoryStatus(commerceMode = 'LIVE') {
     const inventory = await db.getInventory();
@@ -54,6 +56,13 @@ async function getInventoryStatus(commerceMode = 'LIVE') {
 const db = require('../../lib/storage');
 
 module.exports = async (req, res) => {
+    // Set secure CORS headers (restricted to allowed origins)
+    cors.setCORSHeaders(res, req, ['GET', 'OPTIONS']);
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }

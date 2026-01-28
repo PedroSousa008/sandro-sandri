@@ -4,6 +4,7 @@
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../../lib/storage');
+const cors = require('../../lib/cors');
 
 // Shipping configuration
 const SHIPPING_FLAT_RATE = parseFloat(process.env.SHIPPING_FLAT_RATE || '20.00'); // Default €20
@@ -219,6 +220,13 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
 }
 
 module.exports = async (req, res) => {
+    // Set secure CORS headers (restricted to allowed origins)
+    cors.setCORSHeaders(res, req, ['POST', 'OPTIONS']);
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
