@@ -157,7 +157,17 @@ module.exports = async (req, res) => {
         } else if (req.method === 'GET') {
             // Get active users
             try {
-                await db.initDb();
+                if (!db || typeof db.initDb !== 'function') {
+                    console.error('DB module not loaded properly');
+                    return sendError(500, 'Database service unavailable');
+                }
+
+                try {
+                    await db.initDb();
+                } catch (dbInitError) {
+                    console.error('Error initializing database:', dbInitError);
+                    return sendError(500, 'Database initialization failed');
+                }
 
                 let activityData;
                 try {
@@ -210,7 +220,17 @@ module.exports = async (req, res) => {
         // Customers endpoint (GET and DELETE)
         if (req.method === 'GET') {
             try {
-                await db.initDb();
+                if (!db || typeof db.initDb !== 'function') {
+                    console.error('DB module not loaded properly');
+                    return sendError(500, 'Database service unavailable');
+                }
+
+                try {
+                    await db.initDb();
+                } catch (dbInitError) {
+                    console.error('Error initializing database:', dbInitError);
+                    return sendError(500, 'Database initialization failed');
+                }
 
                 const userData = await db.getUserData();
                 const orders = await db.getOrders();
@@ -285,7 +305,17 @@ module.exports = async (req, res) => {
                     });
                 }
                 
-                await db.initDb();
+                if (!db || typeof db.initDb !== 'function') {
+                    console.error('DB module not loaded properly');
+                    return sendError(500, 'Database service unavailable');
+                }
+
+                try {
+                    await db.initDb();
+                } catch (dbInitError) {
+                    console.error('Error initializing database:', dbInitError);
+                    return sendError(500, 'Database initialization failed');
+                }
                 
                 // SECURITY: Log admin action before deletion
                 await securityLog.logAdminAction(req, 'DELETE_CUSTOMER', { email });
