@@ -16,12 +16,17 @@ try {
     console.error('Error loading dependencies:', requireError);
 }
 
-module.exports = async (req, res) => {
+// Ultimate safety wrapper - ensures we NEVER crash without returning JSON
+const handler = async (req, res) => {
     // Ensure response is always JSON
     const sendError = (status, message) => {
-        if (!res.headersSent) {
-            res.setHeader('Content-Type', 'application/json');
-            res.status(status).json({ success: false, error: message });
+        try {
+            if (!res.headersSent) {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(status).json({ success: false, error: message });
+            }
+        } catch (e) {
+            console.error('sendError failed:', e);
         }
     };
 
@@ -442,6 +447,24 @@ module.exports = async (req, res) => {
                         console.error('FATAL: Cannot send any response');
                     }
                 }
+            }
+        }
+    }
+};
+
+// Export with ultimate error protection
+module.exports = async (req, res) => {
+    try {
+        await handler(req, res);
+    } catch (criticalError) {
+        console.error('CRITICAL: Handler wrapper caught unhandled error:', criticalError);
+        console.error('Stack:', criticalError.stack);
+        if (!res.headersSent) {
+            try {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(500).json({ success: false, error: 'Internal server error' });
+            } catch (e) {
+                console.error('FATAL: Cannot send any response at all');
             }
         }
     }

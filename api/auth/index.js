@@ -480,3 +480,21 @@ module.exports = async (req, res) => {
     }
 };
 
+// Export with ultimate error protection
+module.exports = async (req, res) => {
+    try {
+        await handler(req, res);
+    } catch (criticalError) {
+        console.error('CRITICAL: Handler wrapper caught unhandled error:', criticalError);
+        console.error('Stack:', criticalError.stack);
+        if (!res.headersSent) {
+            try {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(500).json({ success: false, error: 'Internal server error' });
+            } catch (e) {
+                console.error('FATAL: Cannot send any response at all');
+            }
+        }
+    }
+};
+
