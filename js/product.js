@@ -45,10 +45,18 @@ function initProductPage() {
     // Get product data
     const product = window.ProductsAPI.getById(productId);
     
+    console.log(`Product Page - Loading product ID: ${productId}`);
+    console.log('Product data:', product);
+    
     if (!product) {
+        console.error(`Product Page - Product ID ${productId} not found!`);
         // Redirect to collection if product not found
         window.location.href = 'collection.html';
         return;
+    }
+    
+    if (!product.images || product.images.length === 0) {
+        console.error(`Product Page - No images found for product ID ${productId} (${product.name})`);
     }
 
     // Populate page with product data
