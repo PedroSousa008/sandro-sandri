@@ -5,6 +5,7 @@
 
 const db = require('../../lib/storage');
 const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers (restricted to allowed origins)
@@ -37,11 +38,8 @@ module.exports = async (req, res) => {
                 data: userAtlas
             });
         } catch (error) {
-            console.error('Error loading Atlas data:', error);
-            res.status(500).json({
-                error: 'Failed to load Atlas data',
-                message: error.message
-            });
+            // SECURITY: Don't expose error details to users
+            errorHandler.sendSecureError(res, error, 500, 'Failed to load Atlas data. Please try again.', 'ATLAS_LOAD_ERROR');
         }
     } else if (req.method === 'POST') {
         // Save Atlas data
@@ -87,11 +85,8 @@ module.exports = async (req, res) => {
                 message: 'Atlas data saved successfully'
             });
         } catch (error) {
-            console.error('Error saving Atlas data:', error);
-            res.status(500).json({
-                error: 'Failed to save Atlas data',
-                message: error.message
-            });
+            // SECURITY: Don't expose error details to users
+            errorHandler.sendSecureError(res, error, 500, 'Failed to save Atlas data. Please try again.', 'ATLAS_SAVE_ERROR');
         }
     } else {
         return res.status(405).json({ error: 'Method not allowed' });

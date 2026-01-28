@@ -5,6 +5,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../../lib/storage');
 const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
 // Shipping configuration
 const SHIPPING_FLAT_RATE = parseFloat(process.env.SHIPPING_FLAT_RATE || '20.00'); // Default €20
@@ -329,11 +330,8 @@ module.exports = async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Error creating checkout session:', error);
-        res.status(500).json({
-            error: 'PAYMENT_FAILED',
-            message: error.message || 'Failed to create checkout session'
-        });
+        // SECURITY: Don't expose error details to users
+        errorHandler.sendSecureError(res, error, 500, 'Failed to create checkout session. Please try again.', 'PAYMENT_FAILED');
     }
 };
 

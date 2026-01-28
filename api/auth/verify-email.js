@@ -6,6 +6,7 @@
 const db = require('../../lib/storage');
 const bcrypt = require('bcryptjs');
 const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers (restricted to allowed origins)
@@ -186,11 +187,8 @@ module.exports = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error verifying email:', error);
-        res.status(500).json({
-            error: 'Failed to verify email',
-            message: error.message
-        });
+        // SECURITY: Don't expose error details to users
+        errorHandler.sendSecureError(res, error, 500, 'Failed to verify email. Please try again.', 'VERIFY_EMAIL_ERROR');
     }
 };
 

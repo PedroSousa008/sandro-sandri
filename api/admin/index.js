@@ -7,6 +7,7 @@ const db = require('../../lib/storage');
 const auth = require('../../lib/auth');
 const securityLog = require('../../lib/security-log');
 const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers (restricted to allowed origins)
@@ -108,12 +109,8 @@ module.exports = async (req, res) => {
                     message: 'Activity recorded'
                 });
             } catch (error) {
-                console.error('Error recording activity:', error);
-                res.status(500).json({
-                    success: false,
-                    error: 'Failed to record activity',
-                    message: error.message
-                });
+                // SECURITY: Don't expose error details to users
+                errorHandler.sendSecureError(res, error, 500, 'Failed to record activity. Please try again.', 'RECORD_ACTIVITY_ERROR');
             }
         } else if (req.method === 'GET') {
             // Get active users
@@ -148,12 +145,8 @@ module.exports = async (req, res) => {
                     sessions: activeSessions
                 });
             } catch (error) {
-                console.error('Error fetching activity:', error);
-                res.status(500).json({
-                    success: false,
-                    error: 'Failed to fetch activity',
-                    message: error.message
-                });
+                // SECURITY: Don't expose error details to users
+                errorHandler.sendSecureError(res, error, 500, 'Failed to fetch activity. Please try again.', 'FETCH_ACTIVITY_ERROR');
             }
         }
     } else if (endpoint === 'customers') {
@@ -211,12 +204,8 @@ module.exports = async (req, res) => {
                     totalCustomers: customersWithDetails.length
                 });
             } catch (error) {
-                console.error('Error fetching customers:', error);
-                res.status(500).json({
-                    success: false,
-                    error: 'Failed to fetch customers',
-                    message: error.message
-                });
+                // SECURITY: Don't expose error details to users
+                errorHandler.sendSecureError(res, error, 500, 'Failed to fetch customers. Please try again.', 'FETCH_CUSTOMERS_ERROR');
             }
         } else if (req.method === 'DELETE') {
             // Delete customer endpoint - SECURITY: Already protected by requireAdmin above
@@ -288,12 +277,8 @@ module.exports = async (req, res) => {
                     message: `Customer ${email} deleted successfully`
                 });
             } catch (error) {
-                console.error('Error deleting customer:', error);
-                res.status(500).json({
-                    success: false,
-                    error: 'Failed to delete customer',
-                    message: error.message
-                });
+                // SECURITY: Don't expose error details to users
+                errorHandler.sendSecureError(res, error, 500, 'Failed to delete customer. Please try again.', 'DELETE_CUSTOMER_ERROR');
             }
         } else {
             return res.status(405).json({ error: 'Method not allowed' });

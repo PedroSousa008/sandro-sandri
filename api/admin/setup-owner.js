@@ -6,6 +6,7 @@
 const db = require('../../lib/storage');
 const bcrypt = require('bcryptjs');
 const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
 const OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
 
@@ -67,11 +68,8 @@ module.exports = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error setting owner password:', error);
-        res.status(500).json({
-            error: 'Failed to set owner password',
-            message: error.message
-        });
+        // SECURITY: Don't expose error details to users
+        errorHandler.sendSecureError(res, error, 500, 'Failed to set owner password. Please try again.', 'SETUP_OWNER_ERROR');
     }
 };
 

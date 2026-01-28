@@ -7,6 +7,7 @@ const db = require('../../lib/storage');
 const auth = require('../../lib/auth');
 const securityLog = require('../../lib/security-log');
 const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers (restricted to allowed origins)
@@ -75,12 +76,8 @@ module.exports = async (req, res) => {
             return res.status(405).json({ error: 'Method not allowed' });
         }
     } catch (error) {
-        console.error('Error in commerce mode API:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to process request',
-            message: error.message
-        });
+        // SECURITY: Don't expose error details to users
+        errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'COMMERCE_MODE_ERROR');
     }
 };
 

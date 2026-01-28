@@ -12,6 +12,7 @@ const rateLimit = require('../../lib/rate-limit');
 const validation = require('../../lib/validation');
 const securityLog = require('../../lib/security-log');
 const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers (restricted to allowed origins)
@@ -290,11 +291,8 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Invalid action' });
 
     } catch (error) {
-        console.error('Error in auth API:', error);
-        res.status(500).json({
-            error: 'Failed to process request',
-            message: error.message
-        });
+        // SECURITY: Don't expose error details to users
+        errorHandler.sendSecureError(res, error, 500, 'Authentication failed. Please try again.', 'AUTH_ERROR');
     }
 };
 

@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const emailService = require('../../lib/email');
 const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers (restricted to allowed origins)
@@ -162,11 +163,8 @@ module.exports = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error resending verification email:', error);
-        res.status(500).json({
-            error: 'Failed to resend verification email',
-            message: error.message
-        });
+        // SECURITY: Don't expose error details to users
+        errorHandler.sendSecureError(res, error, 500, 'Failed to resend verification email. Please try again.', 'RESEND_VERIFICATION_ERROR');
     }
 };
 
