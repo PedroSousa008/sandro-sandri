@@ -585,8 +585,15 @@ function initAddToCartForm(product) {
             return;
         }
         
-        // Handle WAITLIST mode - only for Chapter II products in Chapter II mode
-        const shouldUseWaitlist = window.CommerceMode && window.CommerceMode.shouldUseWaitlistBehavior(product);
+        // Handle WAITLIST mode - only for Chapter II products in Chapter II mode (async)
+        let shouldUseWaitlist = false;
+        if (window.CommerceMode && typeof window.CommerceMode.shouldUseWaitlistBehavior === 'function') {
+            try {
+                shouldUseWaitlist = await window.CommerceMode.shouldUseWaitlistBehavior(product);
+            } catch (error) {
+                console.error('Error checking waitlist behavior:', error);
+            }
+        }
         if (shouldUseWaitlist) {
             // Check if user is logged in
             const isLoggedIn = window.CommerceMode.isUserLoggedIn();
