@@ -116,28 +116,45 @@ function populateProduct(product) {
     // Update main product image - OPTIMIZED: Preload all images and keep in DOM for instant switching
     const mainImageContainer = document.getElementById('product-image');
     if (mainImageContainer && product.images && product.images.length > 0) {
+        console.log(`Product Page - Loading images for ${product.name} (ID: ${product.id}):`, product.images);
+        // Clear any existing images first
+        mainImageContainer.innerHTML = '';
         // Preload all images for instant switching
         product.images.forEach((imgSrc, index) => {
             const img = new Image();
-            img.src = imgSrc;
+            // Add cache busting to ensure latest images are loaded
+            const imageUrl = imgSrc.includes('?') ? `${imgSrc}&v=3.1` : `${imgSrc}?v=3.1`;
+            img.src = imageUrl;
             img.alt = `${product.name} view ${index + 1}`;
             img.style.display = index === 0 ? 'block' : 'none';
             img.style.width = '100%';
             img.style.height = 'auto';
             img.style.transition = 'opacity 0.15s ease-in-out';
             img.loading = 'eager'; // Load immediately
+            img.onerror = function() {
+                console.error(`Failed to load image ${index + 1} for ${product.name}:`, imageUrl);
+            };
+            img.onload = function() {
+                console.log(`Successfully loaded image ${index + 1} for ${product.name}:`, imageUrl);
+            };
             mainImageContainer.appendChild(img);
         });
+    } else {
+        console.error(`Product Page - No images found for ${product.name} (ID: ${product.id})`);
     }
     
     // Update thumbnails
     const thumbnailsContainer = document.querySelector('.product-thumbnails');
     if (thumbnailsContainer && product.images && product.images.length > 0) {
-        thumbnailsContainer.innerHTML = product.images.map((img, index) => `
-            <button class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${img}" data-index="${index}">
-                <img src="${img}" alt="${product.name} view ${index + 1}">
+        thumbnailsContainer.innerHTML = product.images.map((img, index) => {
+            // Add cache busting to thumbnails
+            const imageUrl = img.includes('?') ? `${img}&v=3.1` : `${img}?v=3.1`;
+            return `
+            <button class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${imageUrl}" data-index="${index}">
+                <img src="${imageUrl}" alt="${product.name} view ${index + 1}" onerror="console.error('Failed to load thumbnail ${index + 1}:', '${imageUrl}');">
             </button>
-        `).join('');
+        `;
+        }).join('');
         
         // Add click handlers for thumbnails
         const thumbnails = thumbnailsContainer.querySelectorAll('.thumbnail');
