@@ -151,11 +151,15 @@ function initCollection() {
         products = sortProducts(products, currentSort);
 
         // Render products
-        productsGrid.innerHTML = products.map(product => `
+        productsGrid.innerHTML = products.map(product => {
+            // For Chapter II products (IDs 6-10), use the 'b' image (index 1) which is chapter2-*b.png
+            // For Chapter I products (IDs 1-5), use the 'b' image (index 1) which is tshirt-*b.png
+            const imageUrl = product.images && product.images.length > 1 ? product.images[1] : (product.images[0] || '');
+            return `
             <article class="product-card" data-product-id="${product.id}">
                 <a href="product.html?id=${product.id}" class="product-link">
                     <div class="product-image">
-                        <img src="${product.images[1] || product.images[0]}?v=2.0" alt="${product.name}">
+                        <img src="${imageUrl}?v=2.1" alt="${product.name}" onerror="console.error('Failed to load image:', '${imageUrl}'); this.src='images/placeholder.png';">
                     </div>
                     <div class="product-info">
                         <h3 class="product-name">${product.name}</h3>
@@ -164,7 +168,8 @@ function initCollection() {
                 </a>
                 <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
             </article>
-        `).join('');
+        `;
+        }).join('');
 
         // Add "View All" link if filtered
         if (currentCollection) {
