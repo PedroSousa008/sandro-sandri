@@ -152,14 +152,14 @@ function initCollection() {
 
         // Render products
         productsGrid.innerHTML = products.map(product => {
-            // For Chapter II products (IDs 6-10), use the 'b' image (index 1) which is chapter2-*b.png
-            // For Chapter I products (IDs 1-5), use the 'b' image (index 1) which is tshirt-*b.png
+            // For Chapter II products (IDs 6-10), use image index 1 (maldives2.png, palma2.png, etc.)
+            // For Chapter I products (IDs 1-5), use image index 1 (tshirt-*b.png)
             const imageUrl = product.images && product.images.length > 1 ? product.images[1] : (product.images[0] || '');
             return `
             <article class="product-card" data-product-id="${product.id}">
                 <a href="product.html?id=${product.id}" class="product-link">
                     <div class="product-image">
-                        <img src="${imageUrl}?v=2.1" alt="${product.name}" onerror="console.error('Failed to load image:', '${imageUrl}'); this.src='images/placeholder.png';">
+                        <img src="${imageUrl}?v=3.0" alt="${product.name}" onerror="console.error('Failed to load image:', '${imageUrl}');">
                     </div>
                     <div class="product-info">
                         <h3 class="product-name">${product.name}</h3>

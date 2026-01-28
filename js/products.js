@@ -223,10 +223,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/chapter2-1a.png",
-            "images/chapter2-1b.png",
-            "images/chapter2-1c.png",
-            "images/chapter2-1d.png"
+            "images/maldives1.png",
+            "images/maldives2.png",
+            "images/maldives3.png",
+            "images/maldives4.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -263,10 +263,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/chapter2-2a.png",
-            "images/chapter2-2b.png",
-            "images/chapter2-2c.png",
-            "images/chapter2-2d.png"
+            "images/palma1.png",
+            "images/palma2.png",
+            "images/palma3.png",
+            "images/palma4.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -303,10 +303,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/chapter2-3a.png",
-            "images/chapter2-3b.png",
-            "images/chapter2-3c.png",
-            "images/chapter2-3d.png"
+            "images/lago1.png",
+            "images/lago2.png",
+            "images/lago3.png",
+            "images/lago4.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -343,10 +343,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/chapter2-4a.png",
-            "images/chapter2-4b.png",
-            "images/chapter2-4c.png",
-            "images/chapter2-4d.png"
+            "images/gisele1.png",
+            "images/gisele2.png",
+            "images/gisele3.png",
+            "images/gisele4.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -383,10 +383,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/chapter2-5a.png",
-            "images/chapter2-5b.png",
-            "images/chapter2-5c.png",
-            "images/chapter2-5d.png"
+            "images/pourville1.png",
+            "images/pourville2.png",
+            "images/pourville3.png",
+            "images/pourville4.png"
         ],
         collection: {
             title: "Chapter II Collection",
