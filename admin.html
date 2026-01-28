@@ -1329,14 +1329,18 @@
                 }
 
                 const inventoryData = await inventoryResponse.json();
+                console.log('📦 Inventory data received:', inventoryData);
 
                 // Get products from window.ProductsAPI
                 const products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
                 const tshirtProducts = products.filter(p => p.category === 'tshirts');
+                console.log('📦 T-shirt products found:', tshirtProducts.length, tshirtProducts.map(p => ({ id: p.id, name: p.name })));
 
                 // Get stock levels for each product
                 const stockData = tshirtProducts.map(product => {
                     const productInventory = inventoryData.find(inv => inv.productId === product.id);
+                    console.log(`📦 Product ${product.id} (${product.name}):`, productInventory);
+                    
                     const stock = {
                         XS: 0,
                         S: 0,
@@ -1352,6 +1356,8 @@
                                 stock[sizeInfo.size] = sizeInfo.stock || 0;
                             }
                         });
+                    } else {
+                        console.warn(`⚠️ Product ${product.id} (${product.name}) has no inventory data!`);
                     }
 
                     // Calculate total stock
