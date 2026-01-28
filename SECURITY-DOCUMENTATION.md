@@ -35,6 +35,8 @@ This document outlines all security measures implemented in the Sandro Sandri e-
 | Input Validation | ✅ Complete | High |
 | Rate Limiting | ✅ Complete | High |
 | Security Logging | ✅ Complete | Medium |
+| HTTPS & HSTS | ✅ Complete | Critical |
+| Security Headers | ✅ Complete | High |
 | CSRF Protection | ⚠️ Optional | Medium |
 
 ---
@@ -276,8 +278,34 @@ All user inputs are escaped before display:
 ### XSS Prevention
 - All user inputs sanitized
 - HTML escaping on output
-- Content Security Policy (CSP) headers (recommended)
+- X-XSS-Protection header enabled
+- X-Content-Type-Options: nosniff
 - No `innerHTML` with user data
+
+### HTTPS & HSTS
+**Status:** ✅ Implemented
+
+**HTTPS Forced:**
+- Vercel automatically forces HTTPS for all deployments
+- All HTTP requests automatically redirected to HTTPS
+- SSL/TLS certificates managed by Vercel (Let's Encrypt)
+
+**HSTS (HTTP Strict Transport Security):**
+- Header: `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+- Max age: 1 year (31536000 seconds)
+- Includes subdomains
+- Preload eligible (can be submitted to HSTS preload list)
+
+**Security Headers:**
+- `X-Frame-Options: DENY` - Prevents clickjacking
+- `X-Content-Type-Options: nosniff` - Prevents MIME type sniffing
+- `X-XSS-Protection: 1; mode=block` - XSS protection
+- `Referrer-Policy: strict-origin-when-cross-origin` - Controls referrer information
+- `Permissions-Policy: geolocation=(), microphone=(), camera=()` - Restricts browser features
+
+**Configuration:**
+- File: `vercel.json`
+- Applied to all routes (`source: "/(.*)"`)
 
 ### SQL Injection Prevention
 - No SQL queries (using KV/JSON storage)
@@ -446,6 +474,9 @@ Before deploying to production, ensure:
 - [x] Rate limiting implemented
 - [x] Brute force protection
 - [x] XSS prevention
+- [x] HTTPS forced (Vercel automatic)
+- [x] HSTS headers configured
+- [x] Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
 - [ ] CSRF protection (optional)
 
 ### Security Monitoring
