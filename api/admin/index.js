@@ -38,27 +38,31 @@ module.exports = async (req, res) => {
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
     if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {
         try {
+            if (!auth || typeof auth.requireAdmin !== 'function') {
+                console.error('Auth module not loaded properly');
+                return sendError(500, 'Authentication service unavailable');
+            }
+            
             const adminCheck = auth.requireAdmin(req);
-            if (!adminCheck.authorized) {
+            if (!adminCheck || !adminCheck.authorized) {
                 // SECURITY: Log unauthorized access attempt
-                try {
-                    await securityLog.logUnauthorizedAccess(req, `/api/admin?endpoint=${endpoint}`, adminCheck.error);
-                } catch (logError) {
-                    console.error('Error logging unauthorized access:', logError);
+                if (securityLog && typeof securityLog.logUnauthorizedAccess === 'function') {
+                    try {
+                        await securityLog.logUnauthorizedAccess(req, `/api/admin?endpoint=${endpoint}`, adminCheck?.error || 'Unauthorized');
+                    } catch (logError) {
+                        console.error('Error logging unauthorized access:', logError);
+                    }
                 }
-                return res.status(adminCheck.statusCode).json({
+                return res.status(adminCheck?.statusCode || 401).json({
                     success: false,
-                    error: adminCheck.error
+                    error: adminCheck?.error || 'Unauthorized'
                 });
             }
             // Store user in request for logging
             req.user = adminCheck.user;
         } catch (authError) {
             console.error('Error in admin auth check:', authError);
-            return res.status(500).json({
-                success: false,
-                error: 'Authentication check failed'
-            });
+            return sendError(500, 'Authentication check failed');
         }
     }
 
