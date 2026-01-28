@@ -161,7 +161,7 @@ let currentCommerceMode = 'LIVE';
 // Load commerce mode from server
 async function loadCommerceMode() {
     try {
-        const response = await fetch('/api/site-settings/commerce-mode');
+        const response = await fetch('/api/site-settings?setting=commerce-mode');
         if (response.ok) {
             const data = await response.json();
             if (data.success) {

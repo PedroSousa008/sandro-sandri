@@ -11,7 +11,7 @@ window.CommerceMode = {
     // Load commerce mode from server
     async loadMode() {
         try {
-            const response = await fetch('/api/site-settings/commerce-mode');
+            const response = await fetch('/api/site-settings?setting=commerce-mode');
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {

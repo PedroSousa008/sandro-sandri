@@ -11,7 +11,7 @@ class ActiveChapter {
 
     async loadChapter() {
         try {
-            const response = await fetch('/api/site-settings/active-chapter');
+            const response = await fetch('/api/site-settings?setting=active-chapter');
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {

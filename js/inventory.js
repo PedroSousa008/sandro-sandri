@@ -199,7 +199,7 @@ async function syncInventoryFromServer() {
         // First get commerce mode
         let commerceMode = 'LIVE';
         try {
-            const modeResponse = await fetch('/api/site-settings/commerce-mode');
+            const modeResponse = await fetch('/api/site-settings?setting=commerce-mode');
             if (modeResponse.ok) {
                 const modeData = await modeResponse.json();
                 if (modeData.success) {

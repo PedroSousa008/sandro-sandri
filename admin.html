@@ -457,7 +457,7 @@
                     return;
                 }
 
-                const response = await fetch('/api/site-settings/commerce-mode', {
+                const response = await fetch('/api/site-settings?setting=commerce-mode', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1463,7 +1463,7 @@
                     return;
                 }
 
-                const response = await fetch('/api/site-settings/active-chapter', {
+                const response = await fetch('/api/site-settings?setting=active-chapter', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'X-Session-Token': token
@@ -1495,14 +1495,14 @@
                     throw new Error('Not authenticated');
                 }
 
-                const response = await fetch('/api/site-settings/active-chapter', {
+                const response = await fetch('/api/site-settings?setting=active-chapter', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`,
                         'X-Session-Token': token
                     },
-                    body: JSON.stringify({ chapter })
+                    body: JSON.stringify({ active_chapter: chapter })
                 });
 
                 if (!response.ok) {
