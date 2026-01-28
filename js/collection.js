@@ -91,6 +91,10 @@ function initCollection() {
             btn.classList.add('active');
             currentChapter = btn.dataset.chapter;
             currentCollection = null; // Reset collection filter when selecting chapter
+            
+            // Update page title and subtitle based on selected chapter
+            updateCollectionPageTitle(currentChapter);
+            
             renderProducts();
             
             // Update URL without reload
