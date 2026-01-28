@@ -25,7 +25,26 @@ function initCollection() {
     }
 
     // Update chapter filter buttons based on active chapter
+    // This will show/hide Chapter II button based on site mode
     updateChapterFilters();
+    
+    // Also listen for chapter mode changes (when owner switches modes)
+    window.addEventListener('activeChapterUpdated', () => {
+        updateChapterFilters();
+        // Re-render products with correct chapter
+        if (window.ActiveChapter) {
+            const isChapterIIMode = window.ActiveChapter.isChapterII();
+            currentChapter = isChapterIIMode ? 'chapter-2' : 'chapter-1';
+            // Update active button
+            filterButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.chapter === currentChapter) {
+                    btn.classList.add('active');
+                }
+            });
+            renderProducts();
+        }
+    });
 
     // Set initial chapter based on active chapter from server
     // If Chapter II is active, show both buttons and default to Chapter II
@@ -77,28 +96,30 @@ function initCollection() {
 
     function updateChapterFilters() {
         // Show/hide chapter filter buttons based on active chapter from server
-        // If Chapter II is active, show both buttons. If Chapter I is active, show only Chapter I button
+        // IMPORTANT: Chapter II button ONLY appears when site is in "Upload Chapter II" mode
+        // If Chapter I mode is active, ONLY show Chapter I button
         const chapterIIBtn = document.getElementById('chapter-ii-btn');
         
+        // Wait for ActiveChapter to load if not ready
         if (window.ActiveChapter) {
-            const isChapterIIActive = window.ActiveChapter.isChapterII();
+            const isChapterIIMode = window.ActiveChapter.isChapterII();
             
-            if (isChapterIIActive) {
-                // Chapter II is active - show both buttons
+            if (isChapterIIMode) {
+                // Site is in "Upload Chapter II" mode - show BOTH buttons (Chapter I and Chapter II)
                 if (chapterIIBtn) {
                     chapterIIBtn.style.display = '';
                 }
             } else {
-                // Chapter I is active - hide Chapter II button (only show Chapter I)
+                // Site is in "Chapter I" mode - HIDE Chapter II button (only show Chapter I)
                 if (chapterIIBtn) {
                     chapterIIBtn.style.display = 'none';
                 }
             }
         } else {
-            // If ActiveChapter not loaded yet, default to hiding Chapter II button
-            if (chapterIIBtn) {
-                chapterIIBtn.style.display = 'none';
-            }
+            // If ActiveChapter not loaded yet, wait a bit and try again
+            setTimeout(() => {
+                updateChapterFilters();
+            }, 200);
         }
     }
 
