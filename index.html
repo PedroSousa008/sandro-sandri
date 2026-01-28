@@ -409,8 +409,10 @@
             }, 100);
         });
         
-        // Also listen for chapter updates
+        // Also listen for chapter updates (but don't reload page)
+        // Content will update dynamically
         window.addEventListener('activeChapterUpdated', () => {
+            // Update content without reloading
             updateHomepageForChapter();
         });
     </script>

@@ -43,25 +43,22 @@ class ActiveChapter {
     }
 
     dispatchUpdateEvent() {
-        // Dispatch event when chapter changes
-        window.dispatchEvent(new CustomEvent('activeChapterUpdated', {
-            detail: { chapter: this.currentChapter }
-        }));
+        // Only dispatch event if chapter actually changed
+        // This prevents unnecessary reloads
+        const previousChapter = window._lastActiveChapter;
+        if (previousChapter !== this.currentChapter) {
+            window._lastActiveChapter = this.currentChapter;
+            // Dispatch event when chapter changes
+            window.dispatchEvent(new CustomEvent('activeChapterUpdated', {
+                detail: { chapter: this.currentChapter }
+            }));
+        }
     }
 }
 
 // Initialize global instance
 window.ActiveChapter = new ActiveChapter();
 
-// Listen for chapter updates (for real-time updates)
-window.addEventListener('activeChapterUpdated', (event) => {
-    // Reload page to reflect chapter changes
-    // This ensures all content updates correctly
-    if (window.location.pathname === '/index.html' || window.location.pathname === '/') {
-        // Only reload if on homepage
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
-    }
-});
+// Remove auto-reload to prevent refresh loops
+// Pages will update content dynamically without full page reload
 
