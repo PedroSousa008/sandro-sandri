@@ -496,6 +496,7 @@
 
                 if (response.ok && data.success) {
                     currentCommerceMode = mode;
+                    window.currentCommerceMode = mode;
                     document.getElementById('current-commerce-mode').textContent = mode;
                     
                     // Show success message
