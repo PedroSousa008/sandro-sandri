@@ -341,10 +341,15 @@ function initCollection() {
                         
                         // Send to Formspree for logged-in users
                         try {
+                            // Determine chapter for the product
+                            const isChapterII = product.id >= 6 && product.id <= 10;
+                            const chapter = isChapterII ? 'Chapter II' : 'Chapter I';
+                            
                             const waitlistData = {
-                                _subject: `Waitlist Request - ${product.name} (Logged In User)`,
+                                _subject: `Waitlist Request - ${product.name} (${chapter}) - Logged In User`,
                                 product_id: product.id,
                                 product_name: product.name,
+                                chapter: chapter,
                                 size: defaultSize,
                                 color: null,
                                 quantity: 1,

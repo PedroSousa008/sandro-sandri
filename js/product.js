@@ -598,10 +598,15 @@ function initAddToCartForm(product) {
                 
                 // Send to Formspree for logged-in users
                 try {
+                    // Determine chapter for the product
+                    const isChapterII = product.id >= 6 && product.id <= 10;
+                    const chapter = isChapterII ? 'Chapter II' : 'Chapter I';
+                    
                     const waitlistData = {
-                        _subject: `Waitlist Request - ${product.name} (Logged In User)`,
+                        _subject: `Waitlist Request - ${product.name} (${chapter}) - Logged In User`,
                         product_id: product.id,
                         product_name: product.name,
+                        chapter: chapter,
                         size: size,
                         color: color || 'Navy',
                         quantity: quantity,
@@ -1177,7 +1182,7 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
             Join the Waitlist
         </h2>
         <p style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-lg);">
-            ${addToCartAfterEmail ? 'Please provide your email to join the waitlist. Your item will be added to your cart after you submit.' : 'Your item has been added to your cart. Please provide your email to join the waitlist and be notified when Chapter I becomes available.'}
+            ${addToCartAfterEmail ? 'Please provide your email to join the waitlist. Your item will be added to your cart after you submit.' : `Your item has been added to your cart. Please provide your email to join the waitlist and be notified when ${product.id >= 6 && product.id <= 10 ? 'Chapter II' : 'Chapter I'} becomes available.`}
         </p>
         <form id="waitlist-email-form" style="margin-top: var(--space-lg);">
             <div class="form-group" style="margin-bottom: var(--space-md);">
@@ -1267,11 +1272,16 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
         successEl.style.display = 'none';
         
         try {
+            // Determine chapter for the product
+            const isChapterII = product.id >= 6 && product.id <= 10;
+            const chapter = isChapterII ? 'Chapter II' : 'Chapter I';
+            
             // Submit to Formspree
             const waitlistData = {
-                _subject: `Waitlist Request - ${product.name}`,
+                _subject: `Waitlist Request - ${product.name} (${chapter})`,
                 product_id: product.id,
                 product_name: product.name,
+                chapter: chapter,
                 size: size,
                 color: color || 'Navy',
                 quantity: quantity,
@@ -1290,7 +1300,10 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
             });
             
             if (response.ok) {
-                successEl.textContent = 'Successfully joined the waitlist! You will be notified when Chapter I becomes available.';
+                // Determine chapter for dynamic message
+                const isChapterII = product.id >= 6 && product.id <= 10;
+                const chapterLabel = isChapterII ? 'Chapter II' : 'Chapter I';
+                successEl.textContent = `Successfully joined the waitlist! You will be notified when ${chapterLabel} becomes available.`;
                 successEl.style.display = 'block';
                 
                 // Add to cart after email is submitted (if flag is set)
