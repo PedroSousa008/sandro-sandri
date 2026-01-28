@@ -280,6 +280,7 @@ All user inputs are escaped before display:
 - HTML escaping on output
 - X-XSS-Protection header enabled
 - X-Content-Type-Options: nosniff
+- Content Security Policy (CSP) configured
 - No `innerHTML` with user data
 
 ### HTTPS & HSTS
@@ -302,6 +303,18 @@ All user inputs are escaped before display:
 - `X-XSS-Protection: 1; mode=block` - XSS protection
 - `Referrer-Policy: strict-origin-when-cross-origin` - Controls referrer information
 - `Permissions-Policy: geolocation=(), microphone=(), camera=()` - Restricts browser features
+- `Content-Security-Policy` - Comprehensive CSP for XSS prevention and Stripe integration
+
+**Content Security Policy (CSP):**
+Configured to allow:
+- **Scripts**: Self, Stripe JS (`js.stripe.com`, `checkout.stripe.com`), inline scripts (for compatibility)
+- **Styles**: Self, Google Fonts, inline styles (for compatibility)
+- **Fonts**: Self, Google Fonts, data URIs
+- **Images**: Self, data URIs, HTTPS, blob URIs
+- **Connections**: Self, Stripe API, Vercel domains
+- **Frames**: Self, Stripe checkout and webhooks
+- **Forms**: Self, Stripe checkout
+- **Upgrade Insecure Requests**: Automatically upgrades HTTP to HTTPS
 
 **Configuration:**
 - File: `vercel.json`
@@ -477,6 +490,7 @@ Before deploying to production, ensure:
 - [x] HTTPS forced (Vercel automatic)
 - [x] HSTS headers configured
 - [x] Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
+- [x] Content Security Policy (CSP) configured for Stripe
 - [ ] CSRF protection (optional)
 
 ### Security Monitoring
