@@ -19,6 +19,14 @@
     {
       "source": "/api/user/activity",
       "destination": "/api/user?action=activity"
+    },
+    {
+      "source": "/api/site-settings/commerce-mode",
+      "destination": "/api/site-settings?setting=commerce-mode"
+    },
+    {
+      "source": "/api/site-settings/active-chapter",
+      "destination": "/api/site-settings?setting=active-chapter"
     }
   ],
   "headers": [
