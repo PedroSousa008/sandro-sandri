@@ -40,7 +40,8 @@ const PRODUCTS = [
             M: 50,
             L: 50,
             XL: 20
-        }
+        },
+        chapter: "chapter_i"
     },
     {
         id: 2,
@@ -79,7 +80,8 @@ const PRODUCTS = [
             M: 50,
             L: 50,
             XL: 20
-        }
+        },
+        chapter: "chapter_i"
     },
     {
         id: 3,
@@ -109,6 +111,36 @@ const PRODUCTS = [
             title: "Connoisseur Signature",
             description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
         },
+        chapter: "chapter_i"
+    },
+    {
+        id: 3,
+        name: "Monroe's Kisses",
+        price: 95,
+        category: "tshirts",
+        description: "Marilyn, they still speak of your kisses. Soft as cashmere and fleeting as champagne bubbles. They say your kisses carried the elegance of roses in full bloom, the decadence of midnight escapades, the allure of something just out of reach. But Marilyn, your kisses were never mere gestures. They were couture - tailored to the moment, unforgettable, and utterly, exquisitely divine. Ohhh, I could spend an eternity lost in the poetry of those kisses.",
+        details: [
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
+        ],
+        sizes: ["XS", "S", "M", "L", "XL"],
+        colors: [
+            { name: "Cream", code: "#f5f4f0" }
+        ],
+        images: [
+            "images/tshirt-3a.png",
+            "images/tshirt-3b.png",
+            "images/tshirt-3c.png",
+            "images/tshirt-3d.png"
+        ],
+        collection: {
+            title: "Connoisseur Signature",
+            description: "For those who appreciate the finer things in life."
+        },
         sku: "SS-003",
         inStock: true,
         featured: true,
@@ -118,7 +150,8 @@ const PRODUCTS = [
             M: 50,
             L: 50,
             XL: 20
-        }
+        },
+        chapter: "chapter_i"
     },
     {
         id: 4,
@@ -197,6 +230,207 @@ const PRODUCTS = [
             L: 50,
             XL: 20
         }
+    },
+    // Chapter II Products (IDs 6-10)
+    {
+        id: 6,
+        name: "Chapter II T-Shirt 1",
+        price: 95,
+        category: "tshirts",
+        description: "Chapter II T-Shirt 1 - Description will be updated",
+        details: [
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
+        ],
+        sizes: ["XS", "S", "M", "L", "XL"],
+        colors: [
+            { name: "Cream", code: "#f5f4f0" }
+        ],
+        images: [
+            "images/tshirt-6a.png",
+            "images/tshirt-6b.png",
+            "images/tshirt-6c.png",
+            "images/tshirt-6d.png"
+        ],
+        collection: {
+            title: "Chapter II Collection",
+            description: "The new collection from Sandro Sandri"
+        },
+        sku: "SS-006",
+        inStock: true,
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        },
+        chapter: "chapter_ii"
+    },
+    {
+        id: 7,
+        name: "Chapter II T-Shirt 2",
+        price: 95,
+        category: "tshirts",
+        description: "Chapter II T-Shirt 2 - Description will be updated",
+        details: [
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
+        ],
+        sizes: ["XS", "S", "M", "L", "XL"],
+        colors: [
+            { name: "Cream", code: "#f5f4f0" }
+        ],
+        images: [
+            "images/tshirt-7a.png",
+            "images/tshirt-7b.png",
+            "images/tshirt-7c.png",
+            "images/tshirt-7d.png"
+        ],
+        collection: {
+            title: "Chapter II Collection",
+            description: "The new collection from Sandro Sandri"
+        },
+        sku: "SS-007",
+        inStock: true,
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        },
+        chapter: "chapter_ii"
+    },
+    {
+        id: 8,
+        name: "Chapter II T-Shirt 3",
+        price: 95,
+        category: "tshirts",
+        description: "Chapter II T-Shirt 3 - Description will be updated",
+        details: [
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
+        ],
+        sizes: ["XS", "S", "M", "L", "XL"],
+        colors: [
+            { name: "Cream", code: "#f5f4f0" }
+        ],
+        images: [
+            "images/tshirt-8a.png",
+            "images/tshirt-8b.png",
+            "images/tshirt-8c.png",
+            "images/tshirt-8d.png"
+        ],
+        collection: {
+            title: "Chapter II Collection",
+            description: "The new collection from Sandro Sandri"
+        },
+        sku: "SS-008",
+        inStock: true,
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        },
+        chapter: "chapter_ii"
+    },
+    {
+        id: 9,
+        name: "Chapter II T-Shirt 4",
+        price: 95,
+        category: "tshirts",
+        description: "Chapter II T-Shirt 4 - Description will be updated",
+        details: [
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
+        ],
+        sizes: ["XS", "S", "M", "L", "XL"],
+        colors: [
+            { name: "Cream", code: "#f5f4f0" }
+        ],
+        images: [
+            "images/tshirt-9a.png",
+            "images/tshirt-9b.png",
+            "images/tshirt-9c.png",
+            "images/tshirt-9d.png"
+        ],
+        collection: {
+            title: "Chapter II Collection",
+            description: "The new collection from Sandro Sandri"
+        },
+        sku: "SS-009",
+        inStock: true,
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        },
+        chapter: "chapter_ii"
+    },
+    {
+        id: 10,
+        name: "Chapter II T-Shirt 5",
+        price: 95,
+        category: "tshirts",
+        description: "Chapter II T-Shirt 5 - Description will be updated",
+        details: [
+            "100% Premium Cotton",
+            "Relaxed Fit",
+            "Screen Printed",
+            "Cream Hue",
+            "Model Standing 1,80m (5'11'') using size M",
+            "Made in Portugal"
+        ],
+        sizes: ["XS", "S", "M", "L", "XL"],
+        colors: [
+            { name: "Cream", code: "#f5f4f0" }
+        ],
+        images: [
+            "images/tshirt-10a.png",
+            "images/tshirt-10b.png",
+            "images/tshirt-10c.png",
+            "images/tshirt-10d.png"
+        ],
+        collection: {
+            title: "Chapter II Collection",
+            description: "The new collection from Sandro Sandri"
+        },
+        sku: "SS-010",
+        inStock: true,
+        featured: true,
+        inventory: {
+            XS: 10,
+            S: 20,
+            M: 50,
+            L: 50,
+            XL: 20
+        },
+        chapter: "chapter_ii"
     }
 ];
 
@@ -208,6 +442,16 @@ function getAllProducts() {
 // Get product by ID
 function getProductById(id) {
     return PRODUCTS.find(product => product.id === parseInt(id));
+}
+
+// Get products by chapter
+function getProductsByChapter(chapter) {
+    if (chapter === 'chapter_i' || chapter === 'chapter-1') {
+        return PRODUCTS.filter(p => !p.chapter || p.chapter === 'chapter_i');
+    } else if (chapter === 'chapter_ii' || chapter === 'chapter-2') {
+        return PRODUCTS.filter(p => p.chapter === 'chapter_ii');
+    }
+    return PRODUCTS;
 }
 
 // Get products by category
@@ -254,6 +498,7 @@ function formatPrice(price) {
 window.ProductsAPI = {
     getAll: getAllProducts,
     getById: getProductById,
+    getByChapter: getProductsByChapter,
     getByCategory: getProductsByCategory,
     getFeatured: getFeaturedProducts,
     search: searchProducts,

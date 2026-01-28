@@ -24,8 +24,20 @@ function initCollection() {
         currentCollection = collectionParam;
     }
 
-    // Update chapter filter buttons based on launch dates
+    // Update chapter filter buttons based on active chapter
     updateChapterFilters();
+
+    // Set initial chapter based on active chapter from server
+    if (window.ActiveChapter) {
+        currentChapter = window.ActiveChapter.isChapterII() ? 'chapter-2' : 'chapter-1';
+        // Update active button
+        filterButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.chapter === currentChapter) {
+                btn.classList.add('active');
+            }
+        });
+    }
 
     // Initial render
     renderProducts();
@@ -51,34 +63,39 @@ function initCollection() {
     });
 
     function updateChapterFilters() {
-        // Hide/show chapter filter buttons based on launch dates
-        filterButtons.forEach(btn => {
-            const chapterId = btn.dataset.chapter;
-            if (chapterId && window.FeatureFlags) {
-                const shouldShow = window.FeatureFlags.shouldShowChapter(chapterId);
-                if (!shouldShow) {
-                    btn.style.display = 'none';
-                } else {
-                    btn.style.display = '';
+        // Show/hide chapter filter buttons based on active chapter
+        // If Chapter II is active, show both buttons. If Chapter I is active, show only Chapter I button
+        if (window.ActiveChapter) {
+            const isChapterIIActive = window.ActiveChapter.isChapterII();
+            const chapterIIBtn = document.getElementById('chapter-ii-btn');
+            const chapterILabel = document.getElementById('collection-page-label');
+            
+            if (isChapterIIActive) {
+                // Chapter II is active - show both buttons
+                if (chapterIIBtn) {
+                    chapterIIBtn.style.display = '';
+                }
+                if (chapterILabel) {
+                    chapterILabel.textContent = 'Chapter II';
+                }
+            } else {
+                // Chapter I is active - hide Chapter II button
+                if (chapterIIBtn) {
+                    chapterIIBtn.style.display = 'none';
+                }
+                if (chapterILabel) {
+                    chapterILabel.textContent = 'Chapter I';
                 }
             }
-        });
+        }
     }
 
     function renderProducts() {
         let products = window.ProductsAPI.getAll();
         
-        // Filter by chapter (respects launch dates)
-        if (currentChapter && window.FeatureFlags) {
-            // Only filter if chapter should be shown
-            if (window.FeatureFlags.shouldShowChapter(currentChapter)) {
-                products = filterByChapter(products, currentChapter);
-            } else {
-                // If trying to view unpublished chapter, show nothing (or fallback to chapter-1)
-                if (!window.FeatureFlags.isPreviewMode()) {
-                    products = [];
-                }
-            }
+        // Filter by chapter
+        if (currentChapter) {
+            products = filterByChapter(products, currentChapter);
         }
         
         // Filter by collection if set (from footer links)

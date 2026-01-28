@@ -340,6 +340,24 @@
             </div>
         </div>
 
+        <!-- Chapter Management -->
+        <div class="admin-section">
+            <h2 class="admin-section-title">Chapter Management</h2>
+            <div style="margin-bottom: var(--space-md);">
+                <p style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text-light); margin-bottom: var(--space-md);">
+                    Control which chapter is displayed on the website. Chapter I shows the current collection. Chapter II will show the new collection when activated.
+                </p>
+                <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center;">
+                    <button class="admin-action-btn admin-action-btn-primary" id="set-chapter-i-btn">Chapter I</button>
+                    <button class="admin-action-btn admin-action-btn-secondary" id="set-chapter-ii-btn">Upload Chapter II</button>
+                    <span id="active-chapter-status" style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text-light); margin-left: var(--space-sm);">
+                        Loading...
+                    </span>
+                </div>
+            </div>
+            <div id="chapter-message" style="display: none; padding: var(--space-sm) var(--space-md); margin-top: var(--space-md); border-radius: 4px; font-family: var(--font-sans); font-size: 0.875rem;"></div>
+        </div>
+
         <div class="admin-section">
             <h2 class="admin-section-title">Quick Links</h2>
             <div class="admin-actions">
@@ -1435,6 +1453,99 @@
         }
 
         document.getElementById('load-stock-btn').addEventListener('click', loadStock);
+
+        // Chapter Management
+        async function loadActiveChapter() {
+            try {
+                const token = localStorage.getItem('sandroSandri_session_token');
+                if (!token) {
+                    document.getElementById('active-chapter-status').textContent = 'Not authenticated';
+                    return;
+                }
+
+                const response = await fetch('/api/site-settings/active-chapter', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-Session-Token': token
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load active chapter');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    const chapter = data.activeChapter === 'chapter_ii' ? 'Chapter II' : 'Chapter I';
+                    document.getElementById('active-chapter-status').textContent = `Current: ${chapter}`;
+                }
+            } catch (error) {
+                console.error('Error loading active chapter:', error);
+                document.getElementById('active-chapter-status').textContent = 'Error loading status';
+            }
+        }
+
+        async function setActiveChapter(chapter) {
+            const messageEl = document.getElementById('chapter-message');
+            messageEl.style.display = 'none';
+
+            try {
+                const token = localStorage.getItem('sandroSandri_session_token');
+                if (!token) {
+                    throw new Error('Not authenticated');
+                }
+
+                const response = await fetch('/api/site-settings/active-chapter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'X-Session-Token': token
+                    },
+                    body: JSON.stringify({ chapter })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update active chapter');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    messageEl.textContent = data.message || 'Chapter updated successfully';
+                    messageEl.style.display = 'block';
+                    messageEl.style.background = '#e8f5e9';
+                    messageEl.style.color = '#2e7d32';
+                    messageEl.style.border = '1px solid #4caf50';
+                    
+                    // Update status
+                    await loadActiveChapter();
+                    
+                    // Show success message for 3 seconds
+                    setTimeout(() => {
+                        messageEl.style.display = 'none';
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error setting active chapter:', error);
+                messageEl.textContent = error.message || 'Failed to update active chapter';
+                messageEl.style.display = 'block';
+                messageEl.style.background = '#ffebee';
+                messageEl.style.color = '#c62828';
+                messageEl.style.border = '1px solid #ef5350';
+            }
+        }
+
+        document.getElementById('set-chapter-i-btn').addEventListener('click', () => {
+            setActiveChapter('chapter_i');
+        });
+
+        document.getElementById('set-chapter-ii-btn').addEventListener('click', () => {
+            setActiveChapter('chapter_ii');
+        });
+
+        // Load active chapter on page load
+        loadActiveChapter();
 
         // Orders Management
         async function loadOrders() {

@@ -96,7 +96,7 @@
     <main>
         <section class="hero">
             <div class="hero-content">
-                <span class="chapter-label">Chapter I</span>
+                <span class="chapter-label" id="hero-chapter-label">Chapter I</span>
                 <h1 class="brand-name" data-editable="hero-title">Sandro Sandri</h1>
                 <p class="tagline" data-editable="hero-tagline">Dreamed in Italy, Produced in Portugal, and worn by a few</p>
                 <a href="#collection" class="cta-button">Discover Collection</a>
@@ -107,76 +107,14 @@
         <section class="collection-preview" id="collection">
             <div class="container">
                 <div class="preview-header">
-                    <span class="chapter-label">Chapter I</span>
+                    <span class="chapter-label" id="collection-chapter-label">Chapter I</span>
                 </div>
                 
-                <div class="products-grid">
-                    <article class="product-card" data-product-id="1">
-                        <a href="product.html?id=1" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-1b.png" alt="Isole Cayman">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Isole Cayman</h3>
-                                <p class="product-price">€95</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="1">Add to Cart</button>
-                    </article>
-                    
-                    <article class="product-card" data-product-id="2">
-                        <a href="product.html?id=2" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-2b.png" alt="Isola di Necker">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Isola di Necker</h3>
-                                <p class="product-price">€95</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="2">Add to Cart</button>
-                    </article>
-                    
-                    <article class="product-card" data-product-id="3">
-                        <a href="product.html?id=3" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-3b.png" alt="Monroe's Kisses">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Monroe's Kisses</h3>
-                                <p class="product-price">€95</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="3">Add to Cart</button>
-                    </article>
-                    
-                    <article class="product-card" data-product-id="4">
-                        <a href="product.html?id=4" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-4b.png" alt="Sardinia">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Sardinia</h3>
-                                <p class="product-price">€95</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="4">Add to Cart</button>
-                    </article>
-                    
-                    <article class="product-card" data-product-id="5">
-                        <a href="product.html?id=5" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-5b.png" alt="Port-Coton">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Port-Coton</h3>
-                                <p class="product-price">€95</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="5">Add to Cart</button>
-                    </article>
-                </div>
-                
+                <div class="products-grid" id="homepage-products-grid">
+                    <!-- Products will be dynamically loaded based on active chapter -->
+                    <div style="text-align: center; padding: var(--space-xl); color: var(--color-text-light);">
+                        Loading products...
+                    </div>
                 </div>
         </section>
 
@@ -301,11 +239,181 @@
     <script src="js/admin.js"></script>
     <script src="js/products.js"></script>
     <script src="js/commerce-mode.js"></script>
+    <script src="js/active-chapter.js"></script>
     <script src="js/inventory.js"></script>
     <script src="js/activity-tracker.js"></script>
     <script src="js/activity-monitor.js"></script>
     <script src="js/cart.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        // Update homepage based on active chapter
+        async function updateHomepageForChapter() {
+            const chapter = window.ActiveChapter.getChapter();
+            const isChapterII = window.ActiveChapter.isChapterII();
+            const chapterLabel = window.ActiveChapter.getChapterLabel();
+            
+            // Update chapter labels
+            const heroLabel = document.getElementById('hero-chapter-label');
+            const collectionLabel = document.getElementById('collection-chapter-label');
+            if (heroLabel) heroLabel.textContent = chapterLabel;
+            if (collectionLabel) collectionLabel.textContent = chapterLabel;
+            
+            // Update page title
+            document.title = `Sandro Sandri | ${chapterLabel}`;
+            
+            // Load products based on chapter
+            const productsGrid = document.getElementById('homepage-products-grid');
+            if (!productsGrid) return;
+            
+            if (isChapterII) {
+                // Chapter II products (IDs 6-10)
+                productsGrid.innerHTML = `
+                    <article class="product-card" data-product-id="6">
+                        <a href="product.html?id=6&chapter=ii" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-6b.png" alt="Chapter II T-Shirt 1" onerror="this.src='images/tshirt-1b.png'">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Chapter II T-Shirt 1</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="6">Add to Cart</button>
+                    </article>
+                    <article class="product-card" data-product-id="7">
+                        <a href="product.html?id=7&chapter=ii" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-7b.png" alt="Chapter II T-Shirt 2" onerror="this.src='images/tshirt-2b.png'">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Chapter II T-Shirt 2</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="7">Add to Cart</button>
+                    </article>
+                    <article class="product-card" data-product-id="8">
+                        <a href="product.html?id=8&chapter=ii" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-8b.png" alt="Chapter II T-Shirt 3" onerror="this.src='images/tshirt-3b.png'">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Chapter II T-Shirt 3</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="8">Add to Cart</button>
+                    </article>
+                    <article class="product-card" data-product-id="9">
+                        <a href="product.html?id=9&chapter=ii" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-9b.png" alt="Chapter II T-Shirt 4" onerror="this.src='images/tshirt-4b.png'">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Chapter II T-Shirt 4</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="9">Add to Cart</button>
+                    </article>
+                    <article class="product-card" data-product-id="10">
+                        <a href="product.html?id=10&chapter=ii" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-10b.png" alt="Chapter II T-Shirt 5" onerror="this.src='images/tshirt-5b.png'">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Chapter II T-Shirt 5</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="10">Add to Cart</button>
+                    </article>
+                `;
+            } else {
+                // Chapter I products (IDs 1-5)
+                productsGrid.innerHTML = `
+                    <article class="product-card" data-product-id="1">
+                        <a href="product.html?id=1" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-1b.png" alt="Isole Cayman">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Isole Cayman</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="1">Add to Cart</button>
+                    </article>
+                    <article class="product-card" data-product-id="2">
+                        <a href="product.html?id=2" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-2b.png" alt="Isola di Necker">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Isola di Necker</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="2">Add to Cart</button>
+                    </article>
+                    <article class="product-card" data-product-id="3">
+                        <a href="product.html?id=3" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-3b.png" alt="Monroe's Kisses">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Monroe's Kisses</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="3">Add to Cart</button>
+                    </article>
+                    <article class="product-card" data-product-id="4">
+                        <a href="product.html?id=4" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-4b.png" alt="La Dolce Vita">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">La Dolce Vita</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="4">Add to Cart</button>
+                    </article>
+                    <article class="product-card" data-product-id="5">
+                        <a href="product.html?id=5" class="product-link">
+                            <div class="product-image">
+                                <img src="images/tshirt-5b.png" alt="Port-Coton">
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">Port-Coton</h3>
+                                <p class="product-price">€95</p>
+                            </div>
+                        </a>
+                        <button class="quick-add" data-product-id="5">Add to Cart</button>
+                    </article>
+                `;
+            }
+            
+            // Re-initialize quick-add buttons after updating products
+            if (window.initQuickAddButtons) {
+                window.initQuickAddButtons();
+            }
+        }
+        
+        // Wait for ActiveChapter to load, then update homepage
+        window.addEventListener('DOMContentLoaded', () => {
+            // Give ActiveChapter time to load
+            setTimeout(() => {
+                updateHomepageForChapter();
+            }, 100);
+        });
+        
+        // Also listen for chapter updates
+        window.addEventListener('activeChapterUpdated', () => {
+            updateHomepageForChapter();
+        });
+    </script>
     <script>
         // Update navigation login link based on auth status
         function updateNavLoginLink() {
