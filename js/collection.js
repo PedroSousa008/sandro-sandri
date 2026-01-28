@@ -155,7 +155,7 @@ function initCollection() {
             <article class="product-card" data-product-id="${product.id}">
                 <a href="product.html?id=${product.id}" class="product-link">
                     <div class="product-image">
-                        <img src="${product.images[1] || product.images[0]}" alt="${product.name}">
+                        <img src="${product.images[1] || product.images[0]}?v=2.0" alt="${product.name}">
                     </div>
                     <div class="product-info">
                         <h3 class="product-name">${product.name}</h3>
