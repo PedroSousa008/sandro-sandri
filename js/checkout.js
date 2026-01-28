@@ -178,16 +178,37 @@ async function loadCommerceMode() {
 function initCheckout() {
     // Check commerce mode first
     loadCommerceMode().then(() => {
+        // Get cart items
+        const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
+        
+        // Check if we're in "Upload Chapter II" mode
+        const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
+        
+        // If in WAITLIST mode, check if cart contains only Chapter I products
         if (currentCommerceMode === 'WAITLIST') {
-            // Block checkout in WAITLIST mode
+            // Check if all items in cart are Chapter I (IDs 1-5)
+            const allChapterI = cart.every(item => {
+                const productId = item.productId || item.id;
+                return productId >= 1 && productId <= 5;
+            });
+            
+            // If we're in "Upload Chapter II" mode AND all items are Chapter I, allow checkout
+            if (isChapterIIMode && allChapterI && cart.length > 0) {
+                console.log('✅ Checkout allowed: All items are Chapter I in Upload Chapter II mode');
+                // Continue with normal checkout initialization
+                initCheckoutNormal();
+                return;
+            }
+            
+            // Otherwise, block checkout in WAITLIST mode
             const checkoutContainer = document.querySelector('.checkout-container') || document.body;
             checkoutContainer.innerHTML = `
                 <div style="max-width: 600px; margin: 100px auto; padding: var(--space-xl); text-align: center;">
                     <h1 style="font-family: var(--font-serif); font-size: 2rem; color: var(--color-navy); margin-bottom: var(--space-md);">
-                        Chapter I is not available yet
+                        Chapter II is not available yet
                     </h1>
                     <p style="font-family: var(--font-sans); font-size: 1rem; color: var(--color-text); margin-bottom: var(--space-lg);">
-                        Join the waitlist to be notified when Chapter I becomes available.
+                        Join the waitlist to be notified when Chapter II becomes available.
                     </p>
                     <a href="collection.html" style="display: inline-block; padding: var(--space-sm) var(--space-lg); background: var(--color-navy); color: white; text-decoration: none; font-family: var(--font-sans); font-size: 0.875rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px;">
                         Back to Collection
