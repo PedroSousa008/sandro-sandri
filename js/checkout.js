@@ -206,8 +206,37 @@ async function initCheckout() {
         cartItems: cart.map(item => ({ id: item.productId || item.id, name: item.name }))
     });
     
-    // If in WAITLIST mode, check if cart contains only Chapter I products
-    if (currentCommerceMode === 'WAITLIST') {
+    // Check if we should block checkout based on mode
+    // If in Chapter I mode, check Chapter I mode from table
+    // If in Upload Chapter II mode, check based on cart contents
+    let shouldBlockCheckout = false;
+    let blockMessage = '';
+    
+    if (!isChapterIIMode) {
+        // Chapter I mode: Check Chapter I mode from table
+        try {
+            const chapterIModeResponse = await fetch('/api/site-settings?setting=chapter-modes');
+            if (chapterIModeResponse.ok) {
+                const chapterIModeData = await chapterIModeResponse.json();
+                if (chapterIModeData.success && chapterIModeData.chapter_modes && chapterIModeData.chapter_modes.chapter_i) {
+                    const chapterIMode = chapterIModeData.chapter_modes.chapter_i.mode;
+                    if (chapterIMode === 'WAITLIST') {
+                        shouldBlockCheckout = true;
+                        blockMessage = 'Chapter I is not available yet. Join the waitlist to be notified when Chapter I becomes available.';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error checking Chapter I mode:', error);
+            // Fallback to global mode
+            if (currentCommerceMode === 'WAITLIST') {
+                shouldBlockCheckout = true;
+                blockMessage = 'Chapter I is not available yet. Join the waitlist to be notified when Chapter I becomes available.';
+            }
+        }
+    } else {
+        // Upload Chapter II mode: Use existing logic
+        if (currentCommerceMode === 'WAITLIST') {
         // Check if all items in cart are Chapter I (IDs 1-5)
         const allChapterI = cart.length > 0 && cart.every(item => {
             const productId = item.productId || item.id;

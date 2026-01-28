@@ -109,7 +109,7 @@ window.CommerceMode = {
     
     // Get button text and behavior based on product chapter and commerce mode
     // LOGIC:
-    // - If in "Chapter I mode" (NOT Upload Chapter II): Use global commerce_mode for ALL products
+    // - If in "Chapter I mode" (NOT Upload Chapter II): Use Chapter I mode from table (chapter_modes.chapter_i.mode)
     // - If in "Upload Chapter II mode": Use chapter-specific modes from table
     async getButtonTextForProduct(product) {
         if (!product) return 'Add to Cart';
@@ -122,12 +122,25 @@ window.CommerceMode = {
         const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
         
         // If NOT in "Upload Chapter II" mode (i.e., in Chapter I mode):
-        // Use global commerce_mode for ALL products
+        // Use Chapter I mode from table (chapter_modes.chapter_i.mode)
         if (!isChapterIIMode) {
-            if (this.isWaitlistMode()) {
-                return 'Join the Waitlist';
+            try {
+                const chapterIMode = await this.getChapterMode('chapter_i');
+                if (chapterIMode === 'WAITLIST') {
+                    return 'Join the Waitlist';
+                } else if (chapterIMode === 'EARLY_ACCESS') {
+                    return 'Add to Cart'; // Early Access still uses Add to Cart button
+                } else {
+                    return 'Add to Cart'; // LIVE mode
+                }
+            } catch (error) {
+                console.error('Error getting Chapter I mode, falling back to global mode:', error);
+                // Fallback to global mode
+                if (this.isWaitlistMode()) {
+                    return 'Join the Waitlist';
+                }
+                return 'Add to Cart';
             }
-            return 'Add to Cart';
         }
         
         // IN "Upload Chapter II" MODE:
@@ -162,7 +175,7 @@ window.CommerceMode = {
     
     // Check if product should use waitlist behavior
     // LOGIC:
-    // - If in "Chapter I mode" (NOT Upload Chapter II): Use global commerce_mode for ALL products
+    // - If in "Chapter I mode" (NOT Upload Chapter II): Use Chapter I mode from table (chapter_modes.chapter_i.mode)
     // - If in "Upload Chapter II mode": Use chapter-specific modes from table
     async shouldUseWaitlistBehavior(product) {
         if (!product) return false;
@@ -175,9 +188,16 @@ window.CommerceMode = {
         const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
         
         // If NOT in "Upload Chapter II" mode (i.e., in Chapter I mode):
-        // Use global commerce_mode for ALL products
+        // Use Chapter I mode from table (chapter_modes.chapter_i.mode)
         if (!isChapterIIMode) {
-            return this.isWaitlistMode();
+            try {
+                const chapterIMode = await this.getChapterMode('chapter_i');
+                return chapterIMode === 'WAITLIST';
+            } catch (error) {
+                console.error('Error getting Chapter I mode, falling back to global mode:', error);
+                // Fallback to global mode
+                return this.isWaitlistMode();
+            }
         }
         
         // IN "Upload Chapter II" MODE:
