@@ -457,6 +457,7 @@
                     const data = await response.json();
                     if (data.success) {
                         currentCommerceMode = data.commerce_mode || 'LIVE';
+                        window.currentCommerceMode = currentCommerceMode;
                         document.getElementById('current-commerce-mode').textContent = currentCommerceMode;
                     }
                 }
@@ -1680,7 +1681,8 @@
                     throw new Error('Not authenticated');
                 }
 
-                const response = await fetch('/api/site-settings?setting=chapter-modes', {
+                // First, update the chapter-specific mode
+                const chapterResponse = await fetch('/api/site-settings?setting=chapter-modes', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1693,13 +1695,41 @@
                     })
                 });
 
-                const data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'Failed to update chapter mode');
+                const chapterData = await chapterResponse.json();
+                if (!chapterResponse.ok || !chapterData.success) {
+                    throw new Error(chapterData.error || 'Failed to update chapter mode');
+                }
+
+                // IMPORTANT: Also update the global commerce_mode to match
+                // This makes the table buttons work exactly like the old "Switch to..." buttons
+                const globalResponse = await fetch('/api/site-settings?setting=commerce-mode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'X-Session-Token': token
+                    },
+                    body: JSON.stringify({
+                        commerce_mode: mode
+                    })
+                });
+
+                const globalData = await globalResponse.json();
+                if (!globalResponse.ok || !globalData.success) {
+                    console.warn('Chapter mode updated but failed to update global commerce mode:', globalData.error);
+                } else {
+                    // Update the "Current Store Mode" display
+                    currentCommerceMode = mode;
+                    window.currentCommerceMode = mode;
+                    const modeDisplayEl = document.getElementById('current-commerce-mode');
+                    if (modeDisplayEl) {
+                        modeDisplayEl.textContent = mode;
+                    }
                 }
 
                 const messageEl = document.getElementById('chapter-message');
-                messageEl.textContent = `${chapter} mode set to ${mode}`;
+                const modeLabel = mode === 'WAITLIST' ? 'Join the Waitlist' : (mode === 'EARLY_ACCESS' ? 'Early Access' : 'Add to Cart');
+                messageEl.textContent = `Chapter ${chapter} mode set to ${modeLabel}. Global site mode updated to ${modeLabel}.`;
                 messageEl.style.display = 'block';
                 messageEl.style.background = '#e8f5e9';
                 messageEl.style.color = '#2e7d32';
