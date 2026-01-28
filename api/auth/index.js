@@ -21,12 +21,17 @@ try {
     console.error('Error loading dependencies:', requireError);
 }
 
-module.exports = async (req, res) => {
+// Ultimate safety wrapper - ensures we NEVER crash without returning JSON
+const handler = async (req, res) => {
     // Ensure response is always JSON
     const sendError = (status, message) => {
-        if (!res.headersSent) {
-            res.setHeader('Content-Type', 'application/json');
-            res.status(status).json({ success: false, error: message });
+        try {
+            if (!res.headersSent) {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(status).json({ success: false, error: message });
+            }
+        } catch (e) {
+            console.error('sendError failed:', e);
         }
     };
 
