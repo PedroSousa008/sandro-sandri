@@ -30,7 +30,7 @@
     },
     {
       "source": "/api/site-settings/chapters",
-      "destination": "/api/site-settings/chapters"
+      "destination": "/api/site-settings?setting=chapters"
     }
   ],
   "headers": [
