@@ -149,7 +149,7 @@ function initCollection() {
         }
     }
 
-    function renderProducts() {
+    async function renderProducts() {
         // Force refresh products data to ensure we have latest names
         let products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
         
@@ -166,13 +166,25 @@ function initCollection() {
         // Sort products
         products = sortProducts(products, currentSort);
 
-        // Render products
-        productsGrid.innerHTML = products.map(product => {
+        // Render products (async to support chapter-specific modes)
+        let html = '';
+        for (const product of products) {
             // For Chapter II products (IDs 6-10), use image index 1 (maldives2.png, palma2.png, etc.)
             // For Chapter I products (IDs 1-5), use image index 1 (tshirt-*b.png)
             const imageUrl = product.images && product.images.length > 1 ? product.images[1] : (product.images[0] || '');
             console.log(`Collection - Product ${product.id} (${product.name}): Using image:`, imageUrl, 'All images:', product.images);
-            return `
+            
+            // Get button text (async)
+            let buttonText = 'Add to Cart';
+            if (window.CommerceMode && typeof window.CommerceMode.getButtonTextForProduct === 'function') {
+                try {
+                    buttonText = await window.CommerceMode.getButtonTextForProduct(product);
+                } catch (error) {
+                    console.error('Error getting button text for product:', error);
+                }
+            }
+            
+            html += `
             <article class="product-card" data-product-id="${product.id}">
                 <a href="product.html?id=${product.id}" class="product-link">
                     <div class="product-image">
@@ -183,10 +195,11 @@ function initCollection() {
                         <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                     </div>
                 </a>
-                <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct(product) : 'Add to Cart'}</button>
+                <button class="quick-add" data-product-id="${product.id}">${buttonText}</button>
             </article>
         `;
-        }).join('');
+        }
+        productsGrid.innerHTML = html;
 
         // Add "View All" link if filtered
         if (currentCollection) {

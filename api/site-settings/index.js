@@ -79,8 +79,12 @@ module.exports = async (req, res) => {
 
             // Update chapter mode (new system)
             if (setting === 'chapter-modes' && chapter) {
+                // Get default chapter modes helper
+                const getDefaultChapterModes = require('../../lib/storage').getDefaultChapterModes || (() => ({}));
+                
                 if (!updatedSettings.chapter_modes[chapter]) {
-                    updatedSettings.chapter_modes[chapter] = {
+                    const defaults = getDefaultChapterModes();
+                    updatedSettings.chapter_modes[chapter] = defaults[chapter] || {
                         created: false,
                         mode: 'LIVE',
                         updatedAt: new Date().toISOString()

@@ -516,20 +516,26 @@ function initAccordions() {
 }
 
 // Update product button based on commerce mode and product chapter
-function updateProductButtonForMode(product) {
+async function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
     
-    // Use the new chapter-aware button text function
+    // Use the new chapter-aware button text function (async)
     if (window.CommerceMode) {
-        const buttonText = window.CommerceMode.getButtonTextForProduct(product);
-        submitBtn.textContent = buttonText;
-        
-        // Add waitlist-btn class if using waitlist behavior
-        if (window.CommerceMode.shouldUseWaitlistBehavior(product)) {
-            submitBtn.classList.add('waitlist-btn');
-        } else {
-            submitBtn.classList.remove('waitlist-btn');
+        try {
+            const buttonText = await window.CommerceMode.getButtonTextForProduct(product);
+            submitBtn.textContent = buttonText;
+            
+            // Add waitlist-btn class if using waitlist behavior (async)
+            const shouldUseWaitlist = await window.CommerceMode.shouldUseWaitlistBehavior(product);
+            if (shouldUseWaitlist) {
+                submitBtn.classList.add('waitlist-btn');
+            } else {
+                submitBtn.classList.remove('waitlist-btn');
+            }
+        } catch (error) {
+            console.error('Error updating product button:', error);
+            submitBtn.textContent = 'Add to Cart';
         }
     } else {
         submitBtn.textContent = 'Add to Cart';
