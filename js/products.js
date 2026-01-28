@@ -109,36 +109,6 @@ const PRODUCTS = [
         ],
         collection: {
             title: "Connoisseur Signature",
-            description: "A piece for those who appreciate life's finest details, where taste and elegance intertwine."
-        },
-        chapter: "chapter_i"
-    },
-    {
-        id: 3,
-        name: "Monroe's Kisses",
-        price: 95,
-        category: "tshirts",
-        description: "Marilyn, they still speak of your kisses. Soft as cashmere and fleeting as champagne bubbles. They say your kisses carried the elegance of roses in full bloom, the decadence of midnight escapades, the allure of something just out of reach. But Marilyn, your kisses were never mere gestures. They were couture - tailored to the moment, unforgettable, and utterly, exquisitely divine. Ohhh, I could spend an eternity lost in the poetry of those kisses.",
-        details: [
-            "100% Premium Cotton",
-            "Relaxed Fit",
-            "Screen Printed",
-            "Cream Hue",
-            "Model Standing 1,80m (5'11'') using size M",
-            "Made in Portugal"
-        ],
-        sizes: ["XS", "S", "M", "L", "XL"],
-        colors: [
-            { name: "Cream", code: "#f5f4f0" }
-        ],
-        images: [
-            "images/tshirt-3a.png",
-            "images/tshirt-3b.png",
-            "images/tshirt-3c.png",
-            "images/tshirt-3d.png"
-        ],
-        collection: {
-            title: "Connoisseur Signature",
             description: "For those who appreciate the finer things in life."
         },
         sku: "SS-003",
