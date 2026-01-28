@@ -91,7 +91,17 @@ module.exports = async (req, res) => {
 
                 // Optimize: Only update if session doesn't exist or last update was > 2 seconds ago
                 // This reduces KV writes by ~70% while maintaining accuracy
-                let activityData = await db.getActivityData();
+                if (!db || typeof db.getActivityData !== 'function') {
+                    console.error('DB.getActivityData not available');
+                    return sendError(500, 'Database service unavailable');
+                }
+                let activityData;
+                try {
+                    activityData = await db.getActivityData();
+                } catch (getError) {
+                    console.error('Error getting activity data:', getError);
+                    activityData = {};
+                }
                 if (!activityData) {
                     activityData = {};
                 }
@@ -144,7 +154,16 @@ module.exports = async (req, res) => {
                     });
                 }
 
-                await db.saveActivityData(activityData);
+                if (!db || typeof db.saveActivityData !== 'function') {
+                    console.error('DB.saveActivityData not available');
+                    return sendError(500, 'Database service unavailable');
+                }
+                try {
+                    await db.saveActivityData(activityData);
+                } catch (saveError) {
+                    console.error('Error saving activity data:', saveError);
+                    return sendError(500, 'Failed to save activity data');
+                }
 
                 res.status(200).json({
                     success: true,
@@ -152,7 +171,19 @@ module.exports = async (req, res) => {
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
-                errorHandler.sendSecureError(res, error, 500, 'Failed to record activity. Please try again.', 'RECORD_ACTIVITY_ERROR');
+                console.error('Activity POST error:', error);
+                if (!res.headersSent) {
+                    if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
+                        try {
+                            errorHandler.sendSecureError(res, error, 500, 'Failed to record activity. Please try again.', 'RECORD_ACTIVITY_ERROR');
+                        } catch (handlerError) {
+                            console.error('Error handler failed:', handlerError);
+                            sendError(500, 'Failed to record activity. Please try again.');
+                        }
+                    } else {
+                        sendError(500, 'Failed to record activity. Please try again.');
+                    }
+                }
             }
         } else if (req.method === 'GET') {
             // Get active users
