@@ -1331,7 +1331,9 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 // Close modal after 2 seconds
                 setTimeout(() => {
                     closeModal();
-                    showNotification('You joined the waiting list for Chapter I.', 'success');
+                    const isChapterII = product.id >= 6 && product.id <= 10;
+                    const chapterLabel = isChapterII ? 'Chapter II' : 'Chapter I';
+                    showNotification(`You joined the waiting list for ${chapterLabel}.`, 'success');
                 }, 2000);
             } else {
                 throw new Error('Failed to submit waitlist request');
