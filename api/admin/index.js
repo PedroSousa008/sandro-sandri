@@ -260,7 +260,16 @@ const handler = async (req, res) => {
                 // SECURITY: Don't expose error details to users
                 console.error('Error in GET activity endpoint:', error);
                 if (!res.headersSent) {
-                    errorHandler.sendSecureError(res, error, 500, 'Failed to fetch activity. Please try again.', 'FETCH_ACTIVITY_ERROR');
+                    if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
+                        try {
+                            errorHandler.sendSecureError(res, error, 500, 'Failed to fetch activity. Please try again.', 'FETCH_ACTIVITY_ERROR');
+                        } catch (handlerError) {
+                            console.error('Error handler failed:', handlerError);
+                            sendError(500, 'Failed to fetch activity. Please try again.');
+                        }
+                    } else {
+                        sendError(500, 'Failed to fetch activity. Please try again.');
+                    }
                 }
             }
         }
@@ -330,7 +339,19 @@ const handler = async (req, res) => {
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
-                errorHandler.sendSecureError(res, error, 500, 'Failed to fetch customers. Please try again.', 'FETCH_CUSTOMERS_ERROR');
+                console.error('Fetch customers error:', error);
+                if (!res.headersSent) {
+                    if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
+                        try {
+                            errorHandler.sendSecureError(res, error, 500, 'Failed to fetch customers. Please try again.', 'FETCH_CUSTOMERS_ERROR');
+                        } catch (handlerError) {
+                            console.error('Error handler failed:', handlerError);
+                            sendError(500, 'Failed to fetch customers. Please try again.');
+                        }
+                    } else {
+                        sendError(500, 'Failed to fetch customers. Please try again.');
+                    }
+                }
             }
         } else if (req.method === 'DELETE') {
             // Delete customer endpoint - SECURITY: Already protected by requireAdmin above
@@ -413,7 +434,19 @@ const handler = async (req, res) => {
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
-                errorHandler.sendSecureError(res, error, 500, 'Failed to delete customer. Please try again.', 'DELETE_CUSTOMER_ERROR');
+                console.error('Delete customer error:', error);
+                if (!res.headersSent) {
+                    if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
+                        try {
+                            errorHandler.sendSecureError(res, error, 500, 'Failed to delete customer. Please try again.', 'DELETE_CUSTOMER_ERROR');
+                        } catch (handlerError) {
+                            console.error('Error handler failed:', handlerError);
+                            sendError(500, 'Failed to delete customer. Please try again.');
+                        }
+                    } else {
+                        sendError(500, 'Failed to delete customer. Please try again.');
+                    }
+                }
             }
         } else {
             return res.status(405).json({ error: 'Method not allowed' });
