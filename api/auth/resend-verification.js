@@ -3,16 +3,39 @@
    Resends verification email with rate limiting
    ======================================== */
 
-const db = require('../../lib/storage');
-const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
-const emailService = require('../../lib/email');
-const cors = require('../../lib/cors');
-const errorHandler = require('../../lib/error-handler');
+// Load all dependencies safely
+let db, crypto, bcrypt, emailService, cors, errorHandler;
+
+try {
+    db = require('../../lib/storage');
+    crypto = require('crypto');
+    bcrypt = require('bcryptjs');
+    emailService = require('../../lib/email');
+    cors = require('../../lib/cors');
+    errorHandler = require('../../lib/error-handler');
+} catch (requireError) {
+    console.error('Error loading dependencies:', requireError);
+}
 
 module.exports = async (req, res) => {
-    // Set secure CORS headers (restricted to allowed origins)
-    cors.setCORSHeaders(res, req, ['POST', 'OPTIONS']);
+    // Ensure response is always JSON
+    const sendError = (status, message) => {
+        if (!res.headersSent) {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(status).json({ success: false, error: message });
+        }
+    };
+
+    try {
+        // Set secure CORS headers (restricted to allowed origins)
+        if (cors && typeof cors.setCORSHeaders === 'function') {
+            cors.setCORSHeaders(res, req, ['POST', 'OPTIONS']);
+        } else {
+            // Fallback CORS headers
+            res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
+            res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Token');
+        }
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -31,7 +54,17 @@ module.exports = async (req, res) => {
             });
         }
 
-        await db.initDb();
+        if (!db || typeof db.initDb !== 'function') {
+            console.error('DB module not loaded properly');
+            return sendError(500, 'Database service unavailable');
+        }
+
+        try {
+            await db.initDb();
+        } catch (dbInitError) {
+            console.error('Error initializing database:', dbInitError);
+            return sendError(500, 'Database initialization failed');
+        }
 
         // Get user data
         const userData = await db.getUserData();
@@ -164,7 +197,19 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         // SECURITY: Don't expose error details to users
-        errorHandler.sendSecureError(res, error, 500, 'Failed to resend verification email. Please try again.', 'RESEND_VERIFICATION_ERROR');
+        console.error('Resend verification error:', error);
+        if (!res.headersSent) {
+            if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
+                try {
+                    errorHandler.sendSecureError(res, error, 500, 'Failed to resend verification email. Please try again.', 'RESEND_VERIFICATION_ERROR');
+                } catch (handlerError) {
+                    console.error('Error handler failed:', handlerError);
+                    sendError(500, 'Failed to resend verification email. Please try again.');
+                }
+            } else {
+                sendError(500, 'Failed to resend verification email. Please try again.');
+            }
+        }
     }
 };
 
