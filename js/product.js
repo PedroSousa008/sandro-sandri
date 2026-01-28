@@ -1325,6 +1325,8 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 _replyto: email
             };
             
+            console.log('📧 Sending waitlist email to Formspree:', waitlistData);
+            
             const response = await fetch('https://formspree.io/f/meoyldeq', {
                 method: 'POST',
                 headers: {
@@ -1334,7 +1336,11 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 body: JSON.stringify(waitlistData)
             });
             
+            console.log('📧 Formspree response status:', response.status, response.statusText);
+            
             if (response.ok) {
+                const responseData = await response.json().catch(() => ({}));
+                console.log('✅ Waitlist email sent successfully:', responseData);
                 // Determine chapter for dynamic message
                 const isChapterII = product.id >= 6 && product.id <= 10;
                 const chapterLabel = isChapterII ? 'Chapter II' : 'Chapter I';
@@ -1371,7 +1377,9 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                     showNotification(`You joined the waiting list for ${chapterLabel}.`, 'success');
                 }, 2000);
             } else {
-                throw new Error('Failed to submit waitlist request');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('❌ Formspree error response:', errorData);
+                throw new Error(`Failed to submit waitlist request: ${response.status} ${response.statusText}`);
             }
         } catch (error) {
             console.error('Error submitting waitlist:', error);
