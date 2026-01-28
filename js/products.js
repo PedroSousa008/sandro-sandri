@@ -200,7 +200,8 @@ const PRODUCTS = [
             M: 50,
             L: 50,
             XL: 20
-        }
+        },
+        chapter: "chapter_i"
     },
     // Chapter II Products (IDs 6-10)
     {
