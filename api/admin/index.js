@@ -40,7 +40,12 @@ module.exports = async (req, res) => {
             return res.status(200).end();
         }
 
-        const { endpoint } = req.query;
+        const { endpoint } = req.query || {};
+        
+        // If no endpoint specified, return error
+        if (!endpoint) {
+            return sendError(400, 'Endpoint parameter is required. Use ?endpoint=activity or ?endpoint=customers');
+        }
     
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
     if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {
@@ -415,12 +420,28 @@ module.exports = async (req, res) => {
         // SECURITY: Don't expose error details to users
         console.error('Admin API Error (outer catch):', error);
         console.error('Error stack:', error.stack);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
         // Ensure we always return JSON, even on error
         if (!res.headersSent) {
-            if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
-                errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'ADMIN_ERROR');
-            } else {
-                sendError(500, 'Admin service unavailable. Please try again later.');
+            try {
+                if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
+                    errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'ADMIN_ERROR');
+                } else {
+                    sendError(500, 'Admin service unavailable. Please try again later.');
+                }
+            } catch (finalError) {
+                console.error('CRITICAL: Failed to send error response:', finalError);
+                // Last resort - try to send plain JSON
+                if (!res.headersSent) {
+                    try {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.status(500).json({ success: false, error: 'Internal server error' });
+                    } catch (e) {
+                        // If even this fails, we're completely broken
+                        console.error('FATAL: Cannot send any response');
+                    }
+                }
             }
         }
     }

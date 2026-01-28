@@ -457,9 +457,25 @@ module.exports = async (req, res) => {
         // Outer catch for any errors before inner try-catch (including require errors)
         console.error('Auth API Error (outer catch):', error);
         console.error('Error stack:', error.stack);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
         // Ensure we always return JSON, even on error
         if (!res.headersSent) {
-            sendError(500, 'Authentication service unavailable. Please try again later.');
+            try {
+                sendError(500, 'Authentication service unavailable. Please try again later.');
+            } catch (finalError) {
+                console.error('CRITICAL: Failed to send error response:', finalError);
+                // Last resort - try to send plain JSON
+                if (!res.headersSent) {
+                    try {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.status(500).json({ success: false, error: 'Internal server error' });
+                    } catch (e) {
+                        // If even this fails, we're completely broken
+                        console.error('FATAL: Cannot send any response');
+                    }
+                }
+            }
         }
     }
 };
