@@ -22,17 +22,29 @@ module.exports = async (req, res) => {
     
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
     if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {
-        const adminCheck = auth.requireAdmin(req);
-        if (!adminCheck.authorized) {
-            // SECURITY: Log unauthorized access attempt
-            await securityLog.logUnauthorizedAccess(req, `/api/admin?endpoint=${endpoint}`, adminCheck.error);
-            return res.status(adminCheck.statusCode).json({
+        try {
+            const adminCheck = auth.requireAdmin(req);
+            if (!adminCheck.authorized) {
+                // SECURITY: Log unauthorized access attempt
+                try {
+                    await securityLog.logUnauthorizedAccess(req, `/api/admin?endpoint=${endpoint}`, adminCheck.error);
+                } catch (logError) {
+                    console.error('Error logging unauthorized access:', logError);
+                }
+                return res.status(adminCheck.statusCode).json({
+                    success: false,
+                    error: adminCheck.error
+                });
+            }
+            // Store user in request for logging
+            req.user = adminCheck.user;
+        } catch (authError) {
+            console.error('Error in admin auth check:', authError);
+            return res.status(500).json({
                 success: false,
-                error: adminCheck.error
+                error: 'Authentication check failed'
             });
         }
-        // Store user in request for logging
-        req.user = adminCheck.user;
     }
 
     if (endpoint === 'activity') {

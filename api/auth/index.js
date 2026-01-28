@@ -30,25 +30,34 @@ module.exports = async (req, res) => {
         try {
         // SESSION VERIFICATION (GET)
         if (req.method === 'GET' || action === 'session') {
-            const authResult = auth.requireAuth(req);
-            
-            if (!authResult.authorized) {
-                return res.status(authResult.statusCode).json({
+            try {
+                const authResult = auth.requireAuth(req);
+                
+                if (!authResult.authorized) {
+                    return res.status(authResult.statusCode).json({
+                        success: false,
+                        authenticated: false,
+                        error: authResult.error
+                    });
+                }
+
+                res.status(200).json({
+                    success: true,
+                    authenticated: true,
+                    user: {
+                        email: authResult.user.email,
+                        role: authResult.user.role
+                    }
+                });
+                return;
+            } catch (authError) {
+                console.error('Error in session verification:', authError);
+                return res.status(500).json({
                     success: false,
                     authenticated: false,
-                    error: authResult.error
+                    error: 'Session verification failed'
                 });
             }
-
-            res.status(200).json({
-                success: true,
-                authenticated: true,
-                user: {
-                    email: authResult.user.email,
-                    role: authResult.user.role
-                }
-            });
-            return;
         }
 
         // LOGIN (POST)
@@ -64,7 +73,14 @@ module.exports = async (req, res) => {
             // Normalize email (lowercase, trim) to match signup
             email = email.toLowerCase().trim();
 
-            await db.initDb();
+            try {
+                await db.initDb();
+            } catch (dbError) {
+                console.error('Error initializing database:', dbError);
+                return res.status(500).json({
+                    error: 'Database initialization failed'
+                });
+            }
 
             // Check if this is owner account first
             let isOwner = false;
@@ -79,9 +95,17 @@ module.exports = async (req, res) => {
                 const ownerCheck = await auth.verifyOwnerCredentials(email, password, securityAnswer);
                 console.log('   Owner check result:', ownerCheck.valid ? 'Valid' : 'Invalid', ownerCheck.error || '');
                 if (!ownerCheck.valid) {
-                    // SECURITY: Record failed login attempt and log
-                    await rateLimit.recordFailedAttempt(req, 'login', email);
-                    await securityLog.logFailedLogin(req, email, ownerCheck.error || 'Invalid owner credentials');
+                    // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
+                    try {
+                        await rateLimit.recordFailedAttempt(req, 'login', email);
+                    } catch (e) {
+                        console.error('Error recording failed attempt:', e);
+                    }
+                    try {
+                        await securityLog.logFailedLogin(req, email, ownerCheck.error || 'Invalid owner credentials');
+                    } catch (e) {
+                        console.error('Error logging failed login:', e);
+                    }
                     return res.status(401).json({ 
                         error: ownerCheck.error || 'Invalid credentials' 
                     });
@@ -107,9 +131,17 @@ module.exports = async (req, res) => {
                 // Verify password - SECURITY: Only use hashed passwords
                 const passwordHash = user.passwordHash;
                 if (!passwordHash) {
-                    // SECURITY: Record failed login attempt and log
-                    await rateLimit.recordFailedAttempt(req, 'login', email);
-                    await securityLog.logFailedLogin(req, email, 'Account has no password hash');
+                    // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
+                    try {
+                        await rateLimit.recordFailedAttempt(req, 'login', email);
+                    } catch (e) {
+                        console.error('Error recording failed attempt:', e);
+                    }
+                    try {
+                        await securityLog.logFailedLogin(req, email, 'Account has no password hash');
+                    } catch (e) {
+                        console.error('Error logging failed login:', e);
+                    }
                     return res.status(401).json({ 
                         error: 'Account needs password reset. Please contact support.' 
                     });
@@ -118,9 +150,17 @@ module.exports = async (req, res) => {
                 // Verify hashed password
                 const isValid = await bcrypt.compare(password, passwordHash);
                 if (!isValid) {
-                    // SECURITY: Record failed login attempt and log
-                    await rateLimit.recordFailedAttempt(req, 'login', email);
-                    await securityLog.logFailedLogin(req, email, 'Invalid password');
+                    // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
+                    try {
+                        await rateLimit.recordFailedAttempt(req, 'login', email);
+                    } catch (e) {
+                        console.error('Error recording failed attempt:', e);
+                    }
+                    try {
+                        await securityLog.logFailedLogin(req, email, 'Invalid password');
+                    } catch (e) {
+                        console.error('Error logging failed login:', e);
+                    }
                     return res.status(401).json({ 
                         error: 'Invalid email or password' 
                     });
@@ -152,11 +192,19 @@ module.exports = async (req, res) => {
                 role: isOwner ? 'OWNER' : 'USER'
             });
 
-            // SECURITY: Clear rate limit on successful login
-            await rateLimit.clearRateLimit(req, 'login', email);
+            // SECURITY: Clear rate limit on successful login (don't let errors break the flow)
+            try {
+                await rateLimit.clearRateLimit(req, 'login', email);
+            } catch (e) {
+                console.error('Error clearing rate limit:', e);
+            }
             
-            // SECURITY: Log successful login
-            await securityLog.logSuccessfulLogin(req, userKey, isOwner);
+            // SECURITY: Log successful login (don't let errors break the flow)
+            try {
+                await securityLog.logSuccessfulLogin(req, userKey, isOwner);
+            } catch (e) {
+                console.error('Error logging successful login:', e);
+            }
 
             // Set HTTP-only cookie (more secure than localStorage)
             res.setHeader('Set-Cookie', `session_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${24 * 60 * 60}`);
