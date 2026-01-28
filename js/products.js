@@ -223,10 +223,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/tshirt-6a.png",
-            "images/tshirt-6b.png",
-            "images/tshirt-6c.png",
-            "images/tshirt-6d.png"
+            "images/chapter2-1a.png",
+            "images/chapter2-1b.png",
+            "images/chapter2-1c.png",
+            "images/chapter2-1d.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -263,10 +263,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/tshirt-7a.png",
-            "images/tshirt-7b.png",
-            "images/tshirt-7c.png",
-            "images/tshirt-7d.png"
+            "images/chapter2-2a.png",
+            "images/chapter2-2b.png",
+            "images/chapter2-2c.png",
+            "images/chapter2-2d.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -303,10 +303,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/tshirt-8a.png",
-            "images/tshirt-8b.png",
-            "images/tshirt-8c.png",
-            "images/tshirt-8d.png"
+            "images/chapter2-3a.png",
+            "images/chapter2-3b.png",
+            "images/chapter2-3c.png",
+            "images/chapter2-3d.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -343,10 +343,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/tshirt-9a.png",
-            "images/tshirt-9b.png",
-            "images/tshirt-9c.png",
-            "images/tshirt-9d.png"
+            "images/chapter2-4a.png",
+            "images/chapter2-4b.png",
+            "images/chapter2-4c.png",
+            "images/chapter2-4d.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -383,10 +383,10 @@ const PRODUCTS = [
             { name: "Cream", code: "#f5f4f0" }
         ],
         images: [
-            "images/tshirt-10a.png",
-            "images/tshirt-10b.png",
-            "images/tshirt-10c.png",
-            "images/tshirt-10d.png"
+            "images/chapter2-5a.png",
+            "images/chapter2-5b.png",
+            "images/chapter2-5c.png",
+            "images/chapter2-5d.png"
         ],
         collection: {
             title: "Chapter II Collection",
