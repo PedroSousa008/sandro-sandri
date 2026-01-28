@@ -54,8 +54,15 @@ function initCollection() {
             });
             // Update page title based on current chapter
             updateCollectionPageTitle(currentChapter);
+            // Re-render products to update button texts based on new chapter mode
             renderProducts();
         }
+    });
+    
+    // Also listen for commerce mode changes to update button texts
+    window.addEventListener('commerceModeUpdated', () => {
+        // Re-render products to update button texts
+        renderProducts();
     });
 
     // Set initial chapter based on active chapter from server

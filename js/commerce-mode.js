@@ -43,21 +43,13 @@ window.CommerceMode = {
         return this.currentMode === 'LIVE';
     },
     
-    // Update all "Add to Cart" buttons to "Join the Waitlist" if in WAITLIST mode
+    // Update all "Add to Cart" buttons based on product chapter and commerce mode
+    // IMPORTANT: This function is deprecated - use getButtonTextForProduct instead
+    // Kept for backward compatibility but should not be used for new code
     updateAllButtons() {
-        if (!this.isWaitlistMode()) {
-            return; // Only update in WAITLIST mode
-        }
-        
-        // Update all buttons with class "add-to-cart-btn" or "quick-add"
-        const buttons = document.querySelectorAll('.add-to-cart-btn, .quick-add');
-        buttons.forEach(btn => {
-            if (btn.textContent.includes('Add to Cart') || btn.textContent.includes('ADD TO CART')) {
-                btn.textContent = btn.textContent.replace(/Add to Cart/gi, 'Join the Waitlist');
-                btn.textContent = btn.textContent.replace(/ADD TO CART/gi, 'JOIN THE WAITLIST');
-                btn.classList.add('waitlist-btn');
-            }
-        });
+        // This function is no longer used - buttons are updated using getButtonTextForProduct
+        // when products are rendered
+        return;
     },
     
     // Check if user is logged in
@@ -102,14 +94,23 @@ window.CommerceMode = {
         const isProductChapterI = product.id >= 1 && product.id <= 5;
         
         // Check if site is in "Upload Chapter II" mode
-        // Wait for ActiveChapter to be available
+        // CRITICAL: Wait for ActiveChapter to be available
         let isChapterIIMode = false;
-        if (window.ActiveChapter) {
+        if (window.ActiveChapter && typeof window.ActiveChapter.isChapterII === 'function') {
             isChapterIIMode = window.ActiveChapter.isChapterII();
         } else {
-            // ActiveChapter not loaded yet - default to false (Chapter I mode)
-            // This means all products will follow commerce mode until ActiveChapter loads
-            console.warn('ActiveChapter not loaded yet, defaulting to Chapter I mode');
+            // ActiveChapter not loaded yet - check if we should wait or default
+            // If we're checking a Chapter I product, default to false (Chapter I mode)
+            // This ensures Chapter I products always work correctly
+            if (isProductChapterI) {
+                // For Chapter I products, if ActiveChapter isn't loaded, assume we're NOT in Upload Chapter II mode
+                // This means Chapter I will follow commerce mode (which is correct until Upload Chapter II is activated)
+                isChapterIIMode = false;
+            } else {
+                // For Chapter II products, wait a bit for ActiveChapter to load
+                // But default to false for safety
+                isChapterIIMode = false;
+            }
         }
         
         // If NOT in "Upload Chapter II" mode, all products follow commerce mode normally

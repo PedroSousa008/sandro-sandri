@@ -440,6 +440,12 @@
             // Update content without reloading
             updateHomepageForChapter();
         });
+        
+        // Also listen for commerce mode changes to update button texts
+        window.addEventListener('commerceModeUpdated', () => {
+            // Update homepage products to refresh button texts
+            updateHomepageForChapter();
+        });
     </script>
     <script>
         // Update navigation login link based on auth status
