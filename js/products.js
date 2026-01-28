@@ -206,10 +206,10 @@ const PRODUCTS = [
     // Chapter II Products (IDs 6-10)
     {
         id: 6,
-        name: "Chapter II T-Shirt 1",
+        name: "Maldives",
         price: 95,
         category: "tshirts",
-        description: "Chapter II T-Shirt 1 - Description will be updated",
+        description: "Maldives - Description will be updated",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
@@ -246,10 +246,10 @@ const PRODUCTS = [
     },
     {
         id: 7,
-        name: "Chapter II T-Shirt 2",
+        name: "Palma Mallorca",
         price: 95,
         category: "tshirts",
-        description: "Chapter II T-Shirt 2 - Description will be updated",
+        description: "Palma Mallorca - Description will be updated",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
@@ -286,10 +286,10 @@ const PRODUCTS = [
     },
     {
         id: 8,
-        name: "Chapter II T-Shirt 3",
+        name: "Lago di Como",
         price: 95,
         category: "tshirts",
-        description: "Chapter II T-Shirt 3 - Description will be updated",
+        description: "Lago di Como - Description will be updated",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
@@ -326,10 +326,10 @@ const PRODUCTS = [
     },
     {
         id: 9,
-        name: "Chapter II T-Shirt 4",
+        name: "Gisele",
         price: 95,
         category: "tshirts",
-        description: "Chapter II T-Shirt 4 - Description will be updated",
+        description: "Gisele - Description will be updated",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
@@ -366,10 +366,10 @@ const PRODUCTS = [
     },
     {
         id: 10,
-        name: "Chapter II T-Shirt 5",
+        name: "Pourville",
         price: 95,
         category: "tshirts",
-        description: "Chapter II T-Shirt 5 - Description will be updated",
+        description: "Pourville - Description will be updated",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
