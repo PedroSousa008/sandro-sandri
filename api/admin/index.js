@@ -77,7 +77,17 @@ module.exports = async (req, res) => {
                     return res.status(400).json({ error: 'Session ID is required' });
                 }
 
-                await db.initDb();
+                if (!db || typeof db.initDb !== 'function') {
+                    console.error('DB module not loaded properly');
+                    return sendError(500, 'Database service unavailable');
+                }
+
+                try {
+                    await db.initDb();
+                } catch (dbInitError) {
+                    console.error('Error initializing database:', dbInitError);
+                    return sendError(500, 'Database initialization failed');
+                }
 
                 // Optimize: Only update if session doesn't exist or last update was > 2 seconds ago
                 // This reduces KV writes by ~70% while maintaining accuracy
