@@ -40,6 +40,12 @@ module.exports = async (req, res) => {
                     success: true,
                     activeChapter: activeChapter
                 });
+            } else if (setting === 'chapter-modes') {
+                const chapterModes = settings.chapter_modes || {};
+                return res.status(200).json({
+                    success: true,
+                    chapter_modes: chapterModes
+                });
             } else {
                 // Return all settings
                 return res.status(200).json({
@@ -60,13 +66,90 @@ module.exports = async (req, res) => {
                 });
             }
 
-            const { commerce_mode, active_chapter } = req.body;
+            const { commerce_mode, active_chapter, chapter, created, mode } = req.body;
 
             // Get current settings
             const currentSettings = await db.getSiteSettings();
             const updatedSettings = { ...currentSettings };
 
-            // Update commerce mode if provided
+            // Ensure chapter_modes structure exists
+            if (!updatedSettings.chapter_modes) {
+                updatedSettings.chapter_modes = db.getDefaultChapterModes ? db.getDefaultChapterModes() : {};
+            }
+
+            // Update chapter mode (new system)
+            if (setting === 'chapter-modes' && chapter) {
+                if (!updatedSettings.chapter_modes[chapter]) {
+                    updatedSettings.chapter_modes[chapter] = {
+                        created: false,
+                        mode: 'LIVE',
+                        updatedAt: new Date().toISOString()
+                    };
+                }
+
+                // Update created status if provided
+                if (created !== undefined) {
+                    updatedSettings.chapter_modes[chapter].created = created === true;
+                    updatedSettings.chapter_modes[chapter].updatedAt = new Date().toISOString();
+
+                    // Log admin action
+                    req.user = adminCheck.user;
+                    await securityLog.logAdminAction(req, 'CHANGE_CHAPTER_CREATED', {
+                        chapter: chapter,
+                        created: created
+                    });
+
+                    console.log(`✅ Chapter ${chapter} created status: ${created}`);
+                }
+
+                // Update mode if provided (only if chapter is created)
+                if (mode !== undefined) {
+                    if (!['LIVE', 'WAITLIST', 'EARLY_ACCESS'].includes(mode)) {
+                        return res.status(400).json({
+                            success: false,
+                            error: 'Invalid mode. Must be LIVE, WAITLIST, or EARLY_ACCESS.'
+                        });
+                    }
+
+                    if (!updatedSettings.chapter_modes[chapter].created) {
+                        return res.status(400).json({
+                            success: false,
+                            error: `Chapter ${chapter} must be marked as "Created" before setting its mode.`
+                        });
+                    }
+
+                    const previousMode = updatedSettings.chapter_modes[chapter].mode || 'LIVE';
+                    updatedSettings.chapter_modes[chapter].mode = mode;
+                    updatedSettings.chapter_modes[chapter].updatedAt = new Date().toISOString();
+
+                    // Log admin action
+                    req.user = adminCheck.user;
+                    await securityLog.logAdminAction(req, 'CHANGE_CHAPTER_MODE', {
+                        chapter: chapter,
+                        previousMode: previousMode,
+                        newMode: mode
+                    });
+
+                    console.log(`✅ Chapter ${chapter} mode updated to: ${mode}`);
+
+                    // Also update active chapter if this is the current active chapter
+                    if (updatedSettings.active_chapter === chapter) {
+                        // Update global commerce mode to match (for backward compatibility)
+                        updatedSettings.commerce_mode = mode;
+                    }
+                }
+
+                // Save updated settings
+                await db.saveSiteSettings(updatedSettings);
+
+                return res.status(200).json({
+                    success: true,
+                    message: `Chapter ${chapter} updated successfully`,
+                    chapter_modes: updatedSettings.chapter_modes
+                });
+            }
+
+            // Update commerce mode if provided (legacy system)
             if (commerce_mode) {
                 if (!['LIVE', 'WAITLIST', 'EARLY_ACCESS'].includes(commerce_mode)) {
                     return res.status(400).json({

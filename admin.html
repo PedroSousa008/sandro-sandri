@@ -345,15 +345,37 @@
             <h2 class="admin-section-title">Chapter Management</h2>
             <div style="margin-bottom: var(--space-md);">
                 <p style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text-light); margin-bottom: var(--space-md);">
-                    Control which chapter is displayed on the website. Chapter I shows the current collection. Chapter II will show the new collection when activated.
+                    Control which chapter is displayed on the website and set the commerce mode for each chapter. Only chapters marked as "Created" can have their modes changed.
                 </p>
-                <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center;">
-                    <button class="admin-action-btn admin-action-btn-primary" id="set-chapter-i-btn">Chapter I</button>
-                    <button class="admin-action-btn admin-action-btn-secondary" id="set-chapter-ii-btn">Upload Chapter II</button>
-                    <span id="active-chapter-status" style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text-light); margin-left: var(--space-sm);">
-                        Loading...
-                    </span>
-                </div>
+            </div>
+            <div id="chapter-modes-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
+                Loading chapter modes...
+            </div>
+            <div id="chapter-modes-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
+            <div id="chapter-modes-table-container" style="overflow-x: auto; display: none;">
+                <table id="chapter-modes-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="background: var(--color-navy); color: white;">
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-navy); z-index: 10;">
+                                Chapter <span style="font-size: 0.75rem;">▼</span>
+                            </th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
+                                Join the Waitlist <span style="font-size: 0.75rem;">▼</span>
+                            </th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
+                                Early Access <span style="font-size: 0.75rem;">▼</span>
+                            </th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
+                                Add to Cart <span style="font-size: 0.75rem;">▼</span>
+                            </th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
+                                Created <span style="font-size: 0.75rem;">▼</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="chapter-modes-tbody">
+                    </tbody>
+                </table>
             </div>
             <div id="chapter-message" style="display: none; padding: var(--space-sm) var(--space-md); margin-top: var(--space-md); border-radius: 4px; font-family: var(--font-sans); font-size: 0.875rem;"></div>
         </div>
@@ -1542,13 +1564,21 @@
             }
         }
 
-        document.getElementById('set-chapter-i-btn').addEventListener('click', () => {
-            setActiveChapter('chapter_i');
-        });
-
-        document.getElementById('set-chapter-ii-btn').addEventListener('click', () => {
-            setActiveChapter('chapter_ii');
-        });
+        // Legacy chapter buttons (keeping for backward compatibility)
+        const setChapterIBtn = document.getElementById('set-chapter-i-btn');
+        const setChapterIIBtn = document.getElementById('set-chapter-ii-btn');
+        
+        if (setChapterIBtn) {
+            setChapterIBtn.addEventListener('click', () => {
+                setActiveChapter('chapter_i');
+            });
+        }
+        
+        if (setChapterIIBtn) {
+            setChapterIIBtn.addEventListener('click', () => {
+                setActiveChapter('chapter_ii');
+            });
+        }
 
         // Load active chapter on page load
         loadActiveChapter();
