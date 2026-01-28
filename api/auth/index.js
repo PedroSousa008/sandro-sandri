@@ -191,15 +191,19 @@ module.exports = async (req, res) => {
                 const passwordHash = user.passwordHash;
                 if (!passwordHash) {
                     // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
-                    try {
-                        await rateLimit.recordFailedAttempt(req, 'login', email);
-                    } catch (e) {
-                        console.error('Error recording failed attempt:', e);
+                    if (rateLimit && typeof rateLimit.recordFailedAttempt === 'function') {
+                        try {
+                            await rateLimit.recordFailedAttempt(req, 'login', email);
+                        } catch (e) {
+                            console.error('Error recording failed attempt:', e);
+                        }
                     }
-                    try {
-                        await securityLog.logFailedLogin(req, email, 'Account has no password hash');
-                    } catch (e) {
-                        console.error('Error logging failed login:', e);
+                    if (securityLog && typeof securityLog.logFailedLogin === 'function') {
+                        try {
+                            await securityLog.logFailedLogin(req, email, 'Account has no password hash');
+                        } catch (e) {
+                            console.error('Error logging failed login:', e);
+                        }
                     }
                     return res.status(401).json({ 
                         error: 'Account needs password reset. Please contact support.' 
@@ -260,17 +264,21 @@ module.exports = async (req, res) => {
             });
 
             // SECURITY: Clear rate limit on successful login (don't let errors break the flow)
-            try {
-                await rateLimit.clearRateLimit(req, 'login', email);
-            } catch (e) {
-                console.error('Error clearing rate limit:', e);
+            if (rateLimit && typeof rateLimit.clearRateLimit === 'function') {
+                try {
+                    await rateLimit.clearRateLimit(req, 'login', email);
+                } catch (e) {
+                    console.error('Error clearing rate limit:', e);
+                }
             }
             
             // SECURITY: Log successful login (don't let errors break the flow)
-            try {
-                await securityLog.logSuccessfulLogin(req, userKey, isOwner);
-            } catch (e) {
-                console.error('Error logging successful login:', e);
+            if (securityLog && typeof securityLog.logSuccessfulLogin === 'function') {
+                try {
+                    await securityLog.logSuccessfulLogin(req, userKey, isOwner);
+                } catch (e) {
+                    console.error('Error logging successful login:', e);
+                }
             }
 
             // Set HTTP-only cookie (more secure than localStorage)
