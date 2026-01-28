@@ -205,6 +205,21 @@ function initCollection() {
         initQuickAdd();
     }
 
+    function updateCollectionPageTitle(chapterId) {
+        const pageLabel = document.getElementById('collection-page-label');
+        const pageSubtitle = document.getElementById('collection-page-subtitle');
+        
+        if (chapterId === 'chapter-2') {
+            // Chapter II
+            if (pageLabel) pageLabel.textContent = 'Chapter II';
+            if (pageSubtitle) pageSubtitle.textContent = 'Golden Hour in Whispering Eden';
+        } else {
+            // Chapter I (default)
+            if (pageLabel) pageLabel.textContent = 'Chapter I';
+            if (pageSubtitle) pageSubtitle.textContent = 'A Quiet Season in Blossom Paradise';
+        }
+    }
+
     function filterByChapter(products, chapterId) {
         // Map chapter IDs to product IDs
         // Chapter I: Products 1-5 (current t-shirts)
