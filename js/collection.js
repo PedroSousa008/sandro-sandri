@@ -62,8 +62,30 @@ function initCollection() {
     });
 
     function updateChapterFilters() {
-        // Always show both chapter buttons - no need to hide/show
-        // The buttons allow users to switch between chapters
+        // Show/hide chapter filter buttons based on active chapter from server
+        // If Chapter II is active, show both buttons. If Chapter I is active, show only Chapter I button
+        const chapterIIBtn = document.getElementById('chapter-ii-btn');
+        
+        if (window.ActiveChapter) {
+            const isChapterIIActive = window.ActiveChapter.isChapterII();
+            
+            if (isChapterIIActive) {
+                // Chapter II is active - show both buttons
+                if (chapterIIBtn) {
+                    chapterIIBtn.style.display = '';
+                }
+            } else {
+                // Chapter I is active - hide Chapter II button (only show Chapter I)
+                if (chapterIIBtn) {
+                    chapterIIBtn.style.display = 'none';
+                }
+            }
+        } else {
+            // If ActiveChapter not loaded yet, default to hiding Chapter II button
+            if (chapterIIBtn) {
+                chapterIIBtn.style.display = 'none';
+            }
+        }
     }
 
     function renderProducts() {
