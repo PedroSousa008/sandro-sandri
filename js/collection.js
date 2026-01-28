@@ -81,6 +81,9 @@ function initCollection() {
         }
     });
 
+    // Update page title based on initial chapter
+    updateCollectionPageTitle(currentChapter);
+    
     // Initial render
     renderProducts();
 
