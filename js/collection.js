@@ -134,7 +134,8 @@ function initCollection() {
     }
 
     function renderProducts() {
-        let products = window.ProductsAPI.getAll();
+        // Force refresh products data to ensure we have latest names
+        let products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
         
         // Filter by chapter
         if (currentChapter) {
