@@ -1701,42 +1701,61 @@
                     throw new Error(chapterData.error || 'Failed to update chapter mode');
                 }
 
-                // IMPORTANT: Also update the global commerce_mode to match
-                // This makes the table buttons work exactly like the old "Switch to..." buttons
-                const globalResponse = await fetch('/api/site-settings?setting=commerce-mode', {
-                    method: 'POST',
+                // IMPORTANT: If we're in Chapter I mode (not Upload Chapter II), also update global commerce_mode
+                // This ensures the site reflects the Chapter I mode from the table
+                // Check if we're in Chapter I mode
+                const activeChapterResponse = await fetch('/api/site-settings?setting=active-chapter', {
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`,
                         'X-Session-Token': token
-                    },
-                    body: JSON.stringify({
-                        commerce_mode: mode
-                    })
-                });
-
-                const globalData = await globalResponse.json();
-                if (!globalResponse.ok || !globalData.success) {
-                    console.warn('Chapter mode updated but failed to update global commerce mode:', globalData.error);
-                } else {
-                    // Update the "Current Store Mode" display
-                    currentCommerceMode = mode;
-                    window.currentCommerceMode = mode;
-                    const modeDisplayEl = document.getElementById('current-commerce-mode');
-                    if (modeDisplayEl) {
-                        const modeLabel = mode === 'WAITLIST' ? 'WAITLIST' : (mode === 'EARLY_ACCESS' ? 'EARLY_ACCESS' : 'LIVE');
-                        modeDisplayEl.textContent = modeLabel;
                     }
-                    
-                    // Force reload the page after a short delay to ensure all pages reflect the change
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
+                });
+                
+                let isChapterIMode = false;
+                if (activeChapterResponse.ok) {
+                    const activeChapterData = await activeChapterResponse.json();
+                    if (activeChapterData.success) {
+                        isChapterIMode = activeChapterData.activeChapter === 'chapter_i';
+                    }
                 }
+                
+                // Only update global commerce_mode if we're in Chapter I mode AND updating Chapter I
+                if (isChapterIMode && chapter === 'chapter_i') {
+                    const globalResponse = await fetch('/api/site-settings?setting=commerce-mode', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                            'X-Session-Token': token
+                        },
+                        body: JSON.stringify({
+                            commerce_mode: mode
+                        })
+                    });
+
+                    const globalData = await globalResponse.json();
+                    if (!globalResponse.ok || !globalData.success) {
+                        console.warn('Chapter mode updated but failed to update global commerce mode:', globalData.error);
+                    } else {
+                        // Update the "Current Store Mode" display
+                        currentCommerceMode = mode;
+                        window.currentCommerceMode = mode;
+                        const modeDisplayEl = document.getElementById('current-commerce-mode');
+                        if (modeDisplayEl) {
+                            const modeLabel = mode === 'WAITLIST' ? 'WAITLIST' : (mode === 'EARLY_ACCESS' ? 'EARLY_ACCESS' : 'LIVE');
+                            modeDisplayEl.textContent = modeLabel;
+                        }
+                    }
+                }
+                
+                // Force reload the page after a short delay to ensure all pages reflect the change
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
 
                 const messageEl = document.getElementById('chapter-message');
                 const modeLabel = mode === 'WAITLIST' ? 'Join the Waitlist' : (mode === 'EARLY_ACCESS' ? 'Early Access' : 'Add to Cart');
-                messageEl.textContent = `Chapter ${chapter} mode set to ${modeLabel}. Global site mode updated to ${modeLabel}.`;
+                messageEl.textContent = `Chapter ${chapter} mode set to ${modeLabel}.`;
                 messageEl.style.display = 'block';
                 messageEl.style.background = '#e8f5e9';
                 messageEl.style.color = '#2e7d32';
