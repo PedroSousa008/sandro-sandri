@@ -155,6 +155,10 @@ module.exports = async (req, res) => {
                 }
                 
                 // Get owner user data
+                if (!db || typeof db.getUserData !== 'function') {
+                    console.error('DB.getUserData not available');
+                    return sendError(500, 'Database service unavailable');
+                }
                 const userData = await db.getUserData();
                 user = userData[email] || userData[auth.OWNER_EMAIL];
             } else {
@@ -164,8 +168,20 @@ module.exports = async (req, res) => {
 
                 if (!user) {
                     // SECURITY: Record failed login attempt and log
-                    await rateLimit.recordFailedAttempt(req, 'login', email);
-                    await securityLog.logFailedLogin(req, email, 'User not found');
+                    if (rateLimit && typeof rateLimit.recordFailedAttempt === 'function') {
+                        try {
+                            await rateLimit.recordFailedAttempt(req, 'login', email);
+                        } catch (e) {
+                            console.error('Error recording failed attempt:', e);
+                        }
+                    }
+                    if (securityLog && typeof securityLog.logFailedLogin === 'function') {
+                        try {
+                            await securityLog.logFailedLogin(req, email, 'User not found');
+                        } catch (e) {
+                            console.error('Error logging failed login:', e);
+                        }
+                    }
                     return res.status(401).json({ 
                         error: 'Invalid email or password' 
                     });
@@ -194,15 +210,19 @@ module.exports = async (req, res) => {
                 const isValid = await bcrypt.compare(password, passwordHash);
                 if (!isValid) {
                     // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
-                    try {
-                        await rateLimit.recordFailedAttempt(req, 'login', email);
-                    } catch (e) {
-                        console.error('Error recording failed attempt:', e);
+                    if (rateLimit && typeof rateLimit.recordFailedAttempt === 'function') {
+                        try {
+                            await rateLimit.recordFailedAttempt(req, 'login', email);
+                        } catch (e) {
+                            console.error('Error recording failed attempt:', e);
+                        }
                     }
-                    try {
-                        await securityLog.logFailedLogin(req, email, 'Invalid password');
-                    } catch (e) {
-                        console.error('Error logging failed login:', e);
+                    if (securityLog && typeof securityLog.logFailedLogin === 'function') {
+                        try {
+                            await securityLog.logFailedLogin(req, email, 'Invalid password');
+                        } catch (e) {
+                            console.error('Error logging failed login:', e);
+                        }
                     }
                     return res.status(401).json({ 
                         error: 'Invalid email or password' 
