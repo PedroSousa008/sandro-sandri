@@ -100,6 +100,19 @@ function initProductPage() {
             initSizeSelection(product);
         }
     });
+    
+    // Listen for chapter mode changes to update button
+    window.addEventListener('activeChapterUpdated', () => {
+        console.log('Chapter mode updated, refreshing product button...');
+        updateProductButtonForMode(product);
+    });
+    
+    // Listen for commerce mode changes to update button
+    window.addEventListener('commerceModeUpdated', () => {
+        console.log('Commerce mode updated, refreshing product button...');
+        updateProductButtonForMode(product);
+    });
+    
     loadRelatedProducts(product);
     
     // Initialize swipe navigation on mobile
