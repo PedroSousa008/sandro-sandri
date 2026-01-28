@@ -3,22 +3,44 @@
    Handles login, signup, and session verification
    ======================================== */
 
-const db = require('../../lib/storage');
-const bcrypt = require('bcryptjs');
-const auth = require('../../lib/auth');
-const crypto = require('crypto');
-const emailService = require('../../lib/email');
-const rateLimit = require('../../lib/rate-limit');
-const validation = require('../../lib/validation');
-const securityLog = require('../../lib/security-log');
-const cors = require('../../lib/cors');
-const errorHandler = require('../../lib/error-handler');
+// Load all dependencies safely
+let db, bcrypt, auth, crypto, emailService, rateLimit, validation, securityLog, cors, errorHandler;
+
+try {
+    db = require('../../lib/storage');
+    bcrypt = require('bcryptjs');
+    auth = require('../../lib/auth');
+    crypto = require('crypto');
+    emailService = require('../../lib/email');
+    rateLimit = require('../../lib/rate-limit');
+    validation = require('../../lib/validation');
+    securityLog = require('../../lib/security-log');
+    cors = require('../../lib/cors');
+    errorHandler = require('../../lib/error-handler');
+} catch (requireError) {
+    console.error('Error loading dependencies:', requireError);
+}
 
 module.exports = async (req, res) => {
+    // Ensure response is always JSON
+    const sendError = (status, message) => {
+        if (!res.headersSent) {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(status).json({ success: false, error: message });
+        }
+    };
+
     // Wrap entire handler in try-catch to ensure JSON responses
     try {
         // Set secure CORS headers (restricted to allowed origins)
-        cors.setCORSHeaders(res, req, ['GET', 'POST', 'OPTIONS']);
+        if (cors && typeof cors.setCORSHeaders === 'function') {
+            cors.setCORSHeaders(res, req, ['GET', 'POST', 'OPTIONS']);
+        } else {
+            // Fallback CORS headers
+            res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Token');
+        }
 
         if (req.method === 'OPTIONS') {
             return res.status(200).end();

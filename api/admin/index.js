@@ -3,13 +3,28 @@
    Combined admin endpoints (activity and customers)
    ======================================== */
 
-const db = require('../../lib/storage');
-const auth = require('../../lib/auth');
-const securityLog = require('../../lib/security-log');
-const cors = require('../../lib/cors');
-const errorHandler = require('../../lib/error-handler');
+// Load all dependencies safely
+let db, auth, securityLog, cors, errorHandler;
+
+try {
+    db = require('../../lib/storage');
+    auth = require('../../lib/auth');
+    securityLog = require('../../lib/security-log');
+    cors = require('../../lib/cors');
+    errorHandler = require('../../lib/error-handler');
+} catch (requireError) {
+    console.error('Error loading dependencies:', requireError);
+}
 
 module.exports = async (req, res) => {
+    // Ensure response is always JSON
+    const sendError = (status, message) => {
+        if (!res.headersSent) {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(status).json({ success: false, error: message });
+        }
+    };
+
     try {
         // Set secure CORS headers (restricted to allowed origins)
         cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
@@ -317,9 +332,14 @@ module.exports = async (req, res) => {
     } catch (error) {
         // SECURITY: Don't expose error details to users
         console.error('Admin API Error (outer catch):', error);
+        console.error('Error stack:', error.stack);
         // Ensure we always return JSON, even on error
         if (!res.headersSent) {
-            errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'ADMIN_ERROR');
+            if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
+                errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'ADMIN_ERROR');
+            } else {
+                sendError(500, 'Admin service unavailable. Please try again later.');
+            }
         }
     }
 };
