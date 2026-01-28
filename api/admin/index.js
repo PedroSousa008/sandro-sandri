@@ -118,15 +118,27 @@ module.exports = async (req, res) => {
             try {
                 await db.initDb();
 
-                const activityData = await db.getActivityData() || {};
+                let activityData;
+                try {
+                    activityData = await db.getActivityData() || {};
+                } catch (dbError) {
+                    console.error('Error getting activity data:', dbError);
+                    activityData = {};
+                }
+
                 const now = new Date();
                 const INACTIVE_THRESHOLD = 5 * 60 * 1000;
 
                 const activeSessions = Object.values(activityData).filter(session => {
                     if (!session || !session.lastActivity) return false;
-                    const lastActivityTime = new Date(session.lastActivity);
-                    const timeSinceActivity = now - lastActivityTime;
-                    return timeSinceActivity <= INACTIVE_THRESHOLD;
+                    try {
+                        const lastActivityTime = new Date(session.lastActivity);
+                        const timeSinceActivity = now - lastActivityTime;
+                        return timeSinceActivity <= INACTIVE_THRESHOLD;
+                    } catch (e) {
+                        console.error('Error parsing session lastActivity:', e);
+                        return false;
+                    }
                 });
 
                 const onlineUsers = activeSessions.filter(s => {
@@ -147,7 +159,10 @@ module.exports = async (req, res) => {
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
-                errorHandler.sendSecureError(res, error, 500, 'Failed to fetch activity. Please try again.', 'FETCH_ACTIVITY_ERROR');
+                console.error('Error in GET activity endpoint:', error);
+                if (!res.headersSent) {
+                    errorHandler.sendSecureError(res, error, 500, 'Failed to fetch activity. Please try again.', 'FETCH_ACTIVITY_ERROR');
+                }
             }
         }
     } else if (endpoint === 'customers') {
