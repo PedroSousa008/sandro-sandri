@@ -102,7 +102,15 @@ window.CommerceMode = {
         const isProductChapterI = product.id >= 1 && product.id <= 5;
         
         // Check if site is in "Upload Chapter II" mode
-        const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
+        // Wait for ActiveChapter to be available
+        let isChapterIIMode = false;
+        if (window.ActiveChapter) {
+            isChapterIIMode = window.ActiveChapter.isChapterII();
+        } else {
+            // ActiveChapter not loaded yet - default to false (Chapter I mode)
+            // This means all products will follow commerce mode until ActiveChapter loads
+            console.warn('ActiveChapter not loaded yet, defaulting to Chapter I mode');
+        }
         
         // If NOT in "Upload Chapter II" mode, all products follow commerce mode normally
         if (!isChapterIIMode) {
@@ -115,14 +123,18 @@ window.CommerceMode = {
         // IN "Upload Chapter II" MODE:
         if (isProductChapterI) {
             // Chapter I products: ALWAYS "Add to Cart" (regardless of commerce mode)
+            console.log(`Product ${product.id} (${product.name}) is Chapter I - using Add to Cart (Upload Chapter II mode active)`);
             return 'Add to Cart';
         } else if (isProductChapterII) {
             // Chapter II products: Follow commerce mode
             if (this.isWaitlistMode()) {
+                console.log(`Product ${product.id} (${product.name}) is Chapter II - using Join the Waitlist (WAITLIST mode)`);
                 return 'Join the Waitlist';
             } else if (this.isEarlyAccessMode()) {
+                console.log(`Product ${product.id} (${product.name}) is Chapter II - using Add to Cart (EARLY_ACCESS mode)`);
                 return 'Add to Cart'; // Early Access - limited inventory
             } else {
+                console.log(`Product ${product.id} (${product.name}) is Chapter II - using Add to Cart (LIVE mode)`);
                 return 'Add to Cart'; // LIVE mode
             }
         }
