@@ -271,10 +271,24 @@
                 console.log('Chapter II Products from API:', chapterIIProducts);
                 if (chapterIIProducts.length > 0) {
                     // Use ProductsAPI data to ensure correct images and names
-                    productsGrid.innerHTML = chapterIIProducts.slice(0, 5).map(product => {
+                    // Render products with async button text
+                    let html = '';
+                    for (const product of chapterIIProducts.slice(0, 5)) {
                         const imageUrl = product.images && product.images.length > 1 ? product.images[1] : product.images[0];
                         console.log(`Product ${product.id} (${product.name}): Using image:`, imageUrl);
-                        return `
+                        
+                        // Get button text (async)
+                        let buttonText = 'Add to Cart';
+                        if (window.CommerceMode && typeof window.CommerceMode.getButtonTextForProduct === 'function') {
+                            try {
+                                buttonText = await window.CommerceMode.getButtonTextForProduct(product);
+                                console.log(`✅ Homepage Chapter II - Product ${product.id} button text: ${buttonText}`);
+                            } catch (error) {
+                                console.error(`Error getting button text for product ${product.id}:`, error);
+                            }
+                        }
+                        
+                        html += `
                         <article class="product-card" data-product-id="${product.id}">
                             <a href="product.html?id=${product.id}&chapter=ii" class="product-link">
                                 <div class="product-image">
@@ -285,10 +299,11 @@
                                     <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                                 </div>
                             </a>
-                            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct(product) : 'Add to Cart'}</button>
+                            <button class="quick-add" data-product-id="${product.id}">${buttonText}</button>
                         </article>
                     `;
-                    }).join('');
+                    }
+                    productsGrid.innerHTML = html;
                 } else {
                      // Fallback: hardcoded Chapter II products with async button text
                      let html = '';
