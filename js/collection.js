@@ -52,17 +52,8 @@ function initCollection() {
                     btn.classList.add('active');
                 }
             });
-            // Update page title based on current chapter
-            updateCollectionPageTitle(currentChapter);
-            // Re-render products to update button texts based on new chapter mode
             renderProducts();
         }
-    });
-    
-    // Also listen for commerce mode changes to update button texts
-    window.addEventListener('commerceModeUpdated', () => {
-        // Re-render products to update button texts
-        renderProducts();
     });
 
     // Set initial chapter based on active chapter from server
@@ -90,9 +81,6 @@ function initCollection() {
         }
     });
 
-    // Update page title based on initial chapter
-    updateCollectionPageTitle(currentChapter);
-    
     // Initial render
     renderProducts();
 
@@ -103,10 +91,6 @@ function initCollection() {
             btn.classList.add('active');
             currentChapter = btn.dataset.chapter;
             currentCollection = null; // Reset collection filter when selecting chapter
-            
-            // Update page title and subtitle based on selected chapter
-            updateCollectionPageTitle(currentChapter);
-            
             renderProducts();
             
             // Update URL without reload
@@ -149,7 +133,7 @@ function initCollection() {
         }
     }
 
-    async function renderProducts() {
+    function renderProducts() {
         // Force refresh products data to ensure we have latest names
         let products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
         
@@ -166,25 +150,13 @@ function initCollection() {
         // Sort products
         products = sortProducts(products, currentSort);
 
-        // Render products (async to support chapter-specific modes)
-        let html = '';
-        for (const product of products) {
+        // Render products
+        productsGrid.innerHTML = products.map(product => {
             // For Chapter II products (IDs 6-10), use image index 1 (maldives2.png, palma2.png, etc.)
             // For Chapter I products (IDs 1-5), use image index 1 (tshirt-*b.png)
             const imageUrl = product.images && product.images.length > 1 ? product.images[1] : (product.images[0] || '');
             console.log(`Collection - Product ${product.id} (${product.name}): Using image:`, imageUrl, 'All images:', product.images);
-            
-            // Get button text (async)
-            let buttonText = 'Add to Cart';
-            if (window.CommerceMode && typeof window.CommerceMode.getButtonTextForProduct === 'function') {
-                try {
-                    buttonText = await window.CommerceMode.getButtonTextForProduct(product);
-                } catch (error) {
-                    console.error('Error getting button text for product:', error);
-                }
-            }
-            
-            html += `
+            return `
             <article class="product-card" data-product-id="${product.id}">
                 <a href="product.html?id=${product.id}" class="product-link">
                     <div class="product-image">
@@ -195,11 +167,10 @@ function initCollection() {
                         <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                     </div>
                 </a>
-                <button class="quick-add" data-product-id="${product.id}">${buttonText}</button>
+                <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
             </article>
         `;
-        }
-        productsGrid.innerHTML = html;
+        }).join('');
 
         // Add "View All" link if filtered
         if (currentCollection) {
@@ -228,21 +199,6 @@ function initCollection() {
 
         // Add quick-add functionality
         initQuickAdd();
-    }
-
-    function updateCollectionPageTitle(chapterId) {
-        const pageLabel = document.getElementById('collection-page-label');
-        const pageSubtitle = document.getElementById('collection-page-subtitle');
-        
-        if (chapterId === 'chapter-2') {
-            // Chapter II
-            if (pageLabel) pageLabel.textContent = 'Chapter II';
-            if (pageSubtitle) pageSubtitle.textContent = 'Golden Hour in Whispering Eden';
-        } else {
-            // Chapter I (default)
-            if (pageLabel) pageLabel.textContent = 'Chapter I';
-            if (pageSubtitle) pageSubtitle.textContent = 'A Quiet Season in Blossom Paradise';
-        }
     }
 
     function filterByChapter(products, chapterId) {
@@ -330,9 +286,8 @@ function initCollection() {
                 // Get default size from product or use 'M'
                 const defaultSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M';
                 
-                // Check if this product should use waitlist behavior
-                const shouldUseWaitlist = window.CommerceMode && window.CommerceMode.shouldUseWaitlistBehavior(product);
-                if (shouldUseWaitlist) {
+                // Check if in WAITLIST mode
+                if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
                     // Check if user is logged in
                     const isLoggedIn = window.CommerceMode.isUserLoggedIn();
                     
@@ -354,15 +309,10 @@ function initCollection() {
                         
                         // Send to Formspree for logged-in users
                         try {
-                            // Determine chapter for the product
-                            const isChapterII = product.id >= 6 && product.id <= 10;
-                            const chapter = isChapterII ? 'Chapter II' : 'Chapter I';
-                            
                             const waitlistData = {
-                                _subject: `Waitlist Request - ${product.name} (${chapter}) - Logged In User`,
+                                _subject: `Waitlist Request - ${product.name} (Logged In User)`,
                                 product_id: product.id,
                                 product_name: product.name,
-                                chapter: chapter,
                                 size: defaultSize,
                                 color: null,
                                 quantity: 1,
@@ -373,9 +323,7 @@ function initCollection() {
                                 user_status: 'Logged In'
                             };
                             
-                            // Send to Formspree and wait for response to ensure it's sent
-                            console.log('📧 Sending waitlist email to Formspree (collection page, logged in):', waitlistData);
-                            
+                            // Send to Formspree (fire and forget - don't wait for response)
                             fetch('https://formspree.io/f/meoyldeq', {
                                 method: 'POST',
                                 headers: {
@@ -383,42 +331,9 @@ function initCollection() {
                                     'Accept': 'application/json'
                                 },
                                 body: JSON.stringify(waitlistData)
-                            })
-                            .then(response => {
-                                console.log('📧 Formspree response status (collection):', response.status, response.statusText);
-                                if (response.ok) {
-                                    console.log('✅ Waitlist email sent successfully (collection page)');
-                                } else {
-                                    console.error('❌ Formspree returned error:', response.status, response.statusText);
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                console.log('📧 Formspree response data:', data);
-                            })
-                            .catch(err => {
-                                console.error('❌ Error sending waitlist Formspree for logged-in user:', err);
-                                // Try to send again after 2 seconds
-                                setTimeout(() => {
-                                    console.log('🔄 Retrying Formspree submission...');
-                                    fetch('https://formspree.io/f/meoyldeq', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Accept': 'application/json'
-                                        },
-                                        body: JSON.stringify(waitlistData)
-                                    })
-                                    .then(retryResponse => {
-                                        console.log('📧 Retry response:', retryResponse.status);
-                                        if (retryResponse.ok) {
-                                            console.log('✅ Waitlist email sent successfully on retry');
-                                        }
-                                    })
-                                    .catch(retryErr => {
-                                        console.error('❌ Retry also failed:', retryErr);
-                                    });
-                                }, 2000);
+                            }).catch(err => {
+                                console.error('Error sending waitlist Formspree for logged-in user:', err);
+                                // Don't show error to user - just log it
                             });
                         } catch (error) {
                             console.error('Error preparing waitlist Formspree for logged-in user:', error);

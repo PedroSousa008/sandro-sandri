@@ -80,29 +80,7 @@ class AuthSystem {
                 })
             });
 
-            // Check if response is OK and content-type is JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                console.error('Non-JSON response from server:', text.substring(0, 200));
-                return { 
-                    success: false, 
-                    error: `Server error (${response.status}). Please try again.` 
-                };
-            }
-
-            let data;
-            try {
-                data = await response.json();
-            } catch (parseError) {
-                console.error('Failed to parse JSON response:', parseError);
-                const text = await response.text();
-                console.error('Response text:', text.substring(0, 200));
-                return { 
-                    success: false, 
-                    error: 'Invalid response from server. Please try again.' 
-                };
-            }
+            const data = await response.json();
 
             if (!response.ok) {
                 // Check if email is not verified

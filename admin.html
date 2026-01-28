@@ -345,37 +345,15 @@
             <h2 class="admin-section-title">Chapter Management</h2>
             <div style="margin-bottom: var(--space-md);">
                 <p style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text-light); margin-bottom: var(--space-md);">
-                    Control which chapter is displayed on the website and set the commerce mode for each chapter. Only chapters marked as "Created" can have their modes changed.
+                    Control which chapter is displayed on the website. Chapter I shows the current collection. Chapter II will show the new collection when activated.
                 </p>
-            </div>
-            <div id="chapter-modes-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
-                Loading chapter modes...
-            </div>
-            <div id="chapter-modes-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
-            <div id="chapter-modes-table-container" style="overflow-x: auto; display: none;">
-                <table id="chapter-modes-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-                    <thead>
-                        <tr style="background: var(--color-navy); color: white;">
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-navy); z-index: 10;">
-                                Chapter <span style="font-size: 0.75rem;">▼</span>
-                            </th>
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
-                                Join the Waitlist <span style="font-size: 0.75rem;">▼</span>
-                            </th>
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
-                                Early Access <span style="font-size: 0.75rem;">▼</span>
-                            </th>
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
-                                Add to Cart <span style="font-size: 0.75rem;">▼</span>
-                            </th>
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
-                                Created <span style="font-size: 0.75rem;">▼</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="chapter-modes-tbody">
-                    </tbody>
-                </table>
+                <div style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center;">
+                    <button class="admin-action-btn admin-action-btn-primary" id="set-chapter-i-btn">Chapter I</button>
+                    <button class="admin-action-btn admin-action-btn-secondary" id="set-chapter-ii-btn">Upload Chapter II</button>
+                    <span id="active-chapter-status" style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text-light); margin-left: var(--space-sm);">
+                        Loading...
+                    </span>
+                </div>
             </div>
             <div id="chapter-message" style="display: none; padding: var(--space-sm) var(--space-md); margin-top: var(--space-md); border-radius: 4px; font-family: var(--font-sans); font-size: 0.875rem;"></div>
         </div>
@@ -457,7 +435,6 @@
                     const data = await response.json();
                     if (data.success) {
                         currentCommerceMode = data.commerce_mode || 'LIVE';
-                        window.currentCommerceMode = currentCommerceMode;
                         document.getElementById('current-commerce-mode').textContent = currentCommerceMode;
                     }
                 }
@@ -496,7 +473,6 @@
 
                 if (response.ok && data.success) {
                     currentCommerceMode = mode;
-                    window.currentCommerceMode = mode;
                     document.getElementById('current-commerce-mode').textContent = mode;
                     
                     // Show success message
@@ -1353,18 +1329,14 @@
                 }
 
                 const inventoryData = await inventoryResponse.json();
-                console.log('📦 Inventory data received:', inventoryData);
 
                 // Get products from window.ProductsAPI
                 const products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
                 const tshirtProducts = products.filter(p => p.category === 'tshirts');
-                console.log('📦 T-shirt products found:', tshirtProducts.length, tshirtProducts.map(p => ({ id: p.id, name: p.name })));
 
                 // Get stock levels for each product
                 const stockData = tshirtProducts.map(product => {
                     const productInventory = inventoryData.find(inv => inv.productId === product.id);
-                    console.log(`📦 Product ${product.id} (${product.name}):`, productInventory);
-                    
                     const stock = {
                         XS: 0,
                         S: 0,
@@ -1380,8 +1352,6 @@
                                 stock[sizeInfo.size] = sizeInfo.stock || 0;
                             }
                         });
-                    } else {
-                        console.warn(`⚠️ Product ${product.id} (${product.name}) has no inventory data!`);
                     }
 
                     // Calculate total stock
@@ -1484,266 +1454,7 @@
 
         document.getElementById('load-stock-btn').addEventListener('click', loadStock);
 
-        // Chapter Modes Management (NEW SYSTEM)
-        let chaptersData = [];
-        let activeChapterId = null;
-
-        async function loadChapterModes() {
-            const loadingEl = document.getElementById('chapter-modes-loading');
-            const errorEl = document.getElementById('chapter-modes-error');
-            const tableContainer = document.getElementById('chapter-modes-table-container');
-            const tbody = document.getElementById('chapter-modes-tbody');
-
-            loadingEl.style.display = 'block';
-            errorEl.style.display = 'none';
-            tableContainer.style.display = 'none';
-
-            try {
-                const token = localStorage.getItem('sandroSandri_session_token');
-                if (!token) {
-                    throw new Error('Not authenticated');
-                }
-
-                const response = await fetch('/api/site-settings?setting=chapters', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'X-Session-Token': token
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to load chapters');
-                }
-
-                const data = await response.json();
-                if (!data.success) {
-                    throw new Error(data.error || 'Failed to load chapters');
-                }
-
-                chaptersData = data.chapters || [];
-                activeChapterId = data.activeChapterId || null;
-
-                renderChapterModesTable(chaptersData, activeChapterId);
-                tableContainer.style.display = 'block';
-
-            } catch (error) {
-                console.error('Error loading chapters:', error);
-                errorEl.textContent = `Error: ${error.message}`;
-                errorEl.style.display = 'block';
-            } finally {
-                loadingEl.style.display = 'none';
-            }
-        }
-
-        function renderChapterModesTable(chapters, activeChapterId) {
-            const tbody = document.getElementById('chapter-modes-tbody');
-
-            let html = '';
-            chapters.forEach((chapter, index) => {
-                const isCreated = chapter.created === true;
-                const currentMode = chapter.mode || 'add_to_cart';
-                const isActiveChapter = chapter.id === activeChapterId;
-                
-                // Determine if mode buttons should be enabled:
-                // - Only if chapter is created AND is the active chapter
-                const canEditMode = isCreated && isActiveChapter;
-                
-                // Determine if previous chapters should be locked to "add_to_cart"
-                const isPreviousChapter = isCreated && !isActiveChapter;
-                const lockedMode = isPreviousChapter ? 'add_to_cart' : currentMode;
-                
-                const rowClass = index % 2 === 0 ? 'style="background: var(--color-white);"' : 'style="background: var(--color-gray-light);"';
-
-                html += `
-                    <tr ${rowClass}>
-                        <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 500; position: sticky; left: 0; background: inherit;">
-                            ${chapter.name} ${isActiveChapter ? '<span style="color: #4caf50; font-size: 0.7rem;">(Active)</span>' : ''}
-                        </td>
-                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                            ${isCreated ? `
-                                <button class="chapter-mode-btn ${lockedMode === 'waitlist' ? 'active' : ''}" 
-                                        data-chapter="${chapter.id}" 
-                                        data-mode="waitlist"
-                                        ${canEditMode ? '' : 'disabled'}
-                                        style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-sans); font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 2px; cursor: ${canEditMode ? 'pointer' : 'not-allowed'}; background: ${lockedMode === 'waitlist' ? '#4caf50' : (canEditMode ? '#000' : '#666')}; color: white; min-width: 40px; opacity: ${canEditMode ? '1' : '0.6'};">
-                                    ${lockedMode === 'waitlist' ? '✓' : ''}
-                                </button>
-                            ` : '-'}
-                        </td>
-                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                            ${isCreated ? `
-                                <button class="chapter-mode-btn ${lockedMode === 'early_access' ? 'active' : ''}" 
-                                        data-chapter="${chapter.id}" 
-                                        data-mode="early_access"
-                                        ${canEditMode ? '' : 'disabled'}
-                                        style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-sans); font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 2px; cursor: ${canEditMode ? 'pointer' : 'not-allowed'}; background: ${lockedMode === 'early_access' ? '#4caf50' : (canEditMode ? '#000' : '#666')}; color: white; min-width: 40px; opacity: ${canEditMode ? '1' : '0.6'};">
-                                    ${lockedMode === 'early_access' ? '✓' : ''}
-                                </button>
-                            ` : '-'}
-                        </td>
-                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                            ${isCreated ? `
-                                <button class="chapter-mode-btn ${lockedMode === 'add_to_cart' ? 'active' : ''}" 
-                                        data-chapter="${chapter.id}" 
-                                        data-mode="add_to_cart"
-                                        ${canEditMode ? '' : 'disabled'}
-                                        style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-sans); font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 2px; cursor: ${canEditMode ? 'pointer' : 'not-allowed'}; background: ${lockedMode === 'add_to_cart' ? '#4caf50' : (canEditMode ? '#000' : '#666')}; color: white; min-width: 40px; opacity: ${canEditMode ? '1' : '0.6'};">
-                                    ${lockedMode === 'add_to_cart' ? '✓' : ''}
-                                </button>
-                            ` : '-'}
-                        </td>
-                        <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                            <button class="chapter-created-btn ${isCreated ? 'active' : ''}" 
-                                    data-chapter="${chapter.id}"
-                                    style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-sans); font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 2px; cursor: pointer; background: ${isCreated ? '#4caf50' : '#000'}; color: white; min-width: 50px;">
-                                ${isCreated ? 'Sim' : 'Não'}
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            tbody.innerHTML = html;
-
-            // Bind event listeners
-            bindChapterModeButtons();
-        }
-
-        function bindChapterModeButtons() {
-            // Created buttons
-            document.querySelectorAll('.chapter-created-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const chapter = btn.dataset.chapter;
-                    const isCurrentlyCreated = btn.textContent.trim() === 'Sim';
-                    const newCreatedState = !isCurrentlyCreated;
-
-                    await setChapterCreated(chapter, newCreatedState);
-                    await loadChapterModes(); // Reload table
-                });
-            });
-
-            // Mode buttons (only work if chapter is created)
-            document.querySelectorAll('.chapter-mode-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const chapter = btn.dataset.chapter;
-                    const mode = btn.dataset.mode;
-
-                    await setChapterMode(chapter, mode);
-                    await loadChapterModes(); // Reload table
-                });
-            });
-        }
-
-        async function setChapterCreated(chapterId, created) {
-            try {
-                const token = localStorage.getItem('sandroSandri_session_token');
-                if (!token) {
-                    throw new Error('Not authenticated');
-                }
-
-                const response = await fetch('/api/site-settings?setting=chapters', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                        'X-Session-Token': token
-                    },
-                    body: JSON.stringify({
-                        chapterId: chapterId,
-                        created: created
-                    })
-                });
-
-                const data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'Failed to update chapter created status');
-                }
-
-                // Reload chapters to get updated activeChapterId
-                await loadChapterModes();
-
-                const messageEl = document.getElementById('chapter-message');
-                const chapterName = chaptersData.find(ch => ch.id === chapterId)?.name || chapterId;
-                messageEl.textContent = `${chapterName} ${created ? 'marked as created' : 'marked as not created'}. ${created ? 'It is now the active chapter.' : ''}`;
-                messageEl.style.display = 'block';
-                messageEl.style.background = '#e8f5e9';
-                messageEl.style.color = '#2e7d32';
-                messageEl.style.border = '1px solid #4caf50';
-                setTimeout(() => {
-                    messageEl.style.display = 'none';
-                }, 5000);
-
-            } catch (error) {
-                console.error('Error setting chapter created:', error);
-                const messageEl = document.getElementById('chapter-message');
-                messageEl.textContent = `Error: ${error.message}`;
-                messageEl.style.display = 'block';
-                messageEl.style.background = '#ffebee';
-                messageEl.style.color = '#c62828';
-                messageEl.style.border = '1px solid #ef5350';
-            }
-        }
-
-        async function setChapterMode(chapterId, mode) {
-            try {
-                const token = localStorage.getItem('sandroSandri_session_token');
-                if (!token) {
-                    throw new Error('Not authenticated');
-                }
-
-                // Check if this chapter is the active chapter (only active chapter can have mode changed)
-                if (chapterId !== activeChapterId) {
-                    throw new Error('Only the active chapter can have its mode changed. Previous chapters are locked to "Add to Cart".');
-                }
-
-                const response = await fetch('/api/site-settings?setting=chapters', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                        'X-Session-Token': token
-                    },
-                    body: JSON.stringify({
-                        chapterId: chapterId,
-                        mode: mode
-                    })
-                });
-
-                const data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'Failed to update chapter mode');
-                }
-
-                // Reload chapters to get updated state
-                await loadChapterModes();
-
-                const messageEl = document.getElementById('chapter-message');
-                const chapterName = chaptersData.find(ch => ch.id === chapterId)?.name || chapterId;
-                const modeLabel = mode === 'waitlist' ? 'Join the Waitlist' : (mode === 'early_access' ? 'Early Access' : 'Add to Cart');
-                messageEl.textContent = `${chapterName} mode set to ${modeLabel}. Changes will be reflected on the website immediately.`;
-                messageEl.style.display = 'block';
-                messageEl.style.background = '#e8f5e9';
-                messageEl.style.color = '#2e7d32';
-                messageEl.style.border = '1px solid #4caf50';
-                setTimeout(() => {
-                    messageEl.style.display = 'none';
-                }, 5000);
-
-            } catch (error) {
-                console.error('Error setting chapter mode:', error);
-                const messageEl = document.getElementById('chapter-message');
-                messageEl.textContent = `Error: ${error.message}`;
-                messageEl.style.display = 'block';
-                messageEl.style.background = '#ffebee';
-                messageEl.style.color = '#c62828';
-                messageEl.style.border = '1px solid #ef5350';
-            }
-        }
-
-        // Load chapter modes on page load
-        loadChapterModes();
-
-        // Chapter Management (Legacy - keeping for backward compatibility)
+        // Chapter Management
         async function loadActiveChapter() {
             try {
                 const token = localStorage.getItem('sandroSandri_session_token');
@@ -1825,21 +1536,13 @@
             }
         }
 
-        // Legacy chapter buttons (keeping for backward compatibility)
-        const setChapterIBtn = document.getElementById('set-chapter-i-btn');
-        const setChapterIIBtn = document.getElementById('set-chapter-ii-btn');
-        
-        if (setChapterIBtn) {
-            setChapterIBtn.addEventListener('click', () => {
-                setActiveChapter('chapter_i');
-            });
-        }
-        
-        if (setChapterIIBtn) {
-            setChapterIIBtn.addEventListener('click', () => {
-                setActiveChapter('chapter_ii');
-            });
-        }
+        document.getElementById('set-chapter-i-btn').addEventListener('click', () => {
+            setActiveChapter('chapter_i');
+        });
+
+        document.getElementById('set-chapter-ii-btn').addEventListener('click', () => {
+            setActiveChapter('chapter_ii');
+        });
 
         // Load active chapter on page load
         loadActiveChapter();

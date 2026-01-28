@@ -233,35 +233,20 @@ module.exports = async (req, res) => {
     }
     
     try {
-        // Check commerce mode - block checkout in WAITLIST mode (unless all items are Chapter I in Upload Chapter II mode)
+        // Check commerce mode - block checkout in WAITLIST mode
         const db = require('../../lib/storage');
         await db.initDb();
         const settings = await db.getSiteSettings();
         const commerceMode = settings.commerce_mode || 'LIVE';
-        const activeChapter = settings.active_chapter || 'chapter_i';
+        
+        if (commerceMode === 'WAITLIST') {
+            return res.status(403).json({
+                error: 'CHECKOUT_DISABLED',
+                message: 'Chapter I is not available yet. Join the waitlist to be notified.'
+            });
+        }
         
         const { cart, customerInfo } = req.body;
-        
-        // If in WAITLIST mode, check if cart contains only Chapter I products
-        if (commerceMode === 'WAITLIST') {
-            // Check if all items in cart are Chapter I (IDs 1-5)
-            const allChapterI = cart && cart.every(item => {
-                const productId = item.productId || item.id;
-                return productId >= 1 && productId <= 5;
-            });
-            
-            // If we're in "Upload Chapter II" mode AND all items are Chapter I, allow checkout
-            if (activeChapter === 'chapter_ii' && allChapterI && cart && cart.length > 0) {
-                console.log('✅ Checkout allowed: All items are Chapter I in Upload Chapter II mode');
-                // Continue with checkout
-            } else {
-                // Block checkout - contains Chapter II items or not in Upload Chapter II mode
-                return res.status(403).json({
-                    error: 'CHECKOUT_DISABLED',
-                    message: 'Chapter II is not available yet. Join the waitlist to be notified.'
-                });
-            }
-        }
         
         if (!cart || !Array.isArray(cart) || cart.length === 0) {
             return res.status(400).json({ error: 'INVALID_CART', message: 'Cart is empty or invalid' });

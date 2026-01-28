@@ -262,7 +262,9 @@ const PRODUCTS = [
         ],
         images: [
             "images/palma1.png",
-            "images/palma2.png"
+            "images/palma2.png",
+            "images/palma3.png",
+            "images/palma4.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -300,7 +302,9 @@ const PRODUCTS = [
         ],
         images: [
             "images/lago1.png",
-            "images/lago2.png"
+            "images/lago2.png",
+            "images/lago3.png",
+            "images/lago4.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -338,7 +342,9 @@ const PRODUCTS = [
         ],
         images: [
             "images/gisele1.png",
-            "images/gisele2.png"
+            "images/gisele2.png",
+            "images/gisele3.png",
+            "images/gisele4.png"
         ],
         collection: {
             title: "Chapter II Collection",
@@ -376,7 +382,9 @@ const PRODUCTS = [
         ],
         images: [
             "images/pourville1.png",
-            "images/pourville2.png"
+            "images/pourville2.png",
+            "images/pourville3.png",
+            "images/pourville4.png"
         ],
         collection: {
             title: "Chapter II Collection",

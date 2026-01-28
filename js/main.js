@@ -549,15 +549,10 @@ function createInlineSizeSelector(button, product) {
                     
                     // Send to Formspree for logged-in users
                     try {
-                        // Determine chapter for the product
-                        const isChapterII = product.id >= 6 && product.id <= 10;
-                        const chapter = isChapterII ? 'Chapter II' : 'Chapter I';
-                        
                         const waitlistData = {
-                            _subject: `Waitlist Request - ${product.name} (${chapter}) - Logged In User`,
+                            _subject: `Waitlist Request - ${product.name} (Logged In User)`,
                             product_id: product.id,
                             product_name: product.name,
-                            chapter: chapter,
                             size: size,
                             color: null,
                             quantity: 1,
@@ -568,9 +563,7 @@ function createInlineSizeSelector(button, product) {
                             user_status: 'Logged In'
                         };
                         
-                        // Send to Formspree and wait for response to ensure it's sent
-                        console.log('📧 Sending waitlist email to Formspree (homepage, logged in):', waitlistData);
-                        
+                        // Send to Formspree (fire and forget - don't wait for response)
                         fetch('https://formspree.io/f/meoyldeq', {
                             method: 'POST',
                             headers: {
@@ -578,42 +571,9 @@ function createInlineSizeSelector(button, product) {
                                 'Accept': 'application/json'
                             },
                             body: JSON.stringify(waitlistData)
-                        })
-                        .then(response => {
-                            console.log('📧 Formspree response status (homepage):', response.status, response.statusText);
-                            if (response.ok) {
-                                console.log('✅ Waitlist email sent successfully (homepage)');
-                            } else {
-                                console.error('❌ Formspree returned error:', response.status, response.statusText);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('📧 Formspree response data:', data);
-                        })
-                        .catch(err => {
-                            console.error('❌ Error sending waitlist Formspree for logged-in user:', err);
-                            // Try to send again after 2 seconds
-                            setTimeout(() => {
-                                console.log('🔄 Retrying Formspree submission...');
-                                fetch('https://formspree.io/f/meoyldeq', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify(waitlistData)
-                                })
-                                .then(retryResponse => {
-                                    console.log('📧 Retry response:', retryResponse.status);
-                                    if (retryResponse.ok) {
-                                        console.log('✅ Waitlist email sent successfully on retry');
-                                    }
-                                })
-                                .catch(retryErr => {
-                                    console.error('❌ Retry also failed:', retryErr);
-                                });
-                            }, 2000);
+                        }).catch(err => {
+                            console.error('Error sending waitlist Formspree for logged-in user:', err);
+                            // Don't show error to user - just log it
                         });
                     } catch (error) {
                         console.error('Error preparing waitlist Formspree for logged-in user:', error);

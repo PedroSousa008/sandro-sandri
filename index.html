@@ -238,7 +238,6 @@
     <script src="js/user-sync.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/products.js"></script>
-    <script src="js/chapter-mode.js"></script>
     <script src="js/commerce-mode.js"></script>
     <script src="js/active-chapter.js"></script>
     <script src="js/inventory.js"></script>
@@ -247,17 +246,11 @@
     <script src="js/cart.js"></script>
     <script src="js/main.js"></script>
     <script>
-        // Update homepage based on active chapter (NEW SYSTEM)
+        // Update homepage based on active chapter
         async function updateHomepageForChapter() {
-            // Wait for ChapterMode to be initialized
-            if (!window.ChapterMode || !window.ChapterMode.isInitialized) {
-                await window.ChapterMode.loadChapters();
-            }
-            
-            const activeChapterId = window.ChapterMode.activeChapterId || 'chapter_i';
-            const activeChapter = window.ChapterMode.getActiveChapter();
-            const chapterLabel = activeChapter ? activeChapter.name : 'Chapter I';
-            const isChapterII = activeChapterId === 'chapter_ii';
+            const chapter = window.ActiveChapter.getChapter();
+            const isChapterII = window.ActiveChapter.isChapterII();
+            const chapterLabel = window.ActiveChapter.getChapterLabel();
             
             // Update chapter labels
             const heroLabel = document.getElementById('hero-chapter-label');
@@ -278,24 +271,10 @@
                 console.log('Chapter II Products from API:', chapterIIProducts);
                 if (chapterIIProducts.length > 0) {
                     // Use ProductsAPI data to ensure correct images and names
-                    // Render products with async button text
-                    let html = '';
-                    for (const product of chapterIIProducts.slice(0, 5)) {
+                    productsGrid.innerHTML = chapterIIProducts.slice(0, 5).map(product => {
                         const imageUrl = product.images && product.images.length > 1 ? product.images[1] : product.images[0];
                         console.log(`Product ${product.id} (${product.name}): Using image:`, imageUrl);
-                        
-                        // Get button text (async)
-                        let buttonText = 'Add to Cart';
-                        if (window.CommerceMode && typeof window.CommerceMode.getButtonTextForProduct === 'function') {
-                            try {
-                                buttonText = await window.CommerceMode.getButtonTextForProduct(product);
-                                console.log(`✅ Homepage Chapter II - Product ${product.id} button text: ${buttonText}`);
-                            } catch (error) {
-                                console.error(`Error getting button text for product ${product.id}:`, error);
-                            }
-                        }
-                        
-                        html += `
+                        return `
                         <article class="product-card" data-product-id="${product.id}">
                             <a href="product.html?id=${product.id}&chapter=ii" class="product-link">
                                 <div class="product-image">
@@ -306,49 +285,74 @@
                                     <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                                 </div>
                             </a>
-                            <button class="quick-add" data-product-id="${product.id}">${buttonText}</button>
+                            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
                         </article>
                     `;
-                    }
-                    productsGrid.innerHTML = html;
+                    }).join('');
                 } else {
-                     // Fallback: hardcoded Chapter II products with async button text
-                     let html = '';
-                     const chapterIIProducts = [
-                         {id: 6, name: 'Maldives', image: 'images/maldives2.png'},
-                         {id: 7, name: 'Palma Mallorca', image: 'images/palma2.png'},
-                         {id: 8, name: 'Lago di Como', image: 'images/lago2.png'},
-                         {id: 9, name: 'Gisele', image: 'images/gisele2.png'},
-                         {id: 10, name: 'Pourville', image: 'images/pourville2.png'}
-                     ];
-                     
-                     for (const product of chapterIIProducts) {
-                         // Get button text (async)
-                         let buttonText = 'Add to Cart';
-                         if (window.CommerceMode && typeof window.CommerceMode.getButtonTextForProduct === 'function') {
-                             try {
-                                 buttonText = await window.CommerceMode.getButtonTextForProduct({id: product.id, chapter: 'chapter_ii'});
-                             } catch (error) {
-                                 console.error('Error getting button text for product:', error);
-                             }
-                         }
-                         
-                         html += `
-                         <article class="product-card" data-product-id="${product.id}">
-                             <a href="product.html?id=${product.id}&chapter=ii" class="product-link">
+                     // Fallback: hardcoded Chapter II products
+                     productsGrid.innerHTML = `
+                         <article class="product-card" data-product-id="6">
+                             <a href="product.html?id=6&chapter=ii" class="product-link">
                                  <div class="product-image">
-                                     <img src="${product.image}?v=3.0" alt="${product.name}" onerror="console.error('Failed to load ${product.image}');">
+                                     <img src="images/maldives2.png?v=3.0" alt="Maldives" onerror="console.error('Failed to load maldives2.png');">
                                  </div>
                                  <div class="product-info">
-                                     <h3 class="product-name">${product.name}</h3>
+                                     <h3 class="product-name">Maldives</h3>
                                      <p class="product-price">€95</p>
                                  </div>
                              </a>
-                             <button class="quick-add" data-product-id="${product.id}">${buttonText}</button>
+                             <button class="quick-add" data-product-id="6">Add to Cart</button>
+                         </article>
+                         <article class="product-card" data-product-id="7">
+                             <a href="product.html?id=7&chapter=ii" class="product-link">
+                                 <div class="product-image">
+                                     <img src="images/palma2.png?v=3.0" alt="Palma Mallorca" onerror="console.error('Failed to load palma2.png');">
+                                 </div>
+                                 <div class="product-info">
+                                     <h3 class="product-name">Palma Mallorca</h3>
+                                     <p class="product-price">€95</p>
+                                 </div>
+                             </a>
+                             <button class="quick-add" data-product-id="7">Add to Cart</button>
+                         </article>
+                         <article class="product-card" data-product-id="8">
+                             <a href="product.html?id=8&chapter=ii" class="product-link">
+                                 <div class="product-image">
+                                     <img src="images/lago2.png?v=3.0" alt="Lago di Como" onerror="console.error('Failed to load lago2.png');">
+                                 </div>
+                                 <div class="product-info">
+                                     <h3 class="product-name">Lago di Como</h3>
+                                     <p class="product-price">€95</p>
+                                 </div>
+                             </a>
+                             <button class="quick-add" data-product-id="8">Add to Cart</button>
+                         </article>
+                         <article class="product-card" data-product-id="9">
+                             <a href="product.html?id=9&chapter=ii" class="product-link">
+                                 <div class="product-image">
+                                     <img src="images/gisele2.png?v=3.0" alt="Gisele" onerror="console.error('Failed to load gisele2.png');">
+                                 </div>
+                                 <div class="product-info">
+                                     <h3 class="product-name">Gisele</h3>
+                                     <p class="product-price">€95</p>
+                                 </div>
+                             </a>
+                             <button class="quick-add" data-product-id="9">Add to Cart</button>
+                         </article>
+                         <article class="product-card" data-product-id="10">
+                             <a href="product.html?id=10&chapter=ii" class="product-link">
+                                 <div class="product-image">
+                                     <img src="images/pourville2.png?v=3.0" alt="Pourville" onerror="console.error('Failed to load pourville2.png');">
+                                 </div>
+                                 <div class="product-info">
+                                     <h3 class="product-name">Pourville</h3>
+                                     <p class="product-price">€95</p>
+                                 </div>
+                             </a>
+                             <button class="quick-add" data-product-id="10">Add to Cart</button>
                          </article>
                      `;
-                     }
-                     productsGrid.innerHTML = html;
                 }
             } else {
                 // Chapter I products (IDs 1-5)
@@ -432,55 +436,8 @@
         
         // Also listen for chapter updates (but don't reload page)
         // Content will update dynamically
-        window.addEventListener('activeChapterUpdated', async () => {
+        window.addEventListener('activeChapterUpdated', () => {
             // Update content without reloading
-            await updateHomepageForChapter();
-        });
-        
-        // Also listen for commerce mode changes to update button texts
-        window.addEventListener('commerceModeUpdated', async () => {
-            console.log('🔄 Commerce mode updated, refreshing buttons...');
-            // Refresh all product buttons
-            if (window.CommerceMode && window.ProductsAPI) {
-                const products = window.ProductsAPI.getAll();
-                for (const product of products) {
-                    const button = document.querySelector(`.quick-add[data-product-id="${product.id}"]`);
-                    if (button && window.CommerceMode.getButtonTextForProduct) {
-                        try {
-                            const buttonText = await window.CommerceMode.getButtonTextForProduct(product);
-                            button.textContent = buttonText;
-                            console.log(`✅ Updated button for product ${product.id} to: ${buttonText}`);
-                        } catch (error) {
-                            console.error(`Error updating button for product ${product.id}:`, error);
-                        }
-                    }
-                }
-            }
-        });
-        
-        window.addEventListener('activeChapterUpdated', async () => {
-            console.log('🔄 Active chapter updated, refreshing buttons...');
-            // Refresh all product buttons
-            if (window.CommerceMode && window.ProductsAPI) {
-                const products = window.ProductsAPI.getAll();
-                for (const product of products) {
-                    const button = document.querySelector(`.quick-add[data-product-id="${product.id}"]`);
-                    if (button && window.CommerceMode.getButtonTextForProduct) {
-                        try {
-                            const buttonText = await window.CommerceMode.getButtonTextForProduct(product);
-                            button.textContent = buttonText;
-                            console.log(`✅ Updated button for product ${product.id} to: ${buttonText}`);
-                        } catch (error) {
-                            console.error(`Error updating button for product ${product.id}:`, error);
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Also listen for commerce mode updates (old listener)
-        window.addEventListener('commerceModeUpdated', () => {
-            // Update homepage products to refresh button texts
             updateHomepageForChapter();
         });
     </script>

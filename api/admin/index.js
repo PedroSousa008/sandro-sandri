@@ -3,84 +3,35 @@
    Combined admin endpoints (activity and customers)
    ======================================== */
 
-// Load all dependencies safely
-let db, auth, securityLog, cors, errorHandler;
+const db = require('../../lib/storage');
+const auth = require('../../lib/auth');
+const securityLog = require('../../lib/security-log');
+const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
-try {
-    db = require('../../lib/storage');
-    auth = require('../../lib/auth');
-    securityLog = require('../../lib/security-log');
-    cors = require('../../lib/cors');
-    errorHandler = require('../../lib/error-handler');
-} catch (requireError) {
-    console.error('Error loading dependencies:', requireError);
-}
+module.exports = async (req, res) => {
+    // Set secure CORS headers (restricted to allowed origins)
+    cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
 
-// Ultimate safety wrapper - ensures we NEVER crash without returning JSON
-const handler = async (req, res) => {
-    // Ensure response is always JSON
-    const sendError = (status, message) => {
-        try {
-            if (!res.headersSent) {
-                res.setHeader('Content-Type', 'application/json');
-                res.status(status).json({ success: false, error: message });
-            }
-        } catch (e) {
-            console.error('sendError failed:', e);
-        }
-    };
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
-    try {
-        // Set secure CORS headers (restricted to allowed origins)
-        if (cors && typeof cors.setCORSHeaders === 'function') {
-            cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
-        } else {
-            // Fallback CORS headers
-            res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
-            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Token');
-        }
-
-        if (req.method === 'OPTIONS') {
-            return res.status(200).end();
-        }
-
-        const { endpoint } = req.query || {};
-        
-        // If no endpoint specified, return error
-        if (!endpoint) {
-            return sendError(400, 'Endpoint parameter is required. Use ?endpoint=activity or ?endpoint=customers');
-        }
+    const { endpoint } = req.query;
     
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
     if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {
-        try {
-            if (!auth || typeof auth.requireAdmin !== 'function') {
-                console.error('Auth module not loaded properly');
-                return sendError(500, 'Authentication service unavailable');
-            }
-            
-            const adminCheck = auth.requireAdmin(req);
-            if (!adminCheck || !adminCheck.authorized) {
-                // SECURITY: Log unauthorized access attempt
-                if (securityLog && typeof securityLog.logUnauthorizedAccess === 'function') {
-                    try {
-                        await securityLog.logUnauthorizedAccess(req, `/api/admin?endpoint=${endpoint}`, adminCheck?.error || 'Unauthorized');
-                    } catch (logError) {
-                        console.error('Error logging unauthorized access:', logError);
-                    }
-                }
-                return res.status(adminCheck?.statusCode || 401).json({
-                    success: false,
-                    error: adminCheck?.error || 'Unauthorized'
-                });
-            }
-            // Store user in request for logging
-            req.user = adminCheck.user;
-        } catch (authError) {
-            console.error('Error in admin auth check:', authError);
-            return sendError(500, 'Authentication check failed');
+        const adminCheck = auth.requireAdmin(req);
+        if (!adminCheck.authorized) {
+            // SECURITY: Log unauthorized access attempt
+            await securityLog.logUnauthorizedAccess(req, `/api/admin?endpoint=${endpoint}`, adminCheck.error);
+            return res.status(adminCheck.statusCode).json({
+                success: false,
+                error: adminCheck.error
+            });
         }
+        // Store user in request for logging
+        req.user = adminCheck.user;
     }
 
     if (endpoint === 'activity') {
@@ -94,31 +45,11 @@ const handler = async (req, res) => {
                     return res.status(400).json({ error: 'Session ID is required' });
                 }
 
-                if (!db || typeof db.initDb !== 'function') {
-                    console.error('DB module not loaded properly');
-                    return sendError(500, 'Database service unavailable');
-                }
-
-                try {
-                    await db.initDb();
-                } catch (dbInitError) {
-                    console.error('Error initializing database:', dbInitError);
-                    return sendError(500, 'Database initialization failed');
-                }
+                await db.initDb();
 
                 // Optimize: Only update if session doesn't exist or last update was > 2 seconds ago
                 // This reduces KV writes by ~70% while maintaining accuracy
-                if (!db || typeof db.getActivityData !== 'function') {
-                    console.error('DB.getActivityData not available');
-                    return sendError(500, 'Database service unavailable');
-                }
-                let activityData;
-                try {
-                    activityData = await db.getActivityData();
-                } catch (getError) {
-                    console.error('Error getting activity data:', getError);
-                    activityData = {};
-                }
+                let activityData = await db.getActivityData();
                 if (!activityData) {
                     activityData = {};
                 }
@@ -171,16 +102,7 @@ const handler = async (req, res) => {
                     });
                 }
 
-                if (!db || typeof db.saveActivityData !== 'function') {
-                    console.error('DB.saveActivityData not available');
-                    return sendError(500, 'Database service unavailable');
-                }
-                try {
-                    await db.saveActivityData(activityData);
-                } catch (saveError) {
-                    console.error('Error saving activity data:', saveError);
-                    return sendError(500, 'Failed to save activity data');
-                }
+                await db.saveActivityData(activityData);
 
                 res.status(200).json({
                     success: true,
@@ -188,56 +110,22 @@ const handler = async (req, res) => {
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
-                console.error('Activity POST error:', error);
-                if (!res.headersSent) {
-                    if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
-                        try {
-                            errorHandler.sendSecureError(res, error, 500, 'Failed to record activity. Please try again.', 'RECORD_ACTIVITY_ERROR');
-                        } catch (handlerError) {
-                            console.error('Error handler failed:', handlerError);
-                            sendError(500, 'Failed to record activity. Please try again.');
-                        }
-                    } else {
-                        sendError(500, 'Failed to record activity. Please try again.');
-                    }
-                }
+                errorHandler.sendSecureError(res, error, 500, 'Failed to record activity. Please try again.', 'RECORD_ACTIVITY_ERROR');
             }
         } else if (req.method === 'GET') {
             // Get active users
             try {
-                if (!db || typeof db.initDb !== 'function') {
-                    console.error('DB module not loaded properly');
-                    return sendError(500, 'Database service unavailable');
-                }
+                await db.initDb();
 
-                try {
-                    await db.initDb();
-                } catch (dbInitError) {
-                    console.error('Error initializing database:', dbInitError);
-                    return sendError(500, 'Database initialization failed');
-                }
-
-                let activityData;
-                try {
-                    activityData = await db.getActivityData() || {};
-                } catch (dbError) {
-                    console.error('Error getting activity data:', dbError);
-                    activityData = {};
-                }
-
+                const activityData = await db.getActivityData() || {};
                 const now = new Date();
                 const INACTIVE_THRESHOLD = 5 * 60 * 1000;
 
                 const activeSessions = Object.values(activityData).filter(session => {
                     if (!session || !session.lastActivity) return false;
-                    try {
-                        const lastActivityTime = new Date(session.lastActivity);
-                        const timeSinceActivity = now - lastActivityTime;
-                        return timeSinceActivity <= INACTIVE_THRESHOLD;
-                    } catch (e) {
-                        console.error('Error parsing session lastActivity:', e);
-                        return false;
-                    }
+                    const lastActivityTime = new Date(session.lastActivity);
+                    const timeSinceActivity = now - lastActivityTime;
+                    return timeSinceActivity <= INACTIVE_THRESHOLD;
                 });
 
                 const onlineUsers = activeSessions.filter(s => {
@@ -258,36 +146,14 @@ const handler = async (req, res) => {
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
-                console.error('Error in GET activity endpoint:', error);
-                if (!res.headersSent) {
-                    if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
-                        try {
-                            errorHandler.sendSecureError(res, error, 500, 'Failed to fetch activity. Please try again.', 'FETCH_ACTIVITY_ERROR');
-                        } catch (handlerError) {
-                            console.error('Error handler failed:', handlerError);
-                            sendError(500, 'Failed to fetch activity. Please try again.');
-                        }
-                    } else {
-                        sendError(500, 'Failed to fetch activity. Please try again.');
-                    }
-                }
+                errorHandler.sendSecureError(res, error, 500, 'Failed to fetch activity. Please try again.', 'FETCH_ACTIVITY_ERROR');
             }
         }
     } else if (endpoint === 'customers') {
         // Customers endpoint (GET and DELETE)
         if (req.method === 'GET') {
             try {
-                if (!db || typeof db.initDb !== 'function') {
-                    console.error('DB module not loaded properly');
-                    return sendError(500, 'Database service unavailable');
-                }
-
-                try {
-                    await db.initDb();
-                } catch (dbInitError) {
-                    console.error('Error initializing database:', dbInitError);
-                    return sendError(500, 'Database initialization failed');
-                }
+                await db.initDb();
 
                 const userData = await db.getUserData();
                 const orders = await db.getOrders();
@@ -339,19 +205,7 @@ const handler = async (req, res) => {
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
-                console.error('Fetch customers error:', error);
-                if (!res.headersSent) {
-                    if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
-                        try {
-                            errorHandler.sendSecureError(res, error, 500, 'Failed to fetch customers. Please try again.', 'FETCH_CUSTOMERS_ERROR');
-                        } catch (handlerError) {
-                            console.error('Error handler failed:', handlerError);
-                            sendError(500, 'Failed to fetch customers. Please try again.');
-                        }
-                    } else {
-                        sendError(500, 'Failed to fetch customers. Please try again.');
-                    }
-                }
+                errorHandler.sendSecureError(res, error, 500, 'Failed to fetch customers. Please try again.', 'FETCH_CUSTOMERS_ERROR');
             }
         } else if (req.method === 'DELETE') {
             // Delete customer endpoint - SECURITY: Already protected by requireAdmin above
@@ -374,17 +228,7 @@ const handler = async (req, res) => {
                     });
                 }
                 
-                if (!db || typeof db.initDb !== 'function') {
-                    console.error('DB module not loaded properly');
-                    return sendError(500, 'Database service unavailable');
-                }
-
-                try {
-                    await db.initDb();
-                } catch (dbInitError) {
-                    console.error('Error initializing database:', dbInitError);
-                    return sendError(500, 'Database initialization failed');
-                }
+                await db.initDb();
                 
                 // SECURITY: Log admin action before deletion
                 await securityLog.logAdminAction(req, 'DELETE_CUSTOMER', { email });
@@ -434,72 +278,13 @@ const handler = async (req, res) => {
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
-                console.error('Delete customer error:', error);
-                if (!res.headersSent) {
-                    if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
-                        try {
-                            errorHandler.sendSecureError(res, error, 500, 'Failed to delete customer. Please try again.', 'DELETE_CUSTOMER_ERROR');
-                        } catch (handlerError) {
-                            console.error('Error handler failed:', handlerError);
-                            sendError(500, 'Failed to delete customer. Please try again.');
-                        }
-                    } else {
-                        sendError(500, 'Failed to delete customer. Please try again.');
-                    }
-                }
+                errorHandler.sendSecureError(res, error, 500, 'Failed to delete customer. Please try again.', 'DELETE_CUSTOMER_ERROR');
             }
         } else {
             return res.status(405).json({ error: 'Method not allowed' });
         }
     } else {
         return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity or ?endpoint=customers' });
-    }
-    } catch (error) {
-        // SECURITY: Don't expose error details to users
-        console.error('Admin API Error (outer catch):', error);
-        console.error('Error stack:', error.stack);
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
-        // Ensure we always return JSON, even on error
-        if (!res.headersSent) {
-            try {
-                if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
-                    errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'ADMIN_ERROR');
-                } else {
-                    sendError(500, 'Admin service unavailable. Please try again later.');
-                }
-            } catch (finalError) {
-                console.error('CRITICAL: Failed to send error response:', finalError);
-                // Last resort - try to send plain JSON
-                if (!res.headersSent) {
-                    try {
-                        res.setHeader('Content-Type', 'application/json');
-                        res.status(500).json({ success: false, error: 'Internal server error' });
-                    } catch (e) {
-                        // If even this fails, we're completely broken
-                        console.error('FATAL: Cannot send any response');
-                    }
-                }
-            }
-        }
-    }
-};
-
-// Export with ultimate error protection
-module.exports = async (req, res) => {
-    try {
-        await handler(req, res);
-    } catch (criticalError) {
-        console.error('CRITICAL: Handler wrapper caught unhandled error:', criticalError);
-        console.error('Stack:', criticalError.stack);
-        if (!res.headersSent) {
-            try {
-                res.setHeader('Content-Type', 'application/json');
-                res.status(500).json({ success: false, error: 'Internal server error' });
-            } catch (e) {
-                console.error('FATAL: Cannot send any response at all');
-            }
-        }
     }
 };
 

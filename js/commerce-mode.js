@@ -15,18 +15,8 @@ window.CommerceMode = {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    const previousMode = this.currentMode;
                     this.currentMode = data.commerce_mode || 'LIVE';
                     this.isInitialized = true;
-                    
-                    // Dispatch event if mode changed (or on first load)
-                    if (!this._hasDispatchedInitialEvent || previousMode !== this.currentMode) {
-                        this._hasDispatchedInitialEvent = true;
-                        window.dispatchEvent(new CustomEvent('commerceModeUpdated', {
-                            detail: { mode: this.currentMode, previousMode: previousMode }
-                        }));
-                    }
-                    
                     return this.currentMode;
                 }
             }
@@ -36,24 +26,6 @@ window.CommerceMode = {
         this.currentMode = 'LIVE';
         this.isInitialized = true;
         return this.currentMode;
-    },
-    
-    // Poll for commerce mode changes (useful when admin changes mode)
-    startPolling(intervalMs = 3000) {
-        if (this._pollingInterval) {
-            clearInterval(this._pollingInterval);
-        }
-        this._pollingInterval = setInterval(() => {
-            this.loadMode();
-        }, intervalMs);
-    },
-    
-    // Stop polling
-    stopPolling() {
-        if (this._pollingInterval) {
-            clearInterval(this._pollingInterval);
-            this._pollingInterval = null;
-        }
     },
     
     // Check if in WAITLIST mode
@@ -71,13 +43,21 @@ window.CommerceMode = {
         return this.currentMode === 'LIVE';
     },
     
-    // Update all "Add to Cart" buttons based on product chapter and commerce mode
-    // IMPORTANT: This function is deprecated - use getButtonTextForProduct instead
-    // Kept for backward compatibility but should not be used for new code
+    // Update all "Add to Cart" buttons to "Join the Waitlist" if in WAITLIST mode
     updateAllButtons() {
-        // This function is no longer used - buttons are updated using getButtonTextForProduct
-        // when products are rendered
-        return;
+        if (!this.isWaitlistMode()) {
+            return; // Only update in WAITLIST mode
+        }
+        
+        // Update all buttons with class "add-to-cart-btn" or "quick-add"
+        const buttons = document.querySelectorAll('.add-to-cart-btn, .quick-add');
+        buttons.forEach(btn => {
+            if (btn.textContent.includes('Add to Cart') || btn.textContent.includes('ADD TO CART')) {
+                btn.textContent = btn.textContent.replace(/Add to Cart/gi, 'Join the Waitlist');
+                btn.textContent = btn.textContent.replace(/ADD TO CART/gi, 'JOIN THE WAITLIST');
+                btn.classList.add('waitlist-btn');
+            }
+        });
     },
     
     // Check if user is logged in
@@ -105,166 +85,6 @@ window.CommerceMode = {
             console.error('Error getting user email:', error);
         }
         return null;
-    },
-    
-    // Get button text and behavior based on product chapter and commerce mode
-    // LOGIC:
-    // - If in "Chapter I mode" (NOT Upload Chapter II): Use Chapter I mode from table (chapter_modes.chapter_i.mode)
-    // - If in "Upload Chapter II mode": Use chapter-specific modes from table
-    async getButtonTextForProduct(product) {
-        if (!product) return 'Add to Cart';
-        
-        // Determine which chapter this product belongs to
-        const isProductChapterII = product.id >= 6 && product.id <= 10;
-        const isProductChapterI = product.id >= 1 && product.id <= 5;
-        
-        // Check if site is in "Upload Chapter II" mode
-        const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
-        
-        // If NOT in "Upload Chapter II" mode (i.e., in Chapter I mode):
-        // Use Chapter I mode from table (chapter_modes.chapter_i.mode)
-        if (!isChapterIIMode) {
-            try {
-                console.log(`🔍 Getting button text for product ${product.id} in Chapter I mode`);
-                const chapterIMode = await this.getChapterMode('chapter_i');
-                console.log(`🔍 Chapter I mode from table: ${chapterIMode}`);
-                if (chapterIMode === 'WAITLIST') {
-                    console.log(`✅ Returning "Join the Waitlist" for product ${product.id}`);
-                    return 'Join the Waitlist';
-                } else if (chapterIMode === 'EARLY_ACCESS') {
-                    console.log(`✅ Returning "Add to Cart" (EARLY_ACCESS) for product ${product.id}`);
-                    return 'Add to Cart'; // Early Access still uses Add to Cart button
-                } else {
-                    console.log(`✅ Returning "Add to Cart" (LIVE) for product ${product.id}`);
-                    return 'Add to Cart'; // LIVE mode
-                }
-            } catch (error) {
-                console.error('Error getting Chapter I mode, falling back to global mode:', error);
-                // Fallback to global mode
-                if (this.isWaitlistMode()) {
-                    return 'Join the Waitlist';
-                }
-                return 'Add to Cart';
-            }
-        }
-        
-        // IN "Upload Chapter II" MODE:
-        // Use chapter-specific modes from the table
-        if (isProductChapterI) {
-            // Chapter I products: ALWAYS "Add to Cart" (regardless of mode)
-            return 'Add to Cart';
-        } else if (isProductChapterII) {
-            // Chapter II products: Use chapter-specific mode from table
-            try {
-                const chapterMode = await this.getChapterMode('chapter_ii');
-                if (chapterMode === 'WAITLIST') {
-                    return 'Join the Waitlist';
-                } else if (chapterMode === 'EARLY_ACCESS') {
-                    return 'Add to Cart'; // Early Access still uses Add to Cart button
-                } else {
-                    return 'Add to Cart'; // LIVE mode
-                }
-            } catch (error) {
-                console.error('Error getting chapter mode, falling back to global mode:', error);
-                // Fallback to global mode
-                if (this.isWaitlistMode()) {
-                    return 'Join the Waitlist';
-                }
-                return 'Add to Cart';
-            }
-        }
-        
-        // Fallback
-        return 'Add to Cart';
-    },
-    
-    // Check if product should use waitlist behavior
-    // LOGIC:
-    // - If in "Chapter I mode" (NOT Upload Chapter II): Use Chapter I mode from table (chapter_modes.chapter_i.mode)
-    // - If in "Upload Chapter II mode": Use chapter-specific modes from table
-    async shouldUseWaitlistBehavior(product) {
-        if (!product) return false;
-        
-        // Determine which chapter this product belongs to
-        const isProductChapterII = product.id >= 6 && product.id <= 10;
-        const isProductChapterI = product.id >= 1 && product.id <= 5;
-        
-        // Check if site is in "Upload Chapter II" mode
-        const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
-        
-        // If NOT in "Upload Chapter II" mode (i.e., in Chapter I mode):
-        // Use Chapter I mode from table (chapter_modes.chapter_i.mode)
-        if (!isChapterIIMode) {
-            try {
-                const chapterIMode = await this.getChapterMode('chapter_i');
-                return chapterIMode === 'WAITLIST';
-            } catch (error) {
-                console.error('Error getting Chapter I mode, falling back to global mode:', error);
-                // Fallback to global mode
-                return this.isWaitlistMode();
-            }
-        }
-        
-        // IN "Upload Chapter II" MODE:
-        // Use chapter-specific modes from table
-        if (isProductChapterI) {
-            // Chapter I products: NEVER use waitlist in Upload Chapter II mode
-            return false;
-        } else if (isProductChapterII) {
-            // Chapter II products: Use chapter-specific mode from table
-            try {
-                const chapterMode = await this.getChapterMode('chapter_ii');
-                return chapterMode === 'WAITLIST';
-            } catch (error) {
-                console.error('Error getting chapter mode, falling back to global mode:', error);
-                // Fallback to global mode
-                return this.isWaitlistMode();
-            }
-        }
-        
-        return false;
-    },
-    
-    // Check if product should use early access behavior
-    // NEW SYSTEM: Uses per-chapter modes from the Chapter Modes Management table
-    async shouldUseEarlyAccessBehavior(product) {
-        if (!product) return false;
-        
-        // Determine which chapter this product belongs to
-        const isProductChapterII = product.id >= 6 && product.id <= 10;
-        const isProductChapterI = product.id >= 1 && product.id <= 5;
-        
-        // Determine chapter key
-        let chapterKey = null;
-        if (isProductChapterI) {
-            chapterKey = 'chapter_i';
-        } else if (isProductChapterII) {
-            chapterKey = 'chapter_ii';
-        }
-        
-        // Check if site is in "Upload Chapter II" mode
-        const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
-        
-        // NEW SYSTEM: Try to get chapter-specific mode
-        if (chapterKey) {
-            try {
-                const chapterMode = await this.getChapterMode(chapterKey);
-                
-                // If in "Upload Chapter II" mode and product is Chapter I, never use early access
-                if (isChapterIIMode && isProductChapterI) {
-                    return false;
-                }
-                
-                // Otherwise, check if chapter mode is EARLY_ACCESS
-                return chapterMode === 'EARLY_ACCESS';
-            } catch (error) {
-                console.error('Error getting chapter mode, falling back to global mode:', error);
-            }
-        }
-        
-        // FALLBACK: Use legacy global commerce mode logic
-        // Only Chapter II products in "Upload Chapter II" mode use early access when in EARLY_ACCESS mode
-        return isChapterIIMode && isProductChapterII && this.isEarlyAccessMode();
     }
 };
 
@@ -272,9 +92,23 @@ window.CommerceMode = {
 if (typeof window !== 'undefined') {
     // Load mode immediately
     window.CommerceMode.loadMode().then(() => {
-        // Start polling for mode changes (useful when admin changes mode)
-        // Poll every 5 seconds to catch admin changes
-        window.CommerceMode.startPolling(5000);
+        // Update buttons after mode is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                window.CommerceMode.updateAllButtons();
+            });
+        } else {
+            window.CommerceMode.updateAllButtons();
+        }
+        
+        // Also update buttons when DOM changes (for dynamically loaded content)
+        const observer = new MutationObserver(() => {
+            window.CommerceMode.updateAllButtons();
+        });
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     });
 }
 

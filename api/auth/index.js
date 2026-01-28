@@ -3,92 +3,50 @@
    Handles login, signup, and session verification
    ======================================== */
 
-// Load all dependencies safely
-let db, bcrypt, auth, crypto, emailService, rateLimit, validation, securityLog, cors, errorHandler;
+const db = require('../../lib/storage');
+const bcrypt = require('bcryptjs');
+const auth = require('../../lib/auth');
+const crypto = require('crypto');
+const emailService = require('../../lib/email');
+const rateLimit = require('../../lib/rate-limit');
+const validation = require('../../lib/validation');
+const securityLog = require('../../lib/security-log');
+const cors = require('../../lib/cors');
+const errorHandler = require('../../lib/error-handler');
 
-try {
-    db = require('../../lib/storage');
-    bcrypt = require('bcryptjs');
-    auth = require('../../lib/auth');
-    crypto = require('crypto');
-    emailService = require('../../lib/email');
-    rateLimit = require('../../lib/rate-limit');
-    validation = require('../../lib/validation');
-    securityLog = require('../../lib/security-log');
-    cors = require('../../lib/cors');
-    errorHandler = require('../../lib/error-handler');
-} catch (requireError) {
-    console.error('Error loading dependencies:', requireError);
-}
+module.exports = async (req, res) => {
+    // Set secure CORS headers (restricted to allowed origins)
+    cors.setCORSHeaders(res, req, ['GET', 'POST', 'OPTIONS']);
 
-// Ultimate safety wrapper - ensures we NEVER crash without returning JSON
-const handler = async (req, res) => {
-    // Ensure response is always JSON
-    const sendError = (status, message) => {
-        try {
-            if (!res.headersSent) {
-                res.setHeader('Content-Type', 'application/json');
-                res.status(status).json({ success: false, error: message });
-            }
-        } catch (e) {
-            console.error('sendError failed:', e);
-        }
-    };
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
-    // Wrap entire handler in try-catch to ensure JSON responses
+    // Get the action from query parameter or path
+    const action = req.query.action || (req.url.includes('/login') ? 'login' : req.url.includes('/signup') ? 'signup' : req.url.includes('/session') ? 'session' : null);
+
     try {
-        // Set secure CORS headers (restricted to allowed origins)
-        if (cors && typeof cors.setCORSHeaders === 'function') {
-            cors.setCORSHeaders(res, req, ['GET', 'POST', 'OPTIONS']);
-        } else {
-            // Fallback CORS headers
-            res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
-            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Token');
-        }
-
-        if (req.method === 'OPTIONS') {
-            return res.status(200).end();
-        }
-
-        // Get the action from query parameter or path
-        const action = req.query.action || (req.url.includes('/login') ? 'login' : req.url.includes('/signup') ? 'signup' : req.url.includes('/session') ? 'session' : null);
-
-        try {
         // SESSION VERIFICATION (GET)
         if (req.method === 'GET' || action === 'session') {
-            try {
-                if (!auth || typeof auth.requireAuth !== 'function') {
-                    console.error('Auth module not loaded properly');
-                    return sendError(500, 'Authentication service unavailable');
-                }
-                const authResult = auth.requireAuth(req);
-                
-                if (!authResult.authorized) {
-                    return res.status(authResult.statusCode).json({
-                        success: false,
-                        authenticated: false,
-                        error: authResult.error
-                    });
-                }
-
-                res.status(200).json({
-                    success: true,
-                    authenticated: true,
-                    user: {
-                        email: authResult.user.email,
-                        role: authResult.user.role
-                    }
-                });
-                return;
-            } catch (authError) {
-                console.error('Error in session verification:', authError);
-                return res.status(500).json({
+            const authResult = auth.requireAuth(req);
+            
+            if (!authResult.authorized) {
+                return res.status(authResult.statusCode).json({
                     success: false,
                     authenticated: false,
-                    error: 'Session verification failed'
+                    error: authResult.error
                 });
             }
+
+            res.status(200).json({
+                success: true,
+                authenticated: true,
+                user: {
+                    email: authResult.user.email,
+                    role: authResult.user.role
+                }
+            });
+            return;
         }
 
         // LOGIN (POST)
@@ -104,23 +62,7 @@ const handler = async (req, res) => {
             // Normalize email (lowercase, trim) to match signup
             email = email.toLowerCase().trim();
 
-            // Check if modules are loaded
-            if (!db || typeof db.initDb !== 'function') {
-                console.error('DB module not loaded properly');
-                return sendError(500, 'Database service unavailable');
-            }
-
-            if (!auth || typeof auth.OWNER_EMAIL === 'undefined') {
-                console.error('Auth module not loaded properly');
-                return sendError(500, 'Authentication service unavailable');
-            }
-
-            try {
-                await db.initDb();
-            } catch (dbError) {
-                console.error('Error initializing database:', dbError);
-                return sendError(500, 'Database initialization failed');
-            }
+            await db.initDb();
 
             // Check if this is owner account first
             let isOwner = false;
@@ -132,38 +74,18 @@ const handler = async (req, res) => {
                 console.log('   Email:', email);
                 console.log('   Security Answer provided:', securityAnswer ? 'Yes' : 'No');
                 // Verify owner credentials (including security answer)
-                if (!auth || typeof auth.verifyOwnerCredentials !== 'function') {
-                    console.error('Auth.verifyOwnerCredentials not available');
-                    return sendError(500, 'Authentication service unavailable');
-                }
                 const ownerCheck = await auth.verifyOwnerCredentials(email, password, securityAnswer);
                 console.log('   Owner check result:', ownerCheck.valid ? 'Valid' : 'Invalid', ownerCheck.error || '');
                 if (!ownerCheck.valid) {
-                    // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
-                    if (rateLimit && typeof rateLimit.recordFailedAttempt === 'function') {
-                        try {
-                            await rateLimit.recordFailedAttempt(req, 'login', email);
-                        } catch (e) {
-                            console.error('Error recording failed attempt:', e);
-                        }
-                    }
-                    if (securityLog && typeof securityLog.logFailedLogin === 'function') {
-                        try {
-                            await securityLog.logFailedLogin(req, email, ownerCheck.error || 'Invalid owner credentials');
-                        } catch (e) {
-                            console.error('Error logging failed login:', e);
-                        }
-                    }
+                    // SECURITY: Record failed login attempt and log
+                    await rateLimit.recordFailedAttempt(req, 'login', email);
+                    await securityLog.logFailedLogin(req, email, ownerCheck.error || 'Invalid owner credentials');
                     return res.status(401).json({ 
                         error: ownerCheck.error || 'Invalid credentials' 
                     });
                 }
                 
                 // Get owner user data
-                if (!db || typeof db.getUserData !== 'function') {
-                    console.error('DB.getUserData not available');
-                    return sendError(500, 'Database service unavailable');
-                }
                 const userData = await db.getUserData();
                 user = userData[email] || userData[auth.OWNER_EMAIL];
             } else {
@@ -173,20 +95,8 @@ const handler = async (req, res) => {
 
                 if (!user) {
                     // SECURITY: Record failed login attempt and log
-                    if (rateLimit && typeof rateLimit.recordFailedAttempt === 'function') {
-                        try {
-                            await rateLimit.recordFailedAttempt(req, 'login', email);
-                        } catch (e) {
-                            console.error('Error recording failed attempt:', e);
-                        }
-                    }
-                    if (securityLog && typeof securityLog.logFailedLogin === 'function') {
-                        try {
-                            await securityLog.logFailedLogin(req, email, 'User not found');
-                        } catch (e) {
-                            console.error('Error logging failed login:', e);
-                        }
-                    }
+                    await rateLimit.recordFailedAttempt(req, 'login', email);
+                    await securityLog.logFailedLogin(req, email, 'User not found');
                     return res.status(401).json({ 
                         error: 'Invalid email or password' 
                     });
@@ -195,21 +105,9 @@ const handler = async (req, res) => {
                 // Verify password - SECURITY: Only use hashed passwords
                 const passwordHash = user.passwordHash;
                 if (!passwordHash) {
-                    // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
-                    if (rateLimit && typeof rateLimit.recordFailedAttempt === 'function') {
-                        try {
-                            await rateLimit.recordFailedAttempt(req, 'login', email);
-                        } catch (e) {
-                            console.error('Error recording failed attempt:', e);
-                        }
-                    }
-                    if (securityLog && typeof securityLog.logFailedLogin === 'function') {
-                        try {
-                            await securityLog.logFailedLogin(req, email, 'Account has no password hash');
-                        } catch (e) {
-                            console.error('Error logging failed login:', e);
-                        }
-                    }
+                    // SECURITY: Record failed login attempt and log
+                    await rateLimit.recordFailedAttempt(req, 'login', email);
+                    await securityLog.logFailedLogin(req, email, 'Account has no password hash');
                     return res.status(401).json({ 
                         error: 'Account needs password reset. Please contact support.' 
                     });
@@ -218,21 +116,9 @@ const handler = async (req, res) => {
                 // Verify hashed password
                 const isValid = await bcrypt.compare(password, passwordHash);
                 if (!isValid) {
-                    // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
-                    if (rateLimit && typeof rateLimit.recordFailedAttempt === 'function') {
-                        try {
-                            await rateLimit.recordFailedAttempt(req, 'login', email);
-                        } catch (e) {
-                            console.error('Error recording failed attempt:', e);
-                        }
-                    }
-                    if (securityLog && typeof securityLog.logFailedLogin === 'function') {
-                        try {
-                            await securityLog.logFailedLogin(req, email, 'Invalid password');
-                        } catch (e) {
-                            console.error('Error logging failed login:', e);
-                        }
-                    }
+                    // SECURITY: Record failed login attempt and log
+                    await rateLimit.recordFailedAttempt(req, 'login', email);
+                    await securityLog.logFailedLogin(req, email, 'Invalid password');
                     return res.status(401).json({ 
                         error: 'Invalid email or password' 
                     });
@@ -259,32 +145,16 @@ const handler = async (req, res) => {
             }
 
             // Generate JWT token
-            if (!auth || typeof auth.generateToken !== 'function') {
-                console.error('Auth.generateToken not available');
-                return sendError(500, 'Authentication service unavailable');
-            }
             const token = auth.generateToken({
                 email: userKey,
                 role: isOwner ? 'OWNER' : 'USER'
             });
 
-            // SECURITY: Clear rate limit on successful login (don't let errors break the flow)
-            if (rateLimit && typeof rateLimit.clearRateLimit === 'function') {
-                try {
-                    await rateLimit.clearRateLimit(req, 'login', email);
-                } catch (e) {
-                    console.error('Error clearing rate limit:', e);
-                }
-            }
+            // SECURITY: Clear rate limit on successful login
+            await rateLimit.clearRateLimit(req, 'login', email);
             
-            // SECURITY: Log successful login (don't let errors break the flow)
-            if (securityLog && typeof securityLog.logSuccessfulLogin === 'function') {
-                try {
-                    await securityLog.logSuccessfulLogin(req, userKey, isOwner);
-                } catch (e) {
-                    console.error('Error logging successful login:', e);
-                }
-            }
+            // SECURITY: Log successful login
+            await securityLog.logSuccessfulLogin(req, userKey, isOwner);
 
             // Set HTTP-only cookie (more secure than localStorage)
             res.setHeader('Set-Cookie', `session_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${24 * 60 * 60}`);
@@ -305,11 +175,7 @@ const handler = async (req, res) => {
 
             // SECURITY: Validate and sanitize inputs
             if (!rawEmail || !rawPassword) {
-                try {
-                    await securityLog.logSignupAttempt(req, rawEmail || 'unknown', false);
-                } catch (e) {
-                    console.error('Error logging signup attempt:', e);
-                }
+                await securityLog.logSignupAttempt(req, rawEmail || 'unknown', false);
                 return res.status(400).json({ 
                     error: 'Email and password are required' 
                 });
@@ -318,11 +184,7 @@ const handler = async (req, res) => {
             // Validate email
             const emailValidation = validation.validateEmail(rawEmail);
             if (!emailValidation.valid) {
-                try {
-                    await securityLog.logSignupAttempt(req, rawEmail, false);
-                } catch (e) {
-                    console.error('Error logging signup attempt:', e);
-                }
+                await securityLog.logSignupAttempt(req, rawEmail, false);
                 return res.status(400).json({ 
                     error: emailValidation.error 
                 });
@@ -332,11 +194,7 @@ const handler = async (req, res) => {
             // Validate password
             const passwordValidation = validation.validatePassword(rawPassword);
             if (!passwordValidation.valid) {
-                try {
-                    await securityLog.logSignupAttempt(req, normalizedEmail, false);
-                } catch (e) {
-                    console.error('Error logging signup attempt:', e);
-                }
+                await securityLog.logSignupAttempt(req, normalizedEmail, false);
                 return res.status(400).json({ 
                     error: passwordValidation.error 
                 });
@@ -344,20 +202,9 @@ const handler = async (req, res) => {
             const password = rawPassword; // Password is validated but not sanitized (will be hashed)
 
             // SECURITY: Rate limiting for signup attempts
-            let rateLimitCheck;
-            try {
-                rateLimitCheck = await rateLimit.checkRateLimit(req, 'signup', normalizedEmail);
-            } catch (e) {
-                console.error('Error checking rate limit:', e);
-                // If rate limit check fails, allow the request (fail open)
-                rateLimitCheck = { allowed: true };
-            }
+            const rateLimitCheck = await rateLimit.checkRateLimit(req, 'signup', normalizedEmail);
             if (!rateLimitCheck.allowed) {
-                try {
-                    await securityLog.logRateLimitExceeded(req, 'signup', normalizedEmail);
-                } catch (e) {
-                    console.error('Error logging rate limit exceeded:', e);
-                }
+                await securityLog.logRateLimitExceeded(req, 'signup', normalizedEmail);
                 return res.status(429).json({
                     error: rateLimitCheck.error || 'Too many signup attempts. Please try again later.'
                 });
@@ -371,11 +218,7 @@ const handler = async (req, res) => {
 
             // If user exists and is already verified, return error
             if (existingUser && existingUser.email_verified === true) {
-                try {
-                    await securityLog.logSignupAttempt(req, normalizedEmail, false);
-                } catch (e) {
-                    console.error('Error logging signup attempt:', e);
-                }
+                await securityLog.logSignupAttempt(req, normalizedEmail, false);
                 return res.status(400).json({ 
                     error: 'An account with this email already exists' 
                 });
@@ -447,59 +290,9 @@ const handler = async (req, res) => {
         // Unknown action
         return res.status(400).json({ error: 'Invalid action' });
 
-        } catch (error) {
-            // Inner catch for errors in main logic
-            console.error('Auth API Error (inner catch):', error);
-            if (!res.headersSent) {
-                if (errorHandler && typeof errorHandler.sendSecureError === 'function') {
-                    errorHandler.sendSecureError(res, error, 500, 'Authentication failed. Please try again.', 'AUTH_ERROR');
-                } else {
-                    sendError(500, 'Authentication failed. Please try again.');
-                }
-            }
-        }
     } catch (error) {
-        // Outer catch for any errors before inner try-catch (including require errors)
-        console.error('Auth API Error (outer catch):', error);
-        console.error('Error stack:', error.stack);
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
-        // Ensure we always return JSON, even on error
-        if (!res.headersSent) {
-            try {
-                sendError(500, 'Authentication service unavailable. Please try again later.');
-            } catch (finalError) {
-                console.error('CRITICAL: Failed to send error response:', finalError);
-                // Last resort - try to send plain JSON
-                if (!res.headersSent) {
-                    try {
-                        res.setHeader('Content-Type', 'application/json');
-                        res.status(500).json({ success: false, error: 'Internal server error' });
-                    } catch (e) {
-                        // If even this fails, we're completely broken
-                        console.error('FATAL: Cannot send any response');
-                    }
-                }
-            }
-        }
-    }
-};
-
-// Export with ultimate error protection
-module.exports = async (req, res) => {
-    try {
-        await handler(req, res);
-    } catch (criticalError) {
-        console.error('CRITICAL: Handler wrapper caught unhandled error:', criticalError);
-        console.error('Stack:', criticalError.stack);
-        if (!res.headersSent) {
-            try {
-                res.setHeader('Content-Type', 'application/json');
-                res.status(500).json({ success: false, error: 'Internal server error' });
-            } catch (e) {
-                console.error('FATAL: Cannot send any response at all');
-            }
-        }
+        // SECURITY: Don't expose error details to users
+        errorHandler.sendSecureError(res, error, 500, 'Authentication failed. Please try again.', 'AUTH_ERROR');
     }
 };
 

@@ -175,97 +175,31 @@ async function loadCommerceMode() {
     return 'LIVE';
 }
 
-async function initCheckout() {
+function initCheckout() {
     // Check commerce mode first
-    await loadCommerceMode();
-    
-    // Wait for ActiveChapter to load (if available)
-    if (window.ActiveChapter && typeof window.ActiveChapter.loadChapter === 'function') {
-        await window.ActiveChapter.loadChapter();
-    }
-    
-    // Get cart items
-    const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
-    
-    // Check if we're in "Upload Chapter II" mode
-    // Wait a bit for ActiveChapter to load if it's not ready yet
-    let isChapterIIMode = false;
-    if (window.ActiveChapter) {
-        if (typeof window.ActiveChapter.isChapterII === 'function') {
-            isChapterIIMode = window.ActiveChapter.isChapterII();
-        } else if (window.ActiveChapter.currentChapter === 'chapter_ii') {
-            isChapterIIMode = true;
-        }
-    }
-    
-    console.log('🔍 Checkout Check:', {
-        commerceMode: currentCommerceMode,
-        isChapterIIMode: isChapterIIMode,
-        activeChapterExists: !!window.ActiveChapter,
-        activeChapterValue: window.ActiveChapter?.currentChapter,
-        cartItems: cart.map(item => ({ id: item.productId || item.id, name: item.name }))
-    });
-    
-    // Check if we should block checkout based on mode
-    // If in Chapter I mode, check Chapter I mode from table
-    // If in Upload Chapter II mode, check based on cart contents
-    let shouldBlockCheckout = false;
-    let blockMessage = '';
-    
-    if (!isChapterIIMode) {
-        // Chapter I mode: Check Chapter I mode from table
-        try {
-            const chapterIModeResponse = await fetch('/api/site-settings?setting=chapter-modes');
-            if (chapterIModeResponse.ok) {
-                const chapterIModeData = await chapterIModeResponse.json();
-                if (chapterIModeData.success && chapterIModeData.chapter_modes && chapterIModeData.chapter_modes.chapter_i) {
-                    const chapterIMode = chapterIModeData.chapter_modes.chapter_i.mode;
-                    if (chapterIMode === 'WAITLIST') {
-                        shouldBlockCheckout = true;
-                        blockMessage = 'Chapter I is not available yet. Join the waitlist to be notified when Chapter I becomes available.';
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error checking Chapter I mode:', error);
-            // Fallback to global mode
-            if (currentCommerceMode === 'WAITLIST') {
-                shouldBlockCheckout = true;
-                blockMessage = 'Chapter I is not available yet. Join the waitlist to be notified when Chapter I becomes available.';
-            }
-        }
-    } else {
-        // Upload Chapter II mode: Use existing logic with global commerce_mode
+    loadCommerceMode().then(() => {
         if (currentCommerceMode === 'WAITLIST') {
-            // Check if all items in cart are Chapter I (IDs 1-5)
-            const allChapterI = cart.length > 0 && cart.every(item => {
-                const productId = item.productId || item.id;
-                const isChapterI = productId >= 1 && productId <= 5;
-                console.log(`  Product ${productId} (${item.name}): isChapterI=${isChapterI}`);
-                return isChapterI;
-            });
-            
-            console.log('  All Chapter I?', allChapterI);
-            console.log('  Cart length:', cart.length);
-            
-            // If we're in "Upload Chapter II" mode AND all items are Chapter I, allow checkout
-            if (isChapterIIMode && allChapterI && cart.length > 0) {
-                console.log('✅ Checkout allowed: All items are Chapter I in Upload Chapter II mode');
-                // Continue with normal checkout initialization
-                initCheckoutNormal();
-                return;
-            }
-            
-            // If in "Upload Chapter II" mode but cart contains Chapter II items, block checkout
-            console.log('❌ Checkout blocked: Cart contains Chapter II items in WAITLIST mode');
-            shouldBlockCheckout = true;
-            blockMessage = 'Chapter II is not available yet. Join the waitlist to be notified when Chapter II becomes available.';
+            // Block checkout in WAITLIST mode
+            const checkoutContainer = document.querySelector('.checkout-container') || document.body;
+            checkoutContainer.innerHTML = `
+                <div style="max-width: 600px; margin: 100px auto; padding: var(--space-xl); text-align: center;">
+                    <h1 style="font-family: var(--font-serif); font-size: 2rem; color: var(--color-navy); margin-bottom: var(--space-md);">
+                        Chapter I is not available yet
+                    </h1>
+                    <p style="font-family: var(--font-sans); font-size: 1rem; color: var(--color-text); margin-bottom: var(--space-lg);">
+                        Join the waitlist to be notified when Chapter I becomes available.
+                    </p>
+                    <a href="collection.html" style="display: inline-block; padding: var(--space-sm) var(--space-lg); background: var(--color-navy); color: white; text-decoration: none; font-family: var(--font-sans); font-size: 0.875rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px;">
+                        Back to Collection
+                    </a>
+                </div>
+            `;
+            return;
         }
-    }
-    
-    // Continue with normal checkout initialization (LIVE or EARLY_ACCESS mode)
-    console.log('✅ Checkout allowed: Not in WAITLIST mode');
-    initCheckoutNormal();
+        
+        // Continue with normal checkout initialization
+        initCheckoutNormal();
+    });
 }
 
 function initCheckoutNormal() {
