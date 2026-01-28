@@ -1504,7 +1504,7 @@
                     throw new Error('Not authenticated');
                 }
 
-                const response = await fetch('/api/site-settings/chapters', {
+                const response = await fetch('/api/site-settings?setting=chapters', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'X-Session-Token': token
@@ -1641,7 +1641,7 @@
                     throw new Error('Not authenticated');
                 }
 
-                const response = await fetch('/api/site-settings/chapters', {
+                const response = await fetch('/api/site-settings?setting=chapters', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1696,7 +1696,7 @@
                     throw new Error('Only the active chapter can have its mode changed. Previous chapters are locked to "Add to Cart".');
                 }
 
-                const response = await fetch('/api/site-settings/chapters', {
+                const response = await fetch('/api/site-settings?setting=chapters', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

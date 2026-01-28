@@ -12,7 +12,7 @@ window.ChapterMode = {
     // Load chapters data from server
     async loadChapters() {
         try {
-            const response = await fetch('/api/site-settings/chapters');
+            const response = await fetch('/api/site-settings?setting=chapters');
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
