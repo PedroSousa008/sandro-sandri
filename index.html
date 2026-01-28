@@ -268,15 +268,17 @@
             if (isChapterII) {
                 // Chapter II products (IDs 6-10) - Use ProductsAPI to get correct data
                 const chapterIIProducts = window.ProductsAPI ? window.ProductsAPI.getByChapter('chapter_ii') : [];
+                console.log('Chapter II Products from API:', chapterIIProducts);
                 if (chapterIIProducts.length > 0) {
                     // Use ProductsAPI data to ensure correct images and names
                     productsGrid.innerHTML = chapterIIProducts.slice(0, 5).map(product => {
                         const imageUrl = product.images && product.images.length > 1 ? product.images[1] : product.images[0];
+                        console.log(`Product ${product.id} (${product.name}): Using image:`, imageUrl);
                         return `
                         <article class="product-card" data-product-id="${product.id}">
                             <a href="product.html?id=${product.id}&chapter=ii" class="product-link">
                                 <div class="product-image">
-                                    <img src="${imageUrl}?v=3.0" alt="${product.name}" onerror="console.error('Failed to load:', '${imageUrl}');">
+                                    <img src="${imageUrl}?v=3.1" alt="${product.name}" onerror="console.error('Failed to load:', '${imageUrl}');">
                                 </div>
                                 <div class="product-info">
                                     <h3 class="product-name">${product.name}</h3>
