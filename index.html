@@ -442,6 +442,47 @@
         });
         
         // Also listen for commerce mode changes to update button texts
+        window.addEventListener('commerceModeUpdated', async () => {
+            console.log('🔄 Commerce mode updated, refreshing buttons...');
+            // Refresh all product buttons
+            if (window.CommerceMode && window.ProductsAPI) {
+                const products = window.ProductsAPI.getAll();
+                for (const product of products) {
+                    const button = document.querySelector(`.quick-add[data-product-id="${product.id}"]`);
+                    if (button && window.CommerceMode.getButtonTextForProduct) {
+                        try {
+                            const buttonText = await window.CommerceMode.getButtonTextForProduct(product);
+                            button.textContent = buttonText;
+                            console.log(`✅ Updated button for product ${product.id} to: ${buttonText}`);
+                        } catch (error) {
+                            console.error(`Error updating button for product ${product.id}:`, error);
+                        }
+                    }
+                }
+            }
+        });
+        
+        window.addEventListener('activeChapterUpdated', async () => {
+            console.log('🔄 Active chapter updated, refreshing buttons...');
+            // Refresh all product buttons
+            if (window.CommerceMode && window.ProductsAPI) {
+                const products = window.ProductsAPI.getAll();
+                for (const product of products) {
+                    const button = document.querySelector(`.quick-add[data-product-id="${product.id}"]`);
+                    if (button && window.CommerceMode.getButtonTextForProduct) {
+                        try {
+                            const buttonText = await window.CommerceMode.getButtonTextForProduct(product);
+                            button.textContent = buttonText;
+                            console.log(`✅ Updated button for product ${product.id} to: ${buttonText}`);
+                        } catch (error) {
+                            console.error(`Error updating button for product ${product.id}:`, error);
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Also listen for commerce mode updates (old listener)
         window.addEventListener('commerceModeUpdated', () => {
             // Update homepage products to refresh button texts
             updateHomepageForChapter();

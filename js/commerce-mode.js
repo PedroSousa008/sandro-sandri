@@ -125,12 +125,17 @@ window.CommerceMode = {
         // Use Chapter I mode from table (chapter_modes.chapter_i.mode)
         if (!isChapterIIMode) {
             try {
+                console.log(`🔍 Getting button text for product ${product.id} in Chapter I mode`);
                 const chapterIMode = await this.getChapterMode('chapter_i');
+                console.log(`🔍 Chapter I mode from table: ${chapterIMode}`);
                 if (chapterIMode === 'WAITLIST') {
+                    console.log(`✅ Returning "Join the Waitlist" for product ${product.id}`);
                     return 'Join the Waitlist';
                 } else if (chapterIMode === 'EARLY_ACCESS') {
+                    console.log(`✅ Returning "Add to Cart" (EARLY_ACCESS) for product ${product.id}`);
                     return 'Add to Cart'; // Early Access still uses Add to Cart button
                 } else {
+                    console.log(`✅ Returning "Add to Cart" (LIVE) for product ${product.id}`);
                     return 'Add to Cart'; // LIVE mode
                 }
             } catch (error) {

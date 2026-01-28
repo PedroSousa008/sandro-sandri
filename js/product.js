@@ -108,9 +108,15 @@ function initProductPage() {
     });
     
     // Listen for commerce mode changes to update button
-    window.addEventListener('commerceModeUpdated', () => {
+    window.addEventListener('commerceModeUpdated', async () => {
         console.log('Commerce mode updated, refreshing product button...');
-        updateProductButtonForMode(product);
+        await updateProductButtonForMode(product);
+    });
+    
+    // Listen for active chapter changes to update button
+    window.addEventListener('activeChapterUpdated', async () => {
+        console.log('Active chapter updated, refreshing product button...');
+        await updateProductButtonForMode(product);
     });
     
     loadRelatedProducts(product);
