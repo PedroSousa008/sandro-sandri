@@ -53,6 +53,10 @@ module.exports = async (req, res) => {
         // SESSION VERIFICATION (GET)
         if (req.method === 'GET' || action === 'session') {
             try {
+                if (!auth || typeof auth.requireAuth !== 'function') {
+                    console.error('Auth module not loaded properly');
+                    return sendError(500, 'Authentication service unavailable');
+                }
                 const authResult = auth.requireAuth(req);
                 
                 if (!authResult.authorized) {
@@ -95,13 +99,22 @@ module.exports = async (req, res) => {
             // Normalize email (lowercase, trim) to match signup
             email = email.toLowerCase().trim();
 
+            // Check if modules are loaded
+            if (!db || typeof db.initDb !== 'function') {
+                console.error('DB module not loaded properly');
+                return sendError(500, 'Database service unavailable');
+            }
+
+            if (!auth || typeof auth.OWNER_EMAIL === 'undefined') {
+                console.error('Auth module not loaded properly');
+                return sendError(500, 'Authentication service unavailable');
+            }
+
             try {
                 await db.initDb();
             } catch (dbError) {
                 console.error('Error initializing database:', dbError);
-                return res.status(500).json({
-                    error: 'Database initialization failed'
-                });
+                return sendError(500, 'Database initialization failed');
             }
 
             // Check if this is owner account first
@@ -114,19 +127,27 @@ module.exports = async (req, res) => {
                 console.log('   Email:', email);
                 console.log('   Security Answer provided:', securityAnswer ? 'Yes' : 'No');
                 // Verify owner credentials (including security answer)
+                if (!auth || typeof auth.verifyOwnerCredentials !== 'function') {
+                    console.error('Auth.verifyOwnerCredentials not available');
+                    return sendError(500, 'Authentication service unavailable');
+                }
                 const ownerCheck = await auth.verifyOwnerCredentials(email, password, securityAnswer);
                 console.log('   Owner check result:', ownerCheck.valid ? 'Valid' : 'Invalid', ownerCheck.error || '');
                 if (!ownerCheck.valid) {
                     // SECURITY: Record failed login attempt and log (don't let logging errors break the flow)
-                    try {
-                        await rateLimit.recordFailedAttempt(req, 'login', email);
-                    } catch (e) {
-                        console.error('Error recording failed attempt:', e);
+                    if (rateLimit && typeof rateLimit.recordFailedAttempt === 'function') {
+                        try {
+                            await rateLimit.recordFailedAttempt(req, 'login', email);
+                        } catch (e) {
+                            console.error('Error recording failed attempt:', e);
+                        }
                     }
-                    try {
-                        await securityLog.logFailedLogin(req, email, ownerCheck.error || 'Invalid owner credentials');
-                    } catch (e) {
-                        console.error('Error logging failed login:', e);
+                    if (securityLog && typeof securityLog.logFailedLogin === 'function') {
+                        try {
+                            await securityLog.logFailedLogin(req, email, ownerCheck.error || 'Invalid owner credentials');
+                        } catch (e) {
+                            console.error('Error logging failed login:', e);
+                        }
                     }
                     return res.status(401).json({ 
                         error: ownerCheck.error || 'Invalid credentials' 
@@ -209,6 +230,10 @@ module.exports = async (req, res) => {
             }
 
             // Generate JWT token
+            if (!auth || typeof auth.generateToken !== 'function') {
+                console.error('Auth.generateToken not available');
+                return sendError(500, 'Authentication service unavailable');
+            }
             const token = auth.generateToken({
                 email: userKey,
                 role: isOwner ? 'OWNER' : 'USER'
