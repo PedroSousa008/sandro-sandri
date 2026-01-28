@@ -3,6 +3,96 @@
    ======================================== */
 
 /* ========================================
+   Legal Pages (Privacy Policy, Terms & Conditions)
+   ======================================== */
+.legal-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-md);
+}
+
+.legal-title {
+    font-family: var(--font-serif);
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    color: var(--color-navy);
+    margin-bottom: var(--space-sm);
+    text-align: center;
+}
+
+.legal-updated {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    text-align: center;
+    margin-bottom: var(--space-xl);
+}
+
+.legal-section {
+    margin-bottom: var(--space-xl);
+}
+
+.legal-heading {
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    color: var(--color-navy);
+    margin-bottom: var(--space-md);
+    margin-top: var(--space-lg);
+}
+
+.legal-subheading {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    color: var(--color-navy);
+    margin-bottom: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.legal-list {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--color-text);
+    margin: var(--space-md) 0;
+    padding-left: var(--space-lg);
+}
+
+.legal-list li {
+    margin-bottom: var(--space-sm);
+}
+
+.legal-section p {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--color-text);
+    margin-bottom: var(--space-md);
+}
+
+.legal-section a {
+    color: var(--color-navy);
+    text-decoration: underline;
+    transition: opacity var(--transition-fast);
+}
+
+.legal-section a:hover {
+    opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+    .legal-page {
+        padding: var(--space-lg) var(--space-md);
+    }
+    
+    .legal-heading {
+        font-size: 1.5rem;
+    }
+    
+    .legal-subheading {
+        font-size: 1.125rem;
+    }
+}
+
+/* ========================================
    Common Page Styles
    ======================================== */
 .page-main {
