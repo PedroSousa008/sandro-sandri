@@ -290,69 +290,43 @@
                     `;
                     }).join('');
                 } else {
-                     // Fallback: hardcoded Chapter II products
-                     productsGrid.innerHTML = `
-                         <article class="product-card" data-product-id="6">
-                             <a href="product.html?id=6&chapter=ii" class="product-link">
+                     // Fallback: hardcoded Chapter II products with async button text
+                     let html = '';
+                     const chapterIIProducts = [
+                         {id: 6, name: 'Maldives', image: 'images/maldives2.png'},
+                         {id: 7, name: 'Palma Mallorca', image: 'images/palma2.png'},
+                         {id: 8, name: 'Lago di Como', image: 'images/lago2.png'},
+                         {id: 9, name: 'Gisele', image: 'images/gisele2.png'},
+                         {id: 10, name: 'Pourville', image: 'images/pourville2.png'}
+                     ];
+                     
+                     for (const product of chapterIIProducts) {
+                         // Get button text (async)
+                         let buttonText = 'Add to Cart';
+                         if (window.CommerceMode && typeof window.CommerceMode.getButtonTextForProduct === 'function') {
+                             try {
+                                 buttonText = await window.CommerceMode.getButtonTextForProduct({id: product.id, chapter: 'chapter_ii'});
+                             } catch (error) {
+                                 console.error('Error getting button text for product:', error);
+                             }
+                         }
+                         
+                         html += `
+                         <article class="product-card" data-product-id="${product.id}">
+                             <a href="product.html?id=${product.id}&chapter=ii" class="product-link">
                                  <div class="product-image">
-                                     <img src="images/maldives2.png?v=3.0" alt="Maldives" onerror="console.error('Failed to load maldives2.png');">
+                                     <img src="${product.image}?v=3.0" alt="${product.name}" onerror="console.error('Failed to load ${product.image}');">
                                  </div>
                                  <div class="product-info">
-                                     <h3 class="product-name">Maldives</h3>
+                                     <h3 class="product-name">${product.name}</h3>
                                      <p class="product-price">€95</p>
                                  </div>
                              </a>
-                             <button class="quick-add" data-product-id="6">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 6, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
-                         </article>
-                         <article class="product-card" data-product-id="7">
-                             <a href="product.html?id=7&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/palma2.png?v=3.0" alt="Palma Mallorca" onerror="console.error('Failed to load palma2.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Palma Mallorca</h3>
-                                     <p class="product-price">€95</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="7">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 7, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
-                         </article>
-                         <article class="product-card" data-product-id="8">
-                             <a href="product.html?id=8&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/lago2.png?v=3.0" alt="Lago di Como" onerror="console.error('Failed to load lago2.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Lago di Como</h3>
-                                     <p class="product-price">€95</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="8">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 8, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
-                         </article>
-                         <article class="product-card" data-product-id="9">
-                             <a href="product.html?id=9&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/gisele2.png?v=3.0" alt="Gisele" onerror="console.error('Failed to load gisele2.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Gisele</h3>
-                                     <p class="product-price">€95</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="9">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 9, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
-                         </article>
-                         <article class="product-card" data-product-id="10">
-                             <a href="product.html?id=10&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/pourville2.png?v=3.0" alt="Pourville" onerror="console.error('Failed to load pourville2.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Pourville</h3>
-                                     <p class="product-price">€95</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="10">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 10, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
+                             <button class="quick-add" data-product-id="${product.id}">${buttonText}</button>
                          </article>
                      `;
+                     }
+                     productsGrid.innerHTML = html;
                 }
             } else {
                 // Chapter I products (IDs 1-5)
@@ -436,9 +410,9 @@
         
         // Also listen for chapter updates (but don't reload page)
         // Content will update dynamically
-        window.addEventListener('activeChapterUpdated', () => {
+        window.addEventListener('activeChapterUpdated', async () => {
             // Update content without reloading
-            updateHomepageForChapter();
+            await updateHomepageForChapter();
         });
         
         // Also listen for commerce mode changes to update button texts
