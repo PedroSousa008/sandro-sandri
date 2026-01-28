@@ -10,14 +10,15 @@ const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
-    // Set secure CORS headers (restricted to allowed origins)
-    cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
+    try {
+        // Set secure CORS headers (restricted to allowed origins)
+        cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+        if (req.method === 'OPTIONS') {
+            return res.status(200).end();
+        }
 
-    const { endpoint } = req.query;
+        const { endpoint } = req.query;
     
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
     if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {

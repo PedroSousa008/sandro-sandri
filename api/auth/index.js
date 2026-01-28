@@ -15,17 +15,19 @@ const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
-    // Set secure CORS headers (restricted to allowed origins)
-    cors.setCORSHeaders(res, req, ['GET', 'POST', 'OPTIONS']);
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
-    // Get the action from query parameter or path
-    const action = req.query.action || (req.url.includes('/login') ? 'login' : req.url.includes('/signup') ? 'signup' : req.url.includes('/session') ? 'session' : null);
-
+    // Wrap entire handler in try-catch to ensure JSON responses
     try {
+        // Set secure CORS headers (restricted to allowed origins)
+        cors.setCORSHeaders(res, req, ['GET', 'POST', 'OPTIONS']);
+
+        if (req.method === 'OPTIONS') {
+            return res.status(200).end();
+        }
+
+        // Get the action from query parameter or path
+        const action = req.query.action || (req.url.includes('/login') ? 'login' : req.url.includes('/signup') ? 'signup' : req.url.includes('/session') ? 'session' : null);
+
+        try {
         // SESSION VERIFICATION (GET)
         if (req.method === 'GET' || action === 'session') {
             const authResult = auth.requireAuth(req);
