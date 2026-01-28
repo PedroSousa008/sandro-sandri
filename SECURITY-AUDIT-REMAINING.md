@@ -44,26 +44,25 @@
 
 ---
 
-### 2. **CORS Configuration - Too Permissive** ⚠️ HIGH PRIORITY
-**Status:** ⚠️ Currently allows all origins (`*`)
+### 2. **CORS Configuration - Too Permissive** ✅ COMPLETED
+**Status:** ✅ **FIXED** - CORS now restricted to allowed origins
 
 **Current State:**
-- All API endpoints use: `Access-Control-Allow-Origin: *`
-- Allows requests from any domain
+- ✅ Created `lib/cors.js` helper function for secure CORS configuration
+- ✅ All API endpoints updated to use restricted CORS
+- ✅ Supports environment variable `ALLOWED_ORIGIN` or `APP_URL`
+- ✅ Allows localhost for development
+- ✅ Defaults to production domains if env var not set
 
-**Risk:**
-- Any website can make requests to your API
-- Potential for CSRF attacks
-- Data exposure risk
+**Security Improvements:**
+- ✅ No longer allows requests from any domain (`*`)
+- ✅ Only allows requests from configured domains
+- ✅ Prevents unauthorized API access
+- ✅ Reduces CSRF attack surface
 
-**Required Fix:**
-- Restrict CORS to your domain only
-- Use environment variable for allowed origins
-- Example: `Access-Control-Allow-Origin: https://sandrosandri.com`
-
-**Files to update:**
-- All API files in `/api/` directory
-- Use `process.env.ALLOWED_ORIGIN` or specific domain
+**Configuration:**
+- Set `ALLOWED_ORIGIN` environment variable in Vercel (optional, has smart defaults)
+- Example: `ALLOWED_ORIGIN=https://sandrosandri.com`
 
 ---
 
@@ -199,7 +198,7 @@
 - [x] `KV_REST_API_TOKEN` - Should be set
 - [x] `RESEND_API_KEY` - Should be set
 - [x] `OWNER_PASSWORD` - Should be set (optional, has default)
-- [ ] `ALLOWED_ORIGIN` - **RECOMMENDED** (for CORS restriction)
+- [ ] `ALLOWED_ORIGIN` - **OPTIONAL** (CORS has smart defaults, but recommended to set explicitly)
 
 ### Code Security
 - [x] No hardcoded passwords in frontend
@@ -233,7 +232,7 @@
 3. **Test all security measures** - Verify everything works
 
 ### Should Do (Important):
-4. **Restrict CORS** - Limit to your domain only
+4. ✅ **Restrict CORS** - **COMPLETED** - Now restricted to allowed origins
 5. **Review console logs** - Remove/mask sensitive information
 6. **Consider CSRF protection** - Implement if time permits
 
@@ -283,7 +282,7 @@
 | Logging | ⚠️ Needs Review | 85% |
 | Infrastructure | ✅ Complete | 100% |
 
-**Overall Security Score: 95%** (improved from 93% after JWT_SECRET configuration)
+**Overall Security Score: 97%** (improved from 93% after JWT_SECRET and CORS fixes)
 
 ---
 
@@ -292,12 +291,12 @@
 **Status:** ✅ **Ready for Launch** (with minor fixes recommended)
 
 **Critical Issues:** 0 ✅ (JWT_SECRET configured)  
-**Important Issues:** 2 (CORS, Error messages)  
+**Important Issues:** 1 (Error messages)  
 **Optional Issues:** 3 (CSRF, Logs, Token storage)
 
 **Recommendation:**
 - ✅ JWT_SECRET configuration - **COMPLETED**
-- Review and restrict CORS (IMPORTANT - recommended before launch)
+- ✅ CORS restriction - **COMPLETED**
 - Review error messages (IMPORTANT - recommended before launch)
 - Other items can be addressed post-launch
 
