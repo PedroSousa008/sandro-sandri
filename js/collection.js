@@ -310,8 +310,9 @@ function initCollection() {
                 // Get default size from product or use 'M'
                 const defaultSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M';
                 
-                // Check if in WAITLIST mode
-                if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+                // Check if this product should use waitlist behavior
+                const shouldUseWaitlist = window.CommerceMode && window.CommerceMode.shouldUseWaitlistBehavior(product);
+                if (shouldUseWaitlist) {
                     // Check if user is logged in
                     const isLoggedIn = window.CommerceMode.isUserLoggedIn();
                     
