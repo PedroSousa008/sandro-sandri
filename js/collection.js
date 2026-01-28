@@ -27,17 +27,16 @@ function initCollection() {
     // Update chapter filter buttons based on active chapter
     updateChapterFilters();
 
-    // Set initial chapter based on active chapter from server
-    if (window.ActiveChapter) {
-        currentChapter = window.ActiveChapter.isChapterII() ? 'chapter-2' : 'chapter-1';
-        // Update active button
-        filterButtons.forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.chapter === currentChapter) {
-                btn.classList.add('active');
-            }
-        });
-    }
+    // Always show both chapter buttons
+    // Set initial chapter to Chapter I by default
+    currentChapter = 'chapter-1';
+    // Update active button
+    filterButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.chapter === currentChapter) {
+            btn.classList.add('active');
+        }
+    });
 
     // Initial render
     renderProducts();
@@ -63,31 +62,8 @@ function initCollection() {
     });
 
     function updateChapterFilters() {
-        // Show/hide chapter filter buttons based on active chapter
-        // If Chapter II is active, show both buttons. If Chapter I is active, show only Chapter I button
-        if (window.ActiveChapter) {
-            const isChapterIIActive = window.ActiveChapter.isChapterII();
-            const chapterIIBtn = document.getElementById('chapter-ii-btn');
-            const chapterILabel = document.getElementById('collection-page-label');
-            
-            if (isChapterIIActive) {
-                // Chapter II is active - show both buttons
-                if (chapterIIBtn) {
-                    chapterIIBtn.style.display = '';
-                }
-                if (chapterILabel) {
-                    chapterILabel.textContent = 'Chapter II';
-                }
-            } else {
-                // Chapter I is active - hide Chapter II button
-                if (chapterIIBtn) {
-                    chapterIIBtn.style.display = 'none';
-                }
-                if (chapterILabel) {
-                    chapterILabel.textContent = 'Chapter I';
-                }
-            }
-        }
+        // Always show both chapter buttons - no need to hide/show
+        // The buttons allow users to switch between chapters
     }
 
     function renderProducts() {
@@ -154,16 +130,20 @@ function initCollection() {
     function filterByChapter(products, chapterId) {
         // Map chapter IDs to product IDs
         // Chapter I: Products 1-5 (current t-shirts)
-        // Chapter II: Will be products 6+ (add when ready)
+        // Chapter II: Products 6-10 (Chapter II t-shirts)
         const chapterProductMap = {
-            'chapter-1': [1, 2, 3, 4, 5], // Current products
-            'chapter-2': [6, 7, 8, 9, 10] // Future Chapter II products (add IDs when ready)
+            'chapter-1': [1, 2, 3, 4, 5], // Chapter I products
+            'chapter-2': [6, 7, 8, 9, 10] // Chapter II products
         };
         
         const productIds = chapterProductMap[chapterId];
         if (!productIds) return products; // If chapter not mapped, show all
         
-        return products.filter(product => productIds.includes(product.id));
+        // Filter products and ensure we only return 5 products
+        const filtered = products.filter(product => productIds.includes(product.id));
+        
+        // Limit to 5 products maximum
+        return filtered.slice(0, 5);
     }
 
     function filterByCollection(products, collectionKey) {
