@@ -225,7 +225,11 @@ module.exports = async (req, res) => {
 
             // SECURITY: Validate and sanitize inputs
             if (!rawEmail || !rawPassword) {
-                await securityLog.logSignupAttempt(req, rawEmail || 'unknown', false);
+                try {
+                    await securityLog.logSignupAttempt(req, rawEmail || 'unknown', false);
+                } catch (e) {
+                    console.error('Error logging signup attempt:', e);
+                }
                 return res.status(400).json({ 
                     error: 'Email and password are required' 
                 });
@@ -234,7 +238,11 @@ module.exports = async (req, res) => {
             // Validate email
             const emailValidation = validation.validateEmail(rawEmail);
             if (!emailValidation.valid) {
-                await securityLog.logSignupAttempt(req, rawEmail, false);
+                try {
+                    await securityLog.logSignupAttempt(req, rawEmail, false);
+                } catch (e) {
+                    console.error('Error logging signup attempt:', e);
+                }
                 return res.status(400).json({ 
                     error: emailValidation.error 
                 });
@@ -244,7 +252,11 @@ module.exports = async (req, res) => {
             // Validate password
             const passwordValidation = validation.validatePassword(rawPassword);
             if (!passwordValidation.valid) {
-                await securityLog.logSignupAttempt(req, normalizedEmail, false);
+                try {
+                    await securityLog.logSignupAttempt(req, normalizedEmail, false);
+                } catch (e) {
+                    console.error('Error logging signup attempt:', e);
+                }
                 return res.status(400).json({ 
                     error: passwordValidation.error 
                 });
@@ -252,9 +264,20 @@ module.exports = async (req, res) => {
             const password = rawPassword; // Password is validated but not sanitized (will be hashed)
 
             // SECURITY: Rate limiting for signup attempts
-            const rateLimitCheck = await rateLimit.checkRateLimit(req, 'signup', normalizedEmail);
+            let rateLimitCheck;
+            try {
+                rateLimitCheck = await rateLimit.checkRateLimit(req, 'signup', normalizedEmail);
+            } catch (e) {
+                console.error('Error checking rate limit:', e);
+                // If rate limit check fails, allow the request (fail open)
+                rateLimitCheck = { allowed: true };
+            }
             if (!rateLimitCheck.allowed) {
-                await securityLog.logRateLimitExceeded(req, 'signup', normalizedEmail);
+                try {
+                    await securityLog.logRateLimitExceeded(req, 'signup', normalizedEmail);
+                } catch (e) {
+                    console.error('Error logging rate limit exceeded:', e);
+                }
                 return res.status(429).json({
                     error: rateLimitCheck.error || 'Too many signup attempts. Please try again later.'
                 });
@@ -268,7 +291,11 @@ module.exports = async (req, res) => {
 
             // If user exists and is already verified, return error
             if (existingUser && existingUser.email_verified === true) {
-                await securityLog.logSignupAttempt(req, normalizedEmail, false);
+                try {
+                    await securityLog.logSignupAttempt(req, normalizedEmail, false);
+                } catch (e) {
+                    console.error('Error logging signup attempt:', e);
+                }
                 return res.status(400).json({ 
                     error: 'An account with this email already exists' 
                 });
