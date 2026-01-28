@@ -292,7 +292,11 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         // SECURITY: Don't expose error details to users
-        errorHandler.sendSecureError(res, error, 500, 'Authentication failed. Please try again.', 'AUTH_ERROR');
+        console.error('Auth API Error:', error);
+        // Ensure we always return JSON, even on error
+        if (!res.headersSent) {
+            errorHandler.sendSecureError(res, error, 500, 'Authentication failed. Please try again.', 'AUTH_ERROR');
+        }
     }
 };
 
