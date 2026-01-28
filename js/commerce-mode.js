@@ -15,8 +15,18 @@ window.CommerceMode = {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
+                    const previousMode = this.currentMode;
                     this.currentMode = data.commerce_mode || 'LIVE';
                     this.isInitialized = true;
+                    
+                    // Dispatch event if mode changed (or on first load)
+                    if (!this._hasDispatchedInitialEvent || previousMode !== this.currentMode) {
+                        this._hasDispatchedInitialEvent = true;
+                        window.dispatchEvent(new CustomEvent('commerceModeUpdated', {
+                            detail: { mode: this.currentMode, previousMode: previousMode }
+                        }));
+                    }
+                    
                     return this.currentMode;
                 }
             }
@@ -26,6 +36,24 @@ window.CommerceMode = {
         this.currentMode = 'LIVE';
         this.isInitialized = true;
         return this.currentMode;
+    },
+    
+    // Poll for commerce mode changes (useful when admin changes mode)
+    startPolling(intervalMs = 5000) {
+        if (this._pollingInterval) {
+            clearInterval(this._pollingInterval);
+        }
+        this._pollingInterval = setInterval(() => {
+            this.loadMode();
+        }, intervalMs);
+    },
+    
+    // Stop polling
+    stopPolling() {
+        if (this._pollingInterval) {
+            clearInterval(this._pollingInterval);
+            this._pollingInterval = null;
+        }
     },
     
     // Check if in WAITLIST mode
@@ -181,23 +209,9 @@ window.CommerceMode = {
 if (typeof window !== 'undefined') {
     // Load mode immediately
     window.CommerceMode.loadMode().then(() => {
-        // Update buttons after mode is loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                window.CommerceMode.updateAllButtons();
-            });
-        } else {
-            window.CommerceMode.updateAllButtons();
-        }
-        
-        // Also update buttons when DOM changes (for dynamically loaded content)
-        const observer = new MutationObserver(() => {
-            window.CommerceMode.updateAllButtons();
-        });
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+        // Start polling for mode changes (useful when admin changes mode)
+        // Poll every 5 seconds to catch admin changes
+        window.CommerceMode.startPolling(5000);
     });
 }
 
