@@ -3,7 +3,17 @@
    ======================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
-    initCollection();
+    // Wait for ActiveChapter to load before initializing collection
+    // This ensures we know if site is in Chapter I or Upload Chapter II mode
+    const checkActiveChapter = () => {
+        if (window.ActiveChapter && window.ActiveChapter.currentChapter) {
+            initCollection();
+        } else {
+            // Wait a bit more for ActiveChapter to load
+            setTimeout(checkActiveChapter, 100);
+        }
+    };
+    checkActiveChapter();
 });
 
 function initCollection() {
@@ -24,11 +34,11 @@ function initCollection() {
         currentCollection = collectionParam;
     }
 
-    // Update chapter filter buttons based on active chapter
-    // This will show/hide Chapter II button based on site mode
+    // Update chapter filter buttons based on active chapter from server
+    // IMPORTANT: Chapter II button ONLY appears when site is in "Upload Chapter II" mode
     updateChapterFilters();
     
-    // Also listen for chapter mode changes (when owner switches modes)
+    // Also listen for chapter mode changes (when owner switches modes in Owner Mode)
     window.addEventListener('activeChapterUpdated', () => {
         updateChapterFilters();
         // Re-render products with correct chapter
