@@ -188,11 +188,21 @@ async function initCheckout() {
     const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
     
     // Check if we're in "Upload Chapter II" mode
-    const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
+    // Wait a bit for ActiveChapter to load if it's not ready yet
+    let isChapterIIMode = false;
+    if (window.ActiveChapter) {
+        if (typeof window.ActiveChapter.isChapterII === 'function') {
+            isChapterIIMode = window.ActiveChapter.isChapterII();
+        } else if (window.ActiveChapter.currentChapter === 'chapter_ii') {
+            isChapterIIMode = true;
+        }
+    }
     
     console.log('🔍 Checkout Check:', {
         commerceMode: currentCommerceMode,
         isChapterIIMode: isChapterIIMode,
+        activeChapterExists: !!window.ActiveChapter,
+        activeChapterValue: window.ActiveChapter?.currentChapter,
         cartItems: cart.map(item => ({ id: item.productId || item.id, name: item.name }))
     });
     
