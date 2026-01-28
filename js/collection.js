@@ -52,6 +52,8 @@ function initCollection() {
                     btn.classList.add('active');
                 }
             });
+            // Update page title based on current chapter
+            updateCollectionPageTitle(currentChapter);
             renderProducts();
         }
     });
