@@ -287,5 +287,13 @@ module.exports = async (req, res) => {
     } else {
         return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity or ?endpoint=customers' });
     }
+    } catch (error) {
+        // SECURITY: Don't expose error details to users
+        console.error('Admin API Error (outer catch):', error);
+        // Ensure we always return JSON, even on error
+        if (!res.headersSent) {
+            errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'ADMIN_ERROR');
+        }
+    }
 };
 
