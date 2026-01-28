@@ -27,7 +27,14 @@ module.exports = async (req, res) => {
 
     try {
         // Set secure CORS headers (restricted to allowed origins)
-        cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
+        if (cors && typeof cors.setCORSHeaders === 'function') {
+            cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
+        } else {
+            // Fallback CORS headers
+            res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Token');
+        }
 
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
