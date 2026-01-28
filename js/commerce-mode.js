@@ -39,7 +39,7 @@ window.CommerceMode = {
     },
     
     // Poll for commerce mode changes (useful when admin changes mode)
-    startPolling(intervalMs = 5000) {
+    startPolling(intervalMs = 3000) {
         if (this._pollingInterval) {
             clearInterval(this._pollingInterval);
         }
