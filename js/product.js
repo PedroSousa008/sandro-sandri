@@ -502,15 +502,22 @@ function initAccordions() {
     }
 }
 
-// Update product button based on commerce mode
+// Update product button based on commerce mode and product chapter
 function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
     
-    // Check commerce mode - show "Join the Waitlist" in WAITLIST mode
-    if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
-        submitBtn.textContent = 'Join the Waitlist';
-        submitBtn.classList.add('waitlist-btn');
+    // Use the new chapter-aware button text function
+    if (window.CommerceMode) {
+        const buttonText = window.CommerceMode.getButtonTextForProduct(product);
+        submitBtn.textContent = buttonText;
+        
+        // Add waitlist-btn class if using waitlist behavior
+        if (window.CommerceMode.shouldUseWaitlistBehavior(product)) {
+            submitBtn.classList.add('waitlist-btn');
+        } else {
+            submitBtn.classList.remove('waitlist-btn');
+        }
     } else {
         submitBtn.textContent = 'Add to Cart';
         submitBtn.classList.remove('waitlist-btn');
@@ -1109,7 +1116,7 @@ function loadRelatedProducts(currentProduct) {
                     <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                 </div>
             </a>
-            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
+            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct(product) : 'Add to Cart'}</button>
         </article>
     `).join('');
 }

@@ -285,7 +285,7 @@
                                     <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                                 </div>
                             </a>
-                            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
+                            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct(product) : 'Add to Cart'}</button>
                         </article>
                     `;
                     }).join('');
@@ -302,7 +302,7 @@
                                      <p class="product-price">€95</p>
                                  </div>
                              </a>
-                             <button class="quick-add" data-product-id="6">Add to Cart</button>
+                             <button class="quick-add" data-product-id="6">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 6, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
                          </article>
                          <article class="product-card" data-product-id="7">
                              <a href="product.html?id=7&chapter=ii" class="product-link">
@@ -314,7 +314,7 @@
                                      <p class="product-price">€95</p>
                                  </div>
                              </a>
-                             <button class="quick-add" data-product-id="7">Add to Cart</button>
+                             <button class="quick-add" data-product-id="7">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 7, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
                          </article>
                          <article class="product-card" data-product-id="8">
                              <a href="product.html?id=8&chapter=ii" class="product-link">
@@ -326,7 +326,7 @@
                                      <p class="product-price">€95</p>
                                  </div>
                              </a>
-                             <button class="quick-add" data-product-id="8">Add to Cart</button>
+                             <button class="quick-add" data-product-id="8">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 8, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
                          </article>
                          <article class="product-card" data-product-id="9">
                              <a href="product.html?id=9&chapter=ii" class="product-link">
@@ -338,7 +338,7 @@
                                      <p class="product-price">€95</p>
                                  </div>
                              </a>
-                             <button class="quick-add" data-product-id="9">Add to Cart</button>
+                             <button class="quick-add" data-product-id="9">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 9, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
                          </article>
                          <article class="product-card" data-product-id="10">
                              <a href="product.html?id=10&chapter=ii" class="product-link">
@@ -350,7 +350,7 @@
                                      <p class="product-price">€95</p>
                                  </div>
                              </a>
-                             <button class="quick-add" data-product-id="10">Add to Cart</button>
+                             <button class="quick-add" data-product-id="10">${window.CommerceMode ? window.CommerceMode.getButtonTextForProduct({id: 10, chapter: 'chapter_ii'}) : 'Add to Cart'}</button>
                          </article>
                      `;
                 }

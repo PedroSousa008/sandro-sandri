@@ -85,6 +85,64 @@ window.CommerceMode = {
             console.error('Error getting user email:', error);
         }
         return null;
+    },
+    
+    // Get button text and behavior based on product chapter and commerce mode
+    // This function implements the logic where Chapter I always has Add to Cart,
+    // while Chapter II follows the commerce mode (WAITLIST, EARLY_ACCESS, or LIVE)
+    getButtonTextForProduct(product) {
+        if (!product) return 'Add to Cart';
+        
+        // Check if product is Chapter II (IDs 6-10)
+        const isChapterII = product.id >= 6 && product.id <= 10;
+        
+        // Check if site is in "Upload Chapter II" mode
+        const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
+        
+        // If not in Chapter II mode, all products behave normally
+        if (!isChapterIIMode) {
+            if (this.isWaitlistMode()) {
+                return 'Join the Waitlist';
+            }
+            return 'Add to Cart';
+        }
+        
+        // In Chapter II mode, apply different logic:
+        if (isChapterII) {
+            // Chapter II products follow commerce mode
+            if (this.isWaitlistMode()) {
+                return 'Join the Waitlist';
+            } else if (this.isEarlyAccessMode()) {
+                return 'Add to Cart'; // Early Access - limited inventory
+            } else {
+                return 'Add to Cart'; // LIVE mode
+            }
+        } else {
+            // Chapter I products always have Add to Cart functionality
+            return 'Add to Cart';
+        }
+    },
+    
+    // Check if product should use waitlist behavior
+    shouldUseWaitlistBehavior(product) {
+        if (!product) return false;
+        
+        const isChapterII = product.id >= 6 && product.id <= 10;
+        const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
+        
+        // Only Chapter II products in Chapter II mode use waitlist when in WAITLIST mode
+        return isChapterIIMode && isChapterII && this.isWaitlistMode();
+    },
+    
+    // Check if product should use early access behavior
+    shouldUseEarlyAccessBehavior(product) {
+        if (!product) return false;
+        
+        const isChapterII = product.id >= 6 && product.id <= 10;
+        const isChapterIIMode = window.ActiveChapter && window.ActiveChapter.isChapterII();
+        
+        // Only Chapter II products in Chapter II mode use early access when in EARLY_ACCESS mode
+        return isChapterIIMode && isChapterII && this.isEarlyAccessMode();
     }
 };
 
