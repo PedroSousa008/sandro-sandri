@@ -209,7 +209,7 @@ const PRODUCTS = [
         name: "Maldives",
         price: 95,
         category: "tshirts",
-        description: "Maldives - Description will be updated",
+        description: "A sanctuary of barefoot luxury where time slows, and nature's beauty reigns supreme. \"No shoes, No news\" - just the gentle whisper of the ocean, and endless horizons of sapphire blue. \"Maruhaba\" to a paradise on earth, where overwater villas float above crystal-clear lagoons, and secluded beaches invite effortless serenity. The Mal (dive) s - where every dive is a journey into a world of endless wonder.",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
@@ -247,7 +247,7 @@ const PRODUCTS = [
         name: "Palma Mallorca",
         price: 95,
         category: "tshirts",
-        description: "Palma Mallorca - Description will be updated",
+        description: "Sun drenched escape where palms sway to the rhythm of the sea, and golden light kisses ancient stone and turquoise coves. The Mediterranean's best-kept secret, whispered between olive groves and quiet villages painted in sun.faded hues. Here, every breeze hums the melody of \"La Isla Bonita\", where Madonna once dreamt of San Pedro - but the true dream lives here, in the soul of Spain's own jewel. \"Con Amor desde la isla bonita de España\", from winding coastal roads to secret calas.",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
@@ -287,7 +287,7 @@ const PRODUCTS = [
         name: "Lago di Como",
         price: 95,
         category: "tshirts",
-        description: "Lago di Como - Description will be updated",
+        description: "Lago Di Como glimmers like liquid silk, where mountains rise with quiet grandeur and villas stand as echoes of a storied past. The water reflects more than the sky-it holds whispers of romance, of idle afternoons, of wine kissed by the fading sun. Here, beauty is effortless, time is unhurried, and every glance is a love letter to elegance itself.",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
@@ -327,7 +327,7 @@ const PRODUCTS = [
         name: "Gisele",
         price: 95,
         category: "tshirts",
-        description: "Gisele - Description will be updated",
+        description: "Gisele, poised atop the Martini's delicate rim radiates an aura of effortless sophistication. The rich Expresso gleams beneath her, as her Birkin Bag rests below in a whisper of understated opulence, capturing the essence of Timeless Elegance.",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",
@@ -367,7 +367,7 @@ const PRODUCTS = [
         name: "Pourville",
         price: 95,
         category: "tshirts",
-        description: "Pourville - Description will be updated",
+        description: "The Cliff Walk at Pourville by Claude Monet beautifully captures the quiet majesty of the Normandy coast. The painting immerses the viewer in a windswept landscape, where rolling cliffs meet the vast expanse of sea and sky. Monet's masterful use of light and color transforms the scene into a symphony of blues and greens, evoking both serenity and movement. His delicate yet expressive brushstrokes blur the line between earth air, creating a dreamlike harmony that embodies the fleeting beauty of nature, a hallmark of Impressionism. 1882",
         details: [
             "100% Premium Cotton",
             "Relaxed Fit",

@@ -4,6 +4,7 @@
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../../lib/storage');
+const inventoryService = require('../../lib/inventory');
 
 // Process webhook event with idempotency
 async function processWebhookEvent(event) {
@@ -104,14 +105,20 @@ async function handleCheckoutCompleted(session) {
     
     // IMPORTANT: Only decrement inventory AFTER payment is confirmed
     // All products start with full stock, and quantities are only updated here
-    // Get commerce mode from site settings (or from order metadata if stored)
-    const settings = await db.getSiteSettings();
-    const commerceMode = settings.commerce_mode || 'LIVE';
-    console.log('💰 Payment confirmed, decrementing inventory for:', cart.length, 'items', 'Mode:', commerceMode);
-    const inventoryResult = await decrementInventoryAtomic(cart, commerceMode);
+    console.log('💰 Payment confirmed, decrementing inventory for:', cart.length, 'items');
     
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const userId = customerEmail; // Using email as user ID
+    
+    // Create temporary order object for inventory decrement
+    const tempOrder = {
+        id: orderId,
+        orderNumber: orderNumber,
+        cart: cart
+    };
+    
+    // Decrement inventory using new chapter-based system
+    const inventoryResult = await inventoryService.decrementInventoryOnPaidOrder(tempOrder);
     
     if (!inventoryResult.success) {
         // Inventory insufficient - mark order as failed

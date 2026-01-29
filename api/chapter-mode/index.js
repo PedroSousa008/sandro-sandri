@@ -8,6 +8,7 @@ const auth = require('../../lib/auth');
 const securityLog = require('../../lib/security-log');
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
+const inventoryService = require('../../lib/inventory');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers
@@ -138,6 +139,20 @@ module.exports = async (req, res) => {
                     // Set default mode for new active chapter if not set
                     if (!chapters[chapterId].mode) {
                         chapters[chapterId].mode = 'add_to_cart';
+                    }
+
+                    // Initialize inventory for this chapter
+                    try {
+                        const models = inventoryService.getModelsForChapter(chapterId);
+                        if (models.length > 0) {
+                            const initialized = await inventoryService.initChapterInventoryIfNeeded(chapterId, models);
+                            if (initialized) {
+                                console.log(`✅ Inventory initialized for ${chapterId} with ${models.length} models`);
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`❌ Error initializing inventory for ${chapterId}:`, error);
+                        // Don't fail the chapter creation if inventory init fails
                     }
 
                     // Log admin action

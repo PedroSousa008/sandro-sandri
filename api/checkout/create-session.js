@@ -174,7 +174,7 @@ const db = require('../../lib/storage');
 
 // Validate cart items against inventory
 async function validateCartInventory(cart, commerceMode = 'LIVE') {
-    const inventory = await db.getInventory();
+    const inventoryService = require('../../lib/inventory');
     const errors = [];
     
     for (const item of cart) {
@@ -182,29 +182,28 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
         const size = item.size;
         const quantity = item.quantity;
         
-        // Get stock based on commerce mode
-        let availableStock = 0;
-        const productInventory = inventory[productId];
-        
-        if (!productInventory) {
-            availableStock = 0;
-        } else if (commerceMode === 'EARLY_ACCESS') {
-            // Use early_access_stock
-            if (productInventory.early_access_stock) {
-                availableStock = productInventory.early_access_stock[size] || 0;
-            } else if (productInventory[size]) {
-                // Legacy format - assume it's early_access if no live_stock
-                availableStock = productInventory[size] || 0;
-            }
-        } else {
-            // LIVE mode - use live_stock
-            if (productInventory.live_stock) {
-                availableStock = productInventory.live_stock[size] || 0;
-            } else if (productInventory[size]) {
-                // Legacy format - assume it's live_stock
-                availableStock = productInventory[size] || 0;
-            }
+        // Determine chapter from product ID
+        let chapterId = null;
+        if (productId >= 1 && productId <= 5) {
+            chapterId = 'chapter-1';
+        } else if (productId >= 6 && productId <= 10) {
+            chapterId = 'chapter-2';
         }
+        
+        if (!chapterId) {
+            errors.push({
+                productId,
+                size,
+                requested: quantity,
+                available: 0,
+                productName: item.name,
+                error: `Could not determine chapter for product ${productId}`
+            });
+            continue;
+        }
+        
+        // Get stock from chapter-based inventory
+        const availableStock = await inventoryService.getStock(chapterId, productId, size);
         
         if (availableStock < quantity) {
             errors.push({

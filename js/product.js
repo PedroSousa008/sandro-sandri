@@ -271,33 +271,56 @@ function initSizeSelection(product) {
         }
     }
     
-    // Render size buttons with simple onclick
-    product.sizes.forEach((size, index) => {
+    // Render size buttons with async inventory check
+    let firstInStockSize = null;
+    
+    // Create all buttons first
+    const sizeButtons = product.sizes.map((size, index) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'size-btn';
+        btn.dataset.size = size;
+        btn.textContent = size;
+        sizeOptions.appendChild(btn);
+        return { btn, size, index };
+    });
+    
+    // Then check inventory for each button asynchronously
+    const sizePromises = sizeButtons.map(async ({ btn, size, index }) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'size-btn';
         btn.dataset.size = size;
         btn.textContent = size;
         
-        // Check if size is in stock
-        const inStock = window.InventoryAPI && window.InventoryAPI.isInStock(product.id, size);
+        // Check inventory asynchronously
+        let inStock = false;
+        if (window.InventoryAPI) {
+            if (window.InventoryAPI.isInStockAsync) {
+                inStock = await window.InventoryAPI.isInStockAsync(product.id, size);
+            } else {
+                inStock = window.InventoryAPI.isInStock(product.id, size);
+            }
+        }
         
         if (!inStock) {
             btn.classList.add('sold-out');
+            btn.textContent = `${size} - Sold Out`;
             btn.style.opacity = '0.5';
             btn.style.cursor = 'not-allowed';
-        }
-        
-        // Set default active state
-        if (index === 0) {
-            btn.classList.add('active');
+            btn.disabled = true;
+        } else {
+            // Track first in-stock size for default selection
+            if (!firstInStockSize) {
+                firstInStockSize = size;
+            }
         }
         
         // Simple inline onclick - most reliable
         btn.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            if (!inStock) return false; // Don't allow selection of sold out sizes
+            if (!inStock || btn.disabled) return false; // Don't allow selection of sold out sizes
             console.log('Button clicked for size:', size);
             selectSize(size);
             return false;
@@ -307,18 +330,41 @@ function initSizeSelection(product) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            if (!inStock) return false; // Don't allow selection of sold out sizes
+            if (!inStock || btn.disabled) return false; // Don't allow selection of sold out sizes
             console.log('Event listener triggered for size:', size);
             selectSize(size);
         }, false);
         
-        sizeOptions.appendChild(btn);
+        return { btn, size, inStock };
     });
     
-    // Set default size
-    if (sizeInput) {
-        sizeInput.value = product.sizes[0];
+    // Wait for all inventory checks to complete
+    const sizeResults = await Promise.all(sizePromises);
+    
+    // Set default size to first in-stock size
+    if (sizeInput && firstInStockSize) {
+        sizeInput.value = firstInStockSize;
         console.log('Default size set to:', sizeInput.value);
+        
+        // Activate the first in-stock button
+        sizeResults.forEach(({ btn, size, inStock }) => {
+            if (size === firstInStockSize && inStock) {
+                btn.classList.add('active');
+                selectSize(size);
+            }
+        });
+        
+        // Update Add to Cart button for default size
+        if (window.updateAddToCartButton) {
+            window.updateAddToCartButton(product.id, firstInStockSize);
+        }
+        
+        // Update quantity max for default size
+        updateQuantityMax(product.id, firstInStockSize);
+    } else if (sizeInput && product.sizes.length > 0) {
+        // Fallback: use first size even if sold out
+        sizeInput.value = product.sizes[0];
+        console.log('Default size set to (fallback):', sizeInput.value);
         
         // Update Add to Cart button for default size
         if (window.updateAddToCartButton) {
@@ -1100,17 +1146,30 @@ function loadRelatedProducts(currentProduct) {
     const relatedGrid = document.getElementById('related-products');
     if (!relatedGrid) return;
     
-    // Get products from same category, excluding current product
-    let related = window.ProductsAPI.getByCategory(currentProduct.category)
-        .filter(p => p.id !== currentProduct.id);
+    // Get products from same chapter, excluding current product
+    let related = [];
     
-    // If not enough, add from other categories
+    if (currentProduct.chapter) {
+        // Get all products from the same chapter
+        related = window.ProductsAPI.getByChapter(currentProduct.chapter)
+            .filter(p => p.id !== currentProduct.id);
+    }
+    
+    // If not enough products in same chapter, fall back to same category
+    if (related.length < 4) {
+        const categoryProducts = window.ProductsAPI.getByCategory(currentProduct.category)
+            .filter(p => p.id !== currentProduct.id);
+        related = [...related, ...categoryProducts].slice(0, 4);
+    } else {
+        // Show exactly 4 products from same chapter
+        related = related.slice(0, 4);
+    }
+    
+    // If still not enough, add from other categories
     if (related.length < 4) {
         const others = window.ProductsAPI.getAll()
-            .filter(p => p.id !== currentProduct.id && p.category !== currentProduct.category);
+            .filter(p => p.id !== currentProduct.id && !related.find(r => r.id === p.id));
         related = [...related, ...others].slice(0, 4);
-    } else {
-        related = related.slice(0, 4);
     }
     
     relatedGrid.innerHTML = related.map(product => `
