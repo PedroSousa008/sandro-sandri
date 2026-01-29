@@ -1394,6 +1394,7 @@
     color: var(--color-navy);
 }
 
+.payment-page-btn,
 .place-order-btn {
     display: block;
     width: 100%;
@@ -1408,10 +1409,20 @@
     padding: var(--space-md);
     transition: var(--transition-fast);
     margin-top: var(--space-md);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
 }
 
+.payment-page-btn:hover,
 .place-order-btn:hover {
     background: var(--color-navy-dark);
+}
+
+.payment-page-btn:disabled,
+.place-order-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* ========================================
