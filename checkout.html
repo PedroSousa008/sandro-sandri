@@ -371,15 +371,34 @@
                                 </div>
                             </div>
 
-                            <!-- Payment -->
-                            <div class="checkout-form-section">
-                                <h2 class="checkout-section-title">Payment</h2>
-                                <p style="font-family: var(--font-serif); color: var(--color-text-light); margin-bottom: var(--space-md);">
-                                    You will be redirected to our secure payment page to complete your order.
-                                </p>
+                            <!-- Payment Information (initially hidden) -->
+                            <div class="checkout-form-section" id="payment-section" style="display: none;">
+                                <h2 class="checkout-section-title">Payment Information</h2>
+                                <div class="form-group">
+                                    <label class="form-label" for="cardNumber">Card Number</label>
+                                    <input type="text" id="cardNumber" name="cardNumber" class="checkout-input" placeholder="1234 5678 9012 3456" maxlength="19" pattern="[0-9\s]{13,19}">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="cardExpiry">Expiry Date</label>
+                                        <input type="text" id="cardExpiry" name="cardExpiry" class="checkout-input" placeholder="MM/YY" maxlength="5" pattern="[0-9]{2}/[0-9]{2}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="cardCVC">CVC</label>
+                                        <input type="text" id="cardCVC" name="cardCVC" class="checkout-input" placeholder="123" maxlength="4" pattern="[0-9]{3,4}">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="cardholderName">Cardholder Name</label>
+                                    <input type="text" id="cardholderName" name="cardholderName" class="checkout-input" placeholder="Name on card">
+                                </div>
                             </div>
 
-                            <button type="submit" class="place-order-btn">Place Order</button>
+                            <!-- Payment Page Button (shown first) -->
+                            <button type="button" class="payment-page-btn" id="payment-page-btn" style="display: none;">Payment Page</button>
+                            
+                            <!-- Place Order Button (shown after payment info) -->
+                            <button type="submit" class="place-order-btn" id="place-order-btn" style="display: none;">Place Order</button>
                         </form>
                     </div>
 

@@ -399,11 +399,132 @@ function initCheckoutForm() {
     const form = document.getElementById('checkout-form');
     if (!form) return;
 
+    const paymentSection = document.getElementById('payment-section');
+    const paymentPageBtn = document.getElementById('payment-page-btn');
+    const placeOrderBtn = document.getElementById('place-order-btn');
+    
+    // Required checkout fields (contact + shipping)
+    const requiredCheckoutFields = ['email', 'firstName', 'lastName', 'address', 'city', 'postalCode', 'country'];
+    
+    // Required payment fields
+    const requiredPaymentFields = ['cardNumber', 'cardExpiry', 'cardCVC', 'cardholderName'];
+    
+    // Function to check if checkout info is complete
+    function checkCheckoutInfoComplete() {
+        return requiredCheckoutFields.every(fieldId => {
+            const field = document.getElementById(fieldId);
+            return field && field.value.trim() !== '';
+        });
+    }
+    
+    // Function to check if payment info is complete
+    function checkPaymentInfoComplete() {
+        return requiredPaymentFields.every(fieldId => {
+            const field = document.getElementById(fieldId);
+            return field && field.value.trim() !== '';
+        });
+    }
+    
+    // Function to update button visibility
+    function updateButtonVisibility() {
+        const checkoutComplete = checkCheckoutInfoComplete();
+        const paymentComplete = checkPaymentInfoComplete();
+        
+        if (paymentComplete) {
+            // Payment info complete - show Place Order button
+            if (paymentPageBtn) paymentPageBtn.style.display = 'none';
+            if (placeOrderBtn) placeOrderBtn.style.display = 'block';
+            if (paymentSection) paymentSection.style.display = 'block';
+        } else if (checkoutComplete) {
+            // Checkout info complete - show Payment Page button
+            if (paymentPageBtn) paymentPageBtn.style.display = 'block';
+            if (placeOrderBtn) placeOrderBtn.style.display = 'none';
+            if (paymentSection) paymentSection.style.display = 'none';
+        } else {
+            // Nothing complete - hide both buttons
+            if (paymentPageBtn) paymentPageBtn.style.display = 'none';
+            if (placeOrderBtn) placeOrderBtn.style.display = 'none';
+            if (paymentSection) paymentSection.style.display = 'none';
+        }
+    }
+    
+    // Listen to all form field changes
+    const allFields = [...requiredCheckoutFields, ...requiredPaymentFields];
+    allFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', updateButtonVisibility);
+            field.addEventListener('change', updateButtonVisibility);
+        }
+    });
+    
+    // Payment Page button click handler
+    if (paymentPageBtn) {
+        paymentPageBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Validate checkout info
+            if (!checkCheckoutInfoComplete()) {
+                alert('Please fill in all required checkout information');
+                return;
+            }
+            
+            // Show payment section
+            if (paymentSection) {
+                paymentSection.style.display = 'block';
+                paymentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            // Hide Payment Page button, show Place Order button (will be enabled when payment info is filled)
+            paymentPageBtn.style.display = 'none';
+            if (placeOrderBtn) placeOrderBtn.style.display = 'block';
+        });
+    }
+    
+    // Format card number input
+    const cardNumberInput = document.getElementById('cardNumber');
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            if (formattedValue.length <= 19) {
+                e.target.value = formattedValue;
+            }
+            updateButtonVisibility();
+        });
+    }
+    
+    // Format expiry date input
+    const cardExpiryInput = document.getElementById('cardExpiry');
+    if (cardExpiryInput) {
+        cardExpiryInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+            updateButtonVisibility();
+        });
+    }
+    
+    // Format CVC input (numbers only)
+    const cardCVCInput = document.getElementById('cardCVC');
+    if (cardCVCInput) {
+        cardCVCInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+            updateButtonVisibility();
+        });
+    }
+    
+    // Initial button visibility check
+    updateButtonVisibility();
+
     // Update totals when country changes
     const countrySelect = document.getElementById('country');
     if (countrySelect) {
         countrySelect.addEventListener('change', () => {
             updateCheckoutTotals();
+            updateButtonVisibility();
         });
     }
 
