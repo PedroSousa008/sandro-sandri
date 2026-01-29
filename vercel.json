@@ -44,6 +44,10 @@
     {
       "source": "/api/admin/setup-owner",
       "destination": "/api/admin?endpoint=setup-owner"
+    },
+    {
+      "source": "/api/inventory",
+      "destination": "/api/inventory"
     }
   ],
   "headers": [

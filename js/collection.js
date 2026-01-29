@@ -197,22 +197,6 @@ function initCollection() {
         // Animate cards
         animateCards();
 
-        // Ensure product links are clickable (not blocked by quick-add buttons)
-        const productLinks = productsGrid.querySelectorAll('.product-link');
-        productLinks.forEach(link => {
-            // Remove any existing click handlers that might prevent navigation
-            link.addEventListener('click', (e) => {
-                // Only prevent if clicking on the quick-add button itself
-                if (e.target.closest('.quick-add')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-                // Otherwise, allow normal navigation
-                return true;
-            }, true); // Use capture phase to ensure it runs first
-        });
-
         // Add quick-add functionality
         initQuickAdd();
     }

@@ -174,7 +174,6 @@ const db = require('../../lib/storage');
 
 // Validate cart items against inventory
 async function validateCartInventory(cart, commerceMode = 'LIVE') {
-    const inventoryService = require('../../lib/inventory');
     const errors = [];
     
     for (const item of cart) {
@@ -182,28 +181,57 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
         const size = item.size;
         const quantity = item.quantity;
         
-        // Determine chapter from product ID
+        // Determine chapter ID from product ID
         let chapterId = null;
-        if (productId >= 1 && productId <= 5) {
-            chapterId = 'chapter-1';
-        } else if (productId >= 6 && productId <= 10) {
+        if (productId >= 6 && productId <= 10) {
             chapterId = 'chapter-2';
+        } else if (productId >= 1 && productId <= 5) {
+            chapterId = 'chapter-1';
         }
         
-        if (!chapterId) {
-            errors.push({
-                productId,
-                size,
-                requested: quantity,
-                available: 0,
-                productName: item.name,
-                error: `Could not determine chapter for product ${productId}`
-            });
-            continue;
+        let availableStock = 0;
+        
+        // Use new chapter-based inventory if chapter is known
+        if (chapterId) {
+            try {
+                const inventory = await db.getChapterInventory(chapterId);
+                if (inventory && inventory.models && inventory.models[productId.toString()]) {
+                    const model = inventory.models[productId.toString()];
+                    if (model.stock && model.stock[size.toUpperCase()] !== undefined) {
+                        availableStock = model.stock[size.toUpperCase()] || 0;
+                    }
+                }
+            } catch (error) {
+                console.error(`Error fetching inventory for ${chapterId}:`, error);
+                // Fall through to old system
+            }
         }
         
-        // Get stock from chapter-based inventory
-        const availableStock = await inventoryService.getStock(chapterId, productId, size);
+        // Fallback to old inventory system if chapter-based failed
+        if (availableStock === 0 && !chapterId) {
+            const inventory = await db.getInventory();
+            const productInventory = inventory[productId];
+            
+            if (!productInventory) {
+                availableStock = 0;
+            } else if (commerceMode === 'EARLY_ACCESS') {
+                // Use early_access_stock
+                if (productInventory.early_access_stock) {
+                    availableStock = productInventory.early_access_stock[size] || 0;
+                } else if (productInventory[size]) {
+                    // Legacy format - assume it's early_access if no live_stock
+                    availableStock = productInventory[size] || 0;
+                }
+            } else {
+                // LIVE mode - use live_stock
+                if (productInventory.live_stock) {
+                    availableStock = productInventory.live_stock[size] || 0;
+                } else if (productInventory[size]) {
+                    // Legacy format - assume it's live_stock
+                    availableStock = productInventory[size] || 0;
+                }
+            }
+        }
         
         if (availableStock < quantity) {
             errors.push({

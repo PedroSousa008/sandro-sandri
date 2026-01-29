@@ -73,72 +73,77 @@ function initializeInventory() {
     return saved;
 }
 
-// Get chapter ID from product
-function getChapterIdFromProduct(productId) {
-    const product = window.ProductsAPI?.getById(productId);
+// Get chapter ID for a product
+function getProductChapterId(product) {
     if (!product) return null;
-    
-    if (product.chapter === 'chapter_i') return 'chapter-1';
-    if (product.chapter === 'chapter_ii') return 'chapter-2';
-    // Future chapters can be added here
+    if (product.chapter === 'chapter_i' || product.chapter === 'chapter-1') return 'chapter-1';
+    if (product.chapter === 'chapter_ii' || product.chapter === 'chapter-2') return 'chapter-2';
+    // For products without chapter, return null (use old system)
     return null;
 }
 
-// Get current inventory for a product and size (using chapter-based inventory)
+// Get current inventory for a product and size (chapter-based)
 async function getInventory(productId, size) {
-    // Try to get from cache first
-    const cacheKey = `inventory_${productId}_${size}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached !== null) {
-        return parseInt(cached);
-    }
+    const product = window.ProductsAPI?.getById(productId);
+    if (!product) return 0;
     
-    const chapterId = getChapterIdFromProduct(productId);
+    const chapterId = getProductChapterId(product);
     if (!chapterId) {
-        // Fallback to localStorage for products without chapter
+        // Fallback to old localStorage system for products without chapter
         const inventory = JSON.parse(localStorage.getItem('sandroSandriInventory') || '{}');
         return inventory[productId]?.[size] || 0;
     }
     
+    // Fetch from chapter-based inventory API
     try {
-        const response = await fetch(`/api/inventory?chapterId=${chapterId}&modelId=${productId}&size=${size}`);
+        const response = await fetch(`/api/inventory?chapterId=${chapterId}&modelId=${productId}`);
         if (response.ok) {
             const data = await response.json();
-            if (data.success) {
-                const stock = data.stock || 0;
-                // Cache for 30 seconds
-                sessionStorage.setItem(cacheKey, stock.toString());
-                setTimeout(() => sessionStorage.removeItem(cacheKey), 30000);
-                return stock;
+            if (data.success && data.model && data.model.stock) {
+                return data.model.stock[size.toUpperCase()] || 0;
             }
         }
     } catch (error) {
         console.error('Error fetching inventory:', error);
     }
     
-    // Fallback to localStorage
-    const inventory = JSON.parse(localStorage.getItem('sandroSandriInventory') || '{}');
-    return inventory[productId]?.[size] || 0;
+    // Fallback: check cached inventory
+    const cacheKey = `inventory_${chapterId}_${productId}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+        const parsed = JSON.parse(cached);
+        return parsed[size.toUpperCase()] || 0;
+    }
+    
+    return 0;
 }
 
-// Check if a product size is in stock (async version)
-async function isInStockAsync(productId, size) {
+// Check if a product size is in stock (chapter-based)
+async function isInStock(productId, size) {
     const stock = await getInventory(productId, size);
     return stock > 0;
 }
 
-// Check if a product size is in stock (sync version - uses cache)
-function isInStock(productId, size) {
-    // Try cache first
-    const cacheKey = `inventory_${productId}_${size}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached !== null) {
-        return parseInt(cached) > 0;
+// Sync inventory for a chapter and cache it
+async function syncChapterInventory(chapterId) {
+    try {
+        const response = await fetch(`/api/inventory?chapterId=${chapterId}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.inventory && data.inventory.models) {
+                // Cache each model's inventory
+                Object.keys(data.inventory.models).forEach(modelId => {
+                    const model = data.inventory.models[modelId];
+                    const cacheKey = `inventory_${chapterId}_${modelId}`;
+                    sessionStorage.setItem(cacheKey, JSON.stringify(model.stock));
+                });
+                return true;
+            }
+        }
+    } catch (error) {
+        console.error(`Error syncing inventory for ${chapterId}:`, error);
     }
-    
-    // Fallback to localStorage
-    const inventory = JSON.parse(localStorage.getItem('sandroSandriInventory') || '{}');
-    return (inventory[productId]?.[size] || 0) > 0;
+    return false;
 }
 
 // Decrease inventory when item is added to cart
@@ -248,48 +253,52 @@ if (window.ProductsAPI) {
     }
 }
 
-// Fetch inventory from server and sync with localStorage (chapter-based)
+// Fetch inventory from server and sync with localStorage
 async function syncInventoryFromServer() {
     try {
-        console.log('🔄 Syncing inventory from server (chapter-based)...');
+        console.log('🔄 Syncing inventory from server...');
         
-        const products = window.ProductsAPI?.getAll() || [];
+        // First get commerce mode
+        let commerceMode = 'LIVE';
+        try {
+            const modeResponse = await fetch('/api/site-settings?setting=commerce-mode');
+            if (modeResponse.ok) {
+                const modeData = await modeResponse.json();
+                if (modeData.success) {
+                    commerceMode = modeData.commerce_mode || 'LIVE';
+                }
+            }
+        } catch (error) {
+            console.warn('Could not fetch commerce mode, defaulting to LIVE:', error);
+        }
+        
+        // Fetch inventory with commerce mode
+        const response = await fetch(`/api/inventory/stock?mode=${commerceMode}`);
+        
+        if (!response.ok) {
+            console.warn('⚠️ Failed to fetch inventory from server:', response.status);
+            return false;
+        }
+        
+        const serverStatus = await response.json();
+        
+        // Transform server response to frontend format
+        // Server format: [{ productId: 1, sizes: [{ size: "XS", stock: 10 }, ...] }, ...]
+        // Frontend format: { "1": { "XS": 10, "S": 20, ... }, ... }
         const serverInventory = {};
         
-        // Fetch inventory for each chapter
-        const chapters = ['chapter-1', 'chapter-2']; // Add more as needed
-        
-        for (const chapterId of chapters) {
-            try {
-                const response = await fetch(`/api/inventory?chapterId=${chapterId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.inventory) {
-                        // Transform chapter inventory to product-based format
-                        Object.keys(data.inventory).forEach(modelId => {
-                            if (modelId !== '_initialized' && modelId !== '_initializedAt') {
-                                const modelInventory = data.inventory[modelId];
-                                serverInventory[modelId] = modelInventory;
-                            }
-                        });
-                    }
-                }
-            } catch (error) {
-                console.warn(`⚠️ Failed to fetch inventory for ${chapterId}:`, error);
-            }
-        }
+        serverStatus.forEach(product => {
+            const productInventory = {};
+            product.sizes.forEach(sizeInfo => {
+                productInventory[sizeInfo.size] = sizeInfo.stock;
+            });
+            serverInventory[product.productId] = productInventory;
+        });
         
         // Update localStorage with server inventory (server is source of truth)
         localStorage.setItem('sandroSandriInventory', JSON.stringify(serverInventory));
         
-        // Clear cache to force refresh
-        Object.keys(sessionStorage).forEach(key => {
-            if (key.startsWith('inventory_')) {
-                sessionStorage.removeItem(key);
-            }
-        });
-        
-        console.log('✅ Inventory synced from server:', serverInventory);
+        console.log('✅ Inventory synced from server (Mode:', commerceMode, '):', serverInventory);
         
         // Trigger UI update if products are displayed
         // Dispatch custom event so product pages can refresh
@@ -311,12 +320,12 @@ async function syncInventoryFromServer() {
 window.InventoryAPI = {
     get: getInventory,
     isInStock: isInStock,
-    isInStockAsync: isInStockAsync,
     decrease: decreaseInventory,
     increase: increaseInventory,
     init: initializeInventory,
     reset: resetInventoryToFull,
     syncFromServer: syncInventoryFromServer,
-    getChapterIdFromProduct: getChapterIdFromProduct
+    syncChapterInventory: syncChapterInventory,
+    getProductChapterId: getProductChapterId
 };
 

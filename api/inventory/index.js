@@ -1,9 +1,9 @@
 /* ========================================
    Sandro Sandri - Inventory API
-   Provides inventory data for frontend
+   Manages chapter-based inventory (per model, per size)
    ======================================== */
 
-const inventoryService = require('../../lib/inventory');
+const db = require('../../lib/storage');
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
 
@@ -16,52 +16,67 @@ module.exports = async (req, res) => {
     }
 
     try {
+        await db.initDb();
+
         if (req.method === 'GET') {
-            const { chapterId, modelId, size } = req.query;
+            const { chapterId, modelId } = req.query;
 
-            // Get inventory for specific chapter + model + size
-            if (chapterId && modelId && size) {
-                const stock = await inventoryService.getStock(chapterId, parseInt(modelId), size);
-                return res.status(200).json({
-                    success: true,
-                    chapterId,
-                    modelId: parseInt(modelId),
-                    size,
-                    stock
+            if (!chapterId) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'chapterId is required'
                 });
             }
 
-            // Get inventory for specific chapter + model
-            if (chapterId && modelId) {
-                const inventory = await inventoryService.getInventoryForModel(chapterId, parseInt(modelId));
-                return res.status(200).json({
-                    success: true,
-                    chapterId,
-                    modelId: parseInt(modelId),
-                    inventory
+            // Validate chapter ID format
+            if (!/^chapter-(10|[1-9])$/.test(chapterId)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid chapterId format'
                 });
             }
 
-            // Get inventory for entire chapter
-            if (chapterId) {
-                const inventory = await inventoryService.getInventory(chapterId);
+            const inventory = await db.getChapterInventory(chapterId);
+
+            if (!inventory) {
                 return res.status(200).json({
                     success: true,
-                    chapterId,
-                    inventory
+                    inventory: null,
+                    message: 'Inventory not initialized for this chapter'
                 });
             }
 
-            // No parameters - return error
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required parameter: chapterId'
+            // If modelId specified, return only that model's inventory
+            if (modelId) {
+                const model = inventory.models[modelId.toString()];
+                if (!model) {
+                    return res.status(404).json({
+                        success: false,
+                        error: `Model ${modelId} not found in chapter ${chapterId}`
+                    });
+                }
+                return res.status(200).json({
+                    success: true,
+                    model: {
+                        id: modelId,
+                        name: model.name,
+                        sku: model.sku,
+                        stock: model.stock
+                    }
+                });
+            }
+
+            // Return full chapter inventory
+            return res.status(200).json({
+                success: true,
+                inventory: inventory,
+                chapterId: chapterId
             });
         }
 
         return res.status(405).json({ error: 'Method not allowed' });
     } catch (error) {
-        errorHandler.sendSecureError(res, error, 500, 'Failed to fetch inventory. Please try again.', 'INVENTORY_ERROR');
+        errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'INVENTORY_ERROR');
     }
 };
 

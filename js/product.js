@@ -45,16 +45,33 @@ function initProductPage() {
     // Populate page with product data
     populateProduct(product);
     
-    // Initialize interactions
-    initSizeSelection(product);
-    initColorSelection(product);
-    initQuantitySelector();
-    initAccordions();
-    initAddToCartForm(product);
-    initFavoritesButton(product);
-    
-    // Update button - always show "Join the Waitlist" for t-shirts
-    updateProductButtonForMode(product);
+    // Sync chapter inventory before initializing size selection
+    const chapterId = window.InventoryAPI?.getProductChapterId?.(product);
+    if (chapterId && window.InventoryAPI?.syncChapterInventory) {
+        window.InventoryAPI.syncChapterInventory(chapterId).then(() => {
+            // Initialize interactions after inventory is synced
+            initSizeSelection(product);
+            initColorSelection(product);
+            initQuantitySelector();
+            initAccordions();
+            initAddToCartForm(product);
+            initFavoritesButton(product);
+            
+            // Update button - always show "Join the Waitlist" for t-shirts
+            updateProductButtonForMode(product);
+        });
+    } else {
+        // Initialize interactions (no chapter inventory to sync)
+        initSizeSelection(product);
+        initColorSelection(product);
+        initQuantitySelector();
+        initAccordions();
+        initAddToCartForm(product);
+        initFavoritesButton(product);
+        
+        // Update button - always show "Join the Waitlist" for t-shirts
+        updateProductButtonForMode(product);
+    }
     
     // Listen for favorites sync events to update button state
     window.addEventListener('favoritesSynced', (e) => {
@@ -229,22 +246,22 @@ function initSizeSelection(product) {
             console.error('Size input element not found!');
         }
         
-        // Check inventory and update Add to Cart button
+        // Check inventory and update Add to Cart button (async)
         if (window.updateAddToCartButton) {
             window.updateAddToCartButton(product.id, size);
         }
         
-        // Update quantity max based on available inventory
-        updateQuantityMax(product.id, size);
+        // Update quantity max based on available inventory (async)
+        updateQuantityMaxAsync(product.id, size);
     }
     
-    // Function to update quantity max based on available inventory
-    function updateQuantityMax(productId, size) {
+    // Function to update quantity max based on available inventory (async)
+    async function updateQuantityMaxAsync(productId, size) {
         const quantityInput = document.querySelector('.quantity-input');
         if (!quantityInput) return;
         
         if (window.InventoryAPI) {
-            const availableStock = window.InventoryAPI.get(productId, size);
+            const availableStock = await window.InventoryAPI.get(productId, size);
             const currentValue = parseInt(quantityInput.value) || 1;
             
             // Set max to available stock
@@ -271,120 +288,135 @@ function initSizeSelection(product) {
         }
     }
     
-    // Render size buttons with async inventory check
-    let firstInStockSize = null;
+    // Keep old function for backward compatibility
+    function updateQuantityMax(productId, size) {
+        updateQuantityMaxAsync(productId, size);
+    }
     
-    // Create all buttons first
-    const sizeButtons = product.sizes.map((size, index) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'size-btn';
-        btn.dataset.size = size;
-        btn.textContent = size;
-        sizeOptions.appendChild(btn);
-        return { btn, size, index };
-    });
-    
-    // Then check inventory for each button asynchronously
-    const sizePromises = sizeButtons.map(async ({ btn, size, index }) => {
-        // btn is already created above, just update its properties based on inventory
-        // Check inventory asynchronously
-        let inStock = false;
-        if (window.InventoryAPI) {
-            if (window.InventoryAPI.isInStockAsync) {
-                inStock = await window.InventoryAPI.isInStockAsync(product.id, size);
+    // Load inventory and render size buttons
+    async function renderSizeButtons() {
+        // Sync chapter inventory if product has a chapter
+        const chapterId = window.InventoryAPI?.getProductChapterId?.(product);
+        if (chapterId && window.InventoryAPI?.syncChapterInventory) {
+            await window.InventoryAPI.syncChapterInventory(chapterId);
+        }
+        
+        // Render size buttons
+        for (let index = 0; index < product.sizes.length; index++) {
+            const size = product.sizes[index];
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'size-btn';
+            btn.dataset.size = size;
+            btn.textContent = size;
+            
+            // Check if size is in stock (async)
+            let inStock = false;
+            let stockCount = 0;
+            if (window.InventoryAPI) {
+                stockCount = await window.InventoryAPI.get(product.id, size);
+                inStock = stockCount > 0;
             } else {
-                inStock = window.InventoryAPI.isInStock(product.id, size);
+                // Fallback: check product inventory
+                inStock = product.inventory && product.inventory[size] > 0;
+                stockCount = product.inventory?.[size] || 0;
             }
-        }
-        
-        if (!inStock) {
-            btn.classList.add('sold-out');
-            btn.textContent = `${size} - Sold Out`;
-            btn.style.opacity = '0.5';
-            btn.style.cursor = 'not-allowed';
-            btn.disabled = true;
-        } else {
-            // Track first in-stock size for default selection
-            if (!firstInStockSize) {
-                firstInStockSize = size;
+            
+            if (!inStock) {
+                btn.classList.add('sold-out');
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                btn.textContent = `${size} - Sold Out`;
+                btn.disabled = true;
             }
-        }
-        
-        // Simple inline onclick - most reliable
-        btn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!inStock || btn.disabled) return false; // Don't allow selection of sold out sizes
-            console.log('Button clicked for size:', size);
-            selectSize(size);
-            return false;
-        };
-        
-        // Also add addEventListener as backup
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!inStock || btn.disabled) return false; // Don't allow selection of sold out sizes
-            console.log('Event listener triggered for size:', size);
-            selectSize(size);
-        }, false);
-        
-        return { btn, size, inStock };
-    });
-    
-    // Wait for all inventory checks to complete
-    const sizeResults = await Promise.all(sizePromises);
-    
-    // Set default size to first in-stock size
-    if (sizeInput && firstInStockSize) {
-        sizeInput.value = firstInStockSize;
-        console.log('Default size set to:', sizeInput.value);
-        
-        // Activate the first in-stock button
-        sizeResults.forEach(({ btn, size, inStock }) => {
-            if (size === firstInStockSize && inStock) {
+            
+            // Set default active state (only for first available size)
+            if (index === 0 && inStock) {
                 btn.classList.add('active');
-                selectSize(size);
             }
+            
+            // Simple inline onclick - most reliable
+            btn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!inStock || btn.disabled) return false; // Don't allow selection of sold out sizes
+                console.log('Button clicked for size:', size);
+                selectSize(size);
+                return false;
+            };
+            
+            // Also add addEventListener as backup
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!inStock || btn.disabled) return false; // Don't allow selection of sold out sizes
+                console.log('Event listener triggered for size:', size);
+                selectSize(size);
+            }, false);
+            
+            sizeOptions.appendChild(btn);
+        }
+        
+        // Set default size to first available
+        const firstAvailableSize = product.sizes.find(size => {
+            const btn = sizeOptions.querySelector(`[data-size="${size}"]`);
+            return btn && !btn.disabled;
         });
         
-        // Update Add to Cart button for default size
-        if (window.updateAddToCartButton) {
-            window.updateAddToCartButton(product.id, firstInStockSize);
+        if (firstAvailableSize && sizeInput) {
+            sizeInput.value = firstAvailableSize;
+            selectSize(firstAvailableSize);
+        } else if (sizeInput && product.sizes.length > 0) {
+            sizeInput.value = product.sizes[0];
         }
-        
-        // Update quantity max for default size
-        updateQuantityMax(product.id, firstInStockSize);
-    } else if (sizeInput && product.sizes.length > 0) {
-        // Fallback: use first size even if sold out
-        sizeInput.value = product.sizes[0];
-        console.log('Default size set to (fallback):', sizeInput.value);
-        
-        // Update Add to Cart button for default size
-        if (window.updateAddToCartButton) {
-            window.updateAddToCartButton(product.id, product.sizes[0]);
-        }
-        
-        // Update quantity max for default size
-        updateQuantityMax(product.id, product.sizes[0]);
     }
+    
+    // Render buttons asynchronously
+    renderSizeButtons();
+    
+    // Note: Default size is now set in renderSizeButtons() async function
     
     // Define updateAddToCartButton function if not already defined
     if (!window.updateAddToCartButton) {
-        window.updateAddToCartButton = function(productId, size) {
+        window.updateAddToCartButton = async function(productId, size) {
             const addToCartBtn = document.querySelector('.add-to-cart-btn');
             if (!addToCartBtn) return;
             
-            // Check if size is in stock
-            const inStock = window.InventoryAPI && window.InventoryAPI.isInStock(productId, size);
+            // Check if size is in stock (async)
+            let inStock = false;
+            if (window.InventoryAPI) {
+                inStock = await window.InventoryAPI.isInStock(productId, size);
+            }
             
-            if (inStock) {
-                addToCartBtn.textContent = 'Add to Cart';
+            // Also check if size is selected
+            const sizeSelected = size && size.trim() !== '';
+            
+            if (inStock && sizeSelected) {
+                // Get active chapter mode to determine button text
+                const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
+                const isWaitlist = window.ChapterMode?.isWaitlistMode();
+                const isEarlyAccess = window.ChapterMode?.isEarlyAccessMode();
+                
+                if (isWaitlist) {
+                    addToCartBtn.textContent = 'Join the Waitlist';
+                    addToCartBtn.classList.add('waitlist-btn');
+                } else if (isEarlyAccess) {
+                    addToCartBtn.textContent = 'Add to Cart (Early Access)';
+                    addToCartBtn.classList.add('early-access-btn');
+                } else {
+                    addToCartBtn.textContent = 'Add to Cart';
+                }
                 addToCartBtn.disabled = false;
                 addToCartBtn.style.background = '#1a1a2e';
                 addToCartBtn.style.color = '#ffffff';
                 addToCartBtn.style.cursor = 'pointer';
+                addToCartBtn.style.opacity = '1';
+            } else if (!sizeSelected) {
+                addToCartBtn.textContent = 'Select a Size';
+                addToCartBtn.disabled = true;
+                addToCartBtn.style.background = '#8a8a8a';
+                addToCartBtn.style.color = '#ffffff';
+                addToCartBtn.style.cursor = 'not-allowed';
                 addToCartBtn.style.opacity = '1';
             } else {
                 addToCartBtn.textContent = 'Sold Out';
@@ -1141,7 +1173,7 @@ function loadRelatedProducts(currentProduct) {
     const relatedGrid = document.getElementById('related-products');
     if (!relatedGrid) return;
     
-    // Get products from same chapter, excluding current product
+    // Get products from the SAME chapter, excluding current product
     let related = [];
     
     if (currentProduct.chapter) {
@@ -1153,14 +1185,14 @@ function loadRelatedProducts(currentProduct) {
     // If not enough products in same chapter, fall back to same category
     if (related.length < 4) {
         const categoryProducts = window.ProductsAPI.getByCategory(currentProduct.category)
-            .filter(p => p.id !== currentProduct.id);
+            .filter(p => p.id !== currentProduct.id && (!currentProduct.chapter || p.chapter !== currentProduct.chapter));
         related = [...related, ...categoryProducts].slice(0, 4);
     } else {
-        // Show exactly 4 products from same chapter
+        // Show only 4 products from same chapter
         related = related.slice(0, 4);
     }
     
-    // If still not enough, add from other categories
+    // Final fallback: if still not enough, add any other products
     if (related.length < 4) {
         const others = window.ProductsAPI.getAll()
             .filter(p => p.id !== currentProduct.id && !related.find(r => r.id === p.id));

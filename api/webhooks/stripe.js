@@ -4,7 +4,6 @@
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../../lib/storage');
-const inventoryService = require('../../lib/inventory');
 
 // Process webhook event with idempotency
 async function processWebhookEvent(event) {
@@ -104,49 +103,33 @@ async function handleCheckoutCompleted(session) {
     });
     
     // IMPORTANT: Only decrement inventory AFTER payment is confirmed
-    // All products start with full stock, and quantities are only updated here
+    // Use new chapter-based inventory system
     console.log('💰 Payment confirmed, decrementing inventory for:', cart.length, 'items');
     
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const userId = customerEmail; // Using email as user ID
-    
-    // Create temporary order object for inventory decrement
-    const tempOrder = {
-        id: orderId,
-        orderNumber: orderNumber,
-        cart: cart
+    // Prepare order object for inventory decrement
+    const orderForInventory = {
+        items: cart.map(item => ({
+            product_id: item.productId,
+            productId: item.productId,
+            size: item.size,
+            quantity: item.quantity,
+            chapter: item.chapter || (item.productId >= 6 ? 'chapter-2' : 'chapter-1'),
+            chapter_id: item.chapter_id || (item.productId >= 6 ? 'chapter-2' : 'chapter-1')
+        }))
     };
     
     // Decrement inventory using new chapter-based system
-    const inventoryResult = await inventoryService.decrementInventoryOnPaidOrder(tempOrder);
-    
-    if (!inventoryResult.success) {
-        // Inventory insufficient - mark order as failed
-        await db.saveOrder({
-            id: orderId,
-            userId: userId,
-            orderNumber: orderNumber,
-            stripeSessionId: session.id,
-            status: 'FAILED_STOCK',
-            email: customerEmail,
-            name: customerName,
-            shippingAddress: shippingAddress,
-            shippingCountry: shippingCountry,
-            cart: cart,
-            subtotal: subtotal,
-            shippingCost: shippingAmount / 100,
-            tax: tax,
-            total: total,
-            currency: 'eur',
-            chaptersPurchased: Array.from(chaptersPurchased),
-            sizesPurchased: Array.from(sizesPurchased),
-            error: inventoryResult.error,
-            createdAt: new Date().toISOString()
-        });
-        
-        // TODO: Trigger refund or admin notification
-        throw new Error(`Insufficient stock: ${inventoryResult.error}`);
+    try {
+        await db.decrementInventoryOnPaidOrder(orderForInventory);
+        console.log('✅ Inventory decremented successfully using chapter-based system');
+    } catch (inventoryError) {
+        console.error('❌ Error decrementing inventory:', inventoryError);
+        // Don't fail the order if inventory decrement fails - log it for manual review
+        // Inventory should have been validated at checkout, so this is unexpected
     }
+    
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const userId = customerEmail; // Using email as user ID
     
     // Save successful order
     const order = await db.saveOrder({

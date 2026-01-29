@@ -8,7 +8,6 @@ const auth = require('../../lib/auth');
 const securityLog = require('../../lib/security-log');
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
-const inventoryService = require('../../lib/inventory');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers
@@ -143,16 +142,14 @@ module.exports = async (req, res) => {
 
                     // Initialize inventory for this chapter
                     try {
-                        const models = inventoryService.getModelsForChapter(chapterId);
-                        if (models.length > 0) {
-                            const initialized = await inventoryService.initChapterInventoryIfNeeded(chapterId, models);
-                            if (initialized) {
-                                console.log(`✅ Inventory initialized for ${chapterId} with ${models.length} models`);
-                            }
+                        const models = getModelsForChapter(chapterId);
+                        if (models && models.length > 0) {
+                            await db.initChapterInventoryIfNeeded(chapterId, models);
+                            console.log(`✅ Inventory initialized for ${chapterId} with ${models.length} models`);
                         }
-                    } catch (error) {
-                        console.error(`❌ Error initializing inventory for ${chapterId}:`, error);
-                        // Don't fail the chapter creation if inventory init fails
+                    } catch (invError) {
+                        console.error(`Error initializing inventory for ${chapterId}:`, invError);
+                        // Don't fail the request if inventory init fails, just log it
                     }
 
                     // Log admin action
@@ -204,5 +201,29 @@ function getChapterName(chapterId) {
     const num = chapterId.replace('chapter-', '');
     const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
     return `Chapter ${roman[parseInt(num) - 1] || num}`;
+}
+
+// Helper: Get models for a chapter (for inventory initialization)
+function getModelsForChapter(chapterId) {
+    // Map chapter IDs to product IDs
+    // Chapter II (chapter-2): Products 6-10 (Maldives, Palma, Lago di Como, Gisele, Pourville)
+    const chapterModels = {
+        'chapter-2': [
+            { id: 6, name: 'Maldives', sku: 'SS-006' },
+            { id: 7, name: 'Palma Mallorca', sku: 'SS-007' },
+            { id: 8, name: 'Lago di Como', sku: 'SS-008' },
+            { id: 9, name: 'Gisele', sku: 'SS-009' },
+            { id: 10, name: 'Pourville', sku: 'SS-010' }
+        ],
+        'chapter-1': [
+            { id: 1, name: 'Isole Cayman', sku: 'SS-001' },
+            { id: 2, name: 'Isola di Necker', sku: 'SS-002' },
+            { id: 3, name: "Monroe's Kisses", sku: 'SS-003' },
+            { id: 4, name: 'La Dolce Vita', sku: 'SS-004' },
+            { id: 5, name: 'Port-Coton', sku: 'SS-005' }
+        ]
+    };
+    
+    return chapterModels[chapterId] || [];
 }
 

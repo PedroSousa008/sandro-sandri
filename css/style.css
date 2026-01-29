@@ -790,12 +790,6 @@ img {
 .product-link {
     display: block;
     background: none !important;
-    position: relative;
-    z-index: 20;
-    text-decoration: none;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
 }
 
 .product-image {
@@ -859,10 +853,8 @@ img {
     padding: 0.75rem 1.5rem;
     opacity: 0;
     visibility: hidden;
-    pointer-events: none;
     transition: var(--transition-medium);
     white-space: nowrap;
-    z-index: 10;
 }
 
 /* Collection page quick-add button - smaller size to match home page */
@@ -883,11 +875,9 @@ img {
     padding: 0.3rem 0.65rem;
     opacity: 0;
     visibility: hidden;
-    pointer-events: none;
     transition: all 0.4s ease;
     white-space: nowrap;
     border-radius: 2px;
-    z-index: 15;
 }
 
 /* General quick-add fallback */
@@ -906,17 +896,14 @@ img {
     padding: 0.3rem 0.65rem;
     opacity: 0;
     visibility: hidden;
-    pointer-events: none;
     transition: all 0.4s ease;
     white-space: nowrap;
     border-radius: 2px;
-    z-index: 15;
 }
 
 .product-card:hover .quick-add {
     opacity: 1;
     visibility: visible;
-    pointer-events: auto;
     transform: translateX(-50%) translateY(0);
 }
 
