@@ -30,8 +30,18 @@ class ActivityMonitor {
         this.sendActivity();
 
         // Track ALL clicks immediately (no throttling for clicks)
+        // This ensures users are marked as online whenever they interact
         document.addEventListener('click', (e) => {
             // Track any click anywhere on the page
+            this.sendActivity();
+        }, true);
+        
+        // Also track button clicks, form submissions, and other interactions
+        document.addEventListener('submit', () => {
+            this.sendActivity();
+        }, true);
+        
+        document.addEventListener('change', () => {
             this.sendActivity();
         }, true);
 
@@ -167,7 +177,8 @@ class ActivityMonitor {
         }
 
         try {
-            const response = await fetch('/api/admin?endpoint=activity', {
+            // Use public endpoint for activity tracking (works for logged in and non-logged in users)
+            const response = await fetch('/api/user?action=activity', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

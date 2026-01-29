@@ -197,7 +197,7 @@ module.exports = async (req, res) => {
 
                 const activityData = await db.getActivityData() || {};
                 const now = new Date();
-                const INACTIVE_THRESHOLD = 5 * 60 * 1000;
+                const INACTIVE_THRESHOLD = 3 * 60 * 1000; // 3 minutes of inactivity
 
                 const activeSessions = Object.values(activityData).filter(session => {
                     if (!session || !session.lastActivity) return false;
