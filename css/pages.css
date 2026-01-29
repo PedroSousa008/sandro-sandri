@@ -840,12 +840,12 @@
 }
 
 .waitlist-btn {
-    background: #ff9800;
+    background: var(--color-navy);
 }
 
 .waitlist-btn:hover {
-    background: #f57c00;
-    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+    background: var(--color-navy-dark);
+    box-shadow: 0 4px 8px rgba(26, 26, 46, 0.2);
 }
 
 .favorite-btn {

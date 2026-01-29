@@ -580,21 +580,35 @@ function initAddToCartForm(product) {
                 const profile = JSON.parse(localStorage.getItem('sandroSandriProfile') || 'null');
                 const userName = profile?.name || userEmail.split('@')[0] || 'Customer';
                 
+                // Get active chapter info
+                const activeChapterId = window.ChapterMode?.getActiveChapterId();
+                const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
+                const chapterNum = activeChapterId ? parseInt(activeChapterId.replace('chapter-', '')) : 1;
+                const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+                const chapterName = `Chapter ${roman[chapterNum - 1] || chapterNum}`;
+                
                 // Send to Formspree for logged-in users
                 try {
                     const waitlistData = {
-                        _subject: `Waitlist Request - ${product.name} (Logged In User)`,
+                        _subject: `Waitlist Request - ${product.name} (${chapterName})`,
+                        _replyto: userEmail,
                         product_id: product.id,
                         product_name: product.name,
+                        product_sku: product.sku || 'N/A',
                         size: size,
                         color: color || 'Navy',
                         quantity: quantity,
                         customer_email: userEmail,
                         customer_name: userName,
+                        chapter: chapterName,
+                        chapter_id: activeChapterId || 'chapter-1',
+                        chapter_mode: activeChapterMode || 'waitlist',
+                        page_url: window.location.href,
                         timestamp: new Date().toISOString(),
-                        _replyto: userEmail,
                         user_status: 'Logged In'
                     };
+                    
+                    console.log('📧 Submitting waitlist to Formspree (logged in):', waitlistData);
                     
                     // Send to Formspree (fire and forget - don't wait for response)
                     fetch('https://formspree.io/f/meoyldeq', {
@@ -604,6 +618,8 @@ function initAddToCartForm(product) {
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify(waitlistData)
+                    }).then(response => {
+                        console.log('📧 Formspree response (logged in):', response.status);
                     }).catch(err => {
                         console.error('Error sending waitlist Formspree for logged-in user:', err);
                         // Don't show error to user - just log it
@@ -1137,6 +1153,20 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
         modal.remove();
     }
     
+    // Check if user is logged in
+    const isLoggedIn = window.ChapterMode?.isUserLoggedIn() || 
+                      !!(window.AuthSystem?.currentUser || window.auth?.currentUser);
+    
+    // Get user info if logged in
+    let userName = '';
+    let userEmail = '';
+    if (isLoggedIn) {
+        const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+        userEmail = currentUser?.email || '';
+        const profile = JSON.parse(localStorage.getItem('sandroSandriProfile') || 'null');
+        userName = profile?.name || userEmail.split('@')[0] || '';
+    }
+    
     // Create modal
     modal = document.createElement('div');
     modal.id = 'waitlist-email-modal';
@@ -1164,15 +1194,39 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
         position: relative;
     `;
     
-    modalContent.innerHTML = `
+    // Build form HTML with conditional name field
+    let formHTML = `
         <button class="close-waitlist-modal" style="position: absolute; top: var(--space-md); right: var(--space-md); background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-light); line-height: 1;">&times;</button>
         <h2 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--color-navy); margin-bottom: var(--space-md);">
             Join the Waitlist
         </h2>
         <p style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-lg);">
-            ${addToCartAfterEmail ? 'Please provide your email to join the waitlist. Your item will be added to your cart after you submit.' : 'Your item has been added to your cart. Please provide your email to join the waitlist and be notified when Chapter I becomes available.'}
+            ${addToCartAfterEmail ? 'Please provide your information to join the waitlist. Your item will be added to your cart after you submit.' : 'Please provide your information to join the waitlist and be notified when this product becomes available.'}
         </p>
         <form id="waitlist-email-form" style="margin-top: var(--space-lg);">
+    `;
+    
+    // Add name field if user is not logged in
+    if (!isLoggedIn) {
+        formHTML += `
+            <div class="form-group" style="margin-bottom: var(--space-md);">
+                <label class="form-label" for="waitlist-name" style="display: block; font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-xs);">
+                    Name *
+                </label>
+                <input 
+                    type="text" 
+                    id="waitlist-name" 
+                    name="name" 
+                    required 
+                    autocomplete="name"
+                    style="width: 100%; padding: var(--space-sm); font-family: var(--font-sans); font-size: 0.875rem; border: 1px solid var(--color-gray); border-radius: 2px; box-sizing: border-box;"
+                    placeholder="Your full name"
+                >
+            </div>
+        `;
+    }
+    
+    formHTML += `
             <div class="form-group" style="margin-bottom: var(--space-md);">
                 <label class="form-label" for="waitlist-email" style="display: block; font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-xs);">
                     Email Address *
@@ -1183,6 +1237,7 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                     name="email" 
                     required 
                     autocomplete="email"
+                    value="${userEmail}"
                     style="width: 100%; padding: var(--space-sm); font-family: var(--font-sans); font-size: 0.875rem; border: 1px solid var(--color-gray); border-radius: 2px; box-sizing: border-box;"
                     placeholder="your.email@example.com"
                 >
@@ -1190,15 +1245,14 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
             <div id="waitlist-error" style="display: none; padding: var(--space-sm); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 2px; margin-bottom: var(--space-md); font-size: 0.875rem;"></div>
             <div id="waitlist-success" style="display: none; padding: var(--space-sm); background: #efe; border: 1px solid #cfc; color: #0c0; border-radius: 2px; margin-bottom: var(--space-md); font-size: 0.875rem;"></div>
             <div style="display: flex; gap: var(--space-sm); justify-content: flex-end;">
-                <button type="button" class="cancel-waitlist-btn" style="padding: var(--space-sm) var(--space-lg); font-family: var(--font-sans); font-size: 0.875rem; background: var(--color-white); color: var(--color-navy); border: 1px solid var(--color-navy); border-radius: 2px; cursor: pointer;">
-                    Skip
-                </button>
-                <button type="submit" id="waitlist-submit-btn" style="padding: var(--space-sm) var(--space-lg); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; background: var(--color-navy); color: white; border: none; border-radius: 2px; cursor: pointer;">
+                <button type="submit" id="waitlist-submit-btn" style="width: 100%; padding: 18px 24px; font-family: var(--font-sans); font-size: 1rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: var(--color-navy); color: white; border: none; border-radius: 2px; cursor: pointer; min-height: 56px;">
                     Join Waitlist
                 </button>
             </div>
         </form>
     `;
+    
+    modalContent.innerHTML = formHTML;
     
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
@@ -1212,13 +1266,11 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
     
     // Close modal handlers
     const closeBtn = modal.querySelector('.close-waitlist-modal');
-    const cancelBtn = modal.querySelector('.cancel-waitlist-btn');
     const closeModal = () => {
         modal.remove();
     };
     
     closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeModal();
@@ -1228,6 +1280,7 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
     // Form submission
     const form = document.getElementById('waitlist-email-form');
     const emailInput = document.getElementById('waitlist-email');
+    const nameInput = document.getElementById('waitlist-name');
     const errorEl = document.getElementById('waitlist-error');
     const successEl = document.getElementById('waitlist-success');
     const submitBtn = document.getElementById('waitlist-submit-btn');
@@ -1236,6 +1289,15 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
         e.preventDefault();
         
         const email = emailInput.value.trim();
+        const name = nameInput ? nameInput.value.trim() : (userName || 'Customer');
+        
+        // Validate name if not logged in
+        if (!isLoggedIn && !name) {
+            errorEl.textContent = 'Please enter your name';
+            errorEl.style.display = 'block';
+            successEl.style.display = 'none';
+            return;
+        }
         
         if (!email) {
             errorEl.textContent = 'Please enter your email address';
@@ -1260,18 +1322,34 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
         successEl.style.display = 'none';
         
         try {
-            // Submit to Formspree
+            // Get active chapter info
+            const activeChapterId = window.ChapterMode?.getActiveChapterId();
+            const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
+            const chapterNum = activeChapterId ? parseInt(activeChapterId.replace('chapter-', '')) : 1;
+            const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+            const chapterName = `Chapter ${roman[chapterNum - 1] || chapterNum}`;
+            
+            // Submit to Formspree (email configured in Formspree dashboard: sandrosandri.bysousa@gmail.com)
             const waitlistData = {
-                _subject: `Waitlist Request - ${product.name}`,
+                _subject: `Waitlist Request - ${product.name} (${chapterName})`,
+                _replyto: email,
                 product_id: product.id,
                 product_name: product.name,
+                product_sku: product.sku || 'N/A',
                 size: size,
                 color: color || 'Navy',
                 quantity: quantity,
+                customer_name: name,
                 customer_email: email,
+                chapter: chapterName,
+                chapter_id: activeChapterId || 'chapter-1',
+                chapter_mode: activeChapterMode || 'waitlist',
+                page_url: window.location.href,
                 timestamp: new Date().toISOString(),
-                _replyto: email
+                user_status: isLoggedIn ? 'Logged In' : 'Guest'
             };
+            
+            console.log('📧 Submitting waitlist to Formspree:', waitlistData);
             
             const response = await fetch('https://formspree.io/f/meoyldeq', {
                 method: 'POST',
@@ -1282,8 +1360,13 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 body: JSON.stringify(waitlistData)
             });
             
+            console.log('📧 Formspree response status:', response.status);
+            
             if (response.ok) {
-                successEl.textContent = 'Successfully joined the waitlist! You will be notified when Chapter I becomes available.';
+                const responseData = await response.json().catch(() => ({}));
+                console.log('✅ Formspree submission successful:', responseData);
+                
+                successEl.textContent = 'Successfully joined the waitlist! You will be notified when this product becomes available.';
                 successEl.style.display = 'block';
                 
                 // Add to cart after email is submitted (if flag is set)
@@ -1311,23 +1394,29 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 // Close modal after 2 seconds
                 setTimeout(() => {
                     closeModal();
-                    showNotification('You joined the waiting list for Chapter I.', 'success');
+                    showNotification('Successfully joined the waitlist!', 'success');
                 }, 2000);
             } else {
-                throw new Error('Failed to submit waitlist request');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('❌ Formspree submission failed:', errorData);
+                throw new Error(errorData.error || 'Failed to submit waitlist request');
             }
         } catch (error) {
             console.error('Error submitting waitlist:', error);
-            errorEl.textContent = 'Error joining waitlist. Please try again.';
+            errorEl.textContent = `Error joining waitlist: ${error.message || 'Please try again.'}`;
             errorEl.style.display = 'block';
             submitBtn.disabled = false;
             submitBtn.textContent = 'Join Waitlist';
         }
     });
     
-    // Focus email input
+    // Focus first input
     setTimeout(() => {
-        emailInput.focus();
+        if (nameInput && !isLoggedIn) {
+            nameInput.focus();
+        } else {
+            emailInput.focus();
+        }
     }, 100);
 }
 
