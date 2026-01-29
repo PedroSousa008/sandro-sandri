@@ -85,14 +85,28 @@ function getProductChapterId(product) {
 // Get current inventory for a product and size (chapter-based)
 async function getInventory(productId, size) {
     const product = window.ProductsAPI?.getById(productId);
-    if (!product) return 0;
+    if (!product) {
+        // Default full stock if product not found
+        const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
+        return defaultStock[size.toUpperCase()] || 0;
+    }
     
     const chapterId = getProductChapterId(product);
     if (!chapterId) {
         // Fallback to old localStorage system for products without chapter
         const inventory = JSON.parse(localStorage.getItem('sandroSandriInventory') || '{}');
-        return inventory[productId]?.[size] || 0;
+        const stock = inventory[productId]?.[size];
+        // If stock exists in localStorage, use it; otherwise use default full stock
+        if (stock !== undefined && stock !== null) {
+            return stock;
+        }
+        // Default full stock for products without chapter
+        const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
+        return defaultStock[size.toUpperCase()] || 0;
     }
+    
+    // Default full stock distribution
+    const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
     
     // Fetch from chapter-based inventory API
     try {
@@ -100,7 +114,15 @@ async function getInventory(productId, size) {
         if (response.ok) {
             const data = await response.json();
             if (data.success && data.model && data.model.stock) {
-                return data.model.stock[size.toUpperCase()] || 0;
+                const stock = data.model.stock[size.toUpperCase()];
+                // If stock is explicitly 0, return 0 (sold out)
+                // If stock is undefined/null, return default (full stock)
+                // If stock exists and > 0, return actual stock
+                if (stock !== undefined && stock !== null) {
+                    return stock;
+                }
+                // If stock not found in model, return default full stock
+                return defaultStock[size.toUpperCase()] || 0;
             }
         }
     } catch (error) {
@@ -112,15 +134,23 @@ async function getInventory(productId, size) {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
         const parsed = JSON.parse(cached);
-        return parsed[size.toUpperCase()] || 0;
+        const stock = parsed[size.toUpperCase()];
+        if (stock !== undefined && stock !== null) {
+            return stock;
+        }
     }
     
-    return 0;
+    // If no inventory found, return default full stock (not 0)
+    // This ensures sizes don't show as "Sold Out" when inventory hasn't been initialized
+    return defaultStock[size.toUpperCase()] || 0;
 }
 
 // Check if a product size is in stock (chapter-based)
 async function isInStock(productId, size) {
     const stock = await getInventory(productId, size);
+    // Return true if stock > 0
+    // If stock is 0, it's explicitly sold out
+    // If stock is default full stock (10, 20, 50, etc.), it's in stock
     return stock > 0;
 }
 

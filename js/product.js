@@ -315,14 +315,26 @@ function initSizeSelection(product) {
             let stockCount = 0;
             if (window.InventoryAPI) {
                 stockCount = await window.InventoryAPI.get(product.id, size);
+                // Only show as sold out if stock is explicitly 0
+                // If stock is > 0 or default full stock, it's in stock
                 inStock = stockCount > 0;
             } else {
                 // Fallback: check product inventory
-                inStock = product.inventory && product.inventory[size] > 0;
-                stockCount = product.inventory?.[size] || 0;
+                stockCount = product.inventory?.[size];
+                // If product.inventory exists and has a value, use it
+                // Otherwise, assume full stock (default values)
+                if (stockCount !== undefined && stockCount !== null) {
+                    inStock = stockCount > 0;
+                } else {
+                    // No inventory data - assume full stock
+                    const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
+                    stockCount = defaultStock[size] || 0;
+                    inStock = stockCount > 0;
+                }
             }
             
-            if (!inStock) {
+            // Only show "Sold Out" if stock is explicitly 0
+            if (stockCount === 0) {
                 btn.classList.add('sold-out');
                 btn.style.opacity = '0.5';
                 btn.style.cursor = 'not-allowed';
@@ -700,7 +712,7 @@ function initAddToCartForm(product) {
                 
                 // Check inventory before adding to cart
                 if (window.InventoryAPI) {
-                    const inStock = window.InventoryAPI.isInStock(product.id, size);
+                    const inStock = await window.InventoryAPI.isInStock(product.id, size);
                     if (!inStock) {
                         showNotification('This size is sold out');
                         isSubmitting = false;
@@ -709,7 +721,7 @@ function initAddToCartForm(product) {
                         return;
                     }
                     
-                    const availableStock = window.InventoryAPI.get(product.id, size);
+                    const availableStock = await window.InventoryAPI.get(product.id, size);
                     if (quantity > availableStock) {
                         showNotification(`Only ${availableStock} available in this size. Please reduce quantity.`);
                         if (quantityInput) {
@@ -788,7 +800,7 @@ function initAddToCartForm(product) {
         
         // Check inventory before adding to cart
         if (window.InventoryAPI) {
-            const inStock = window.InventoryAPI.isInStock(product.id, size);
+            const inStock = await window.InventoryAPI.isInStock(product.id, size);
             if (!inStock) {
                 showNotification('This size is sold out');
                 isSubmitting = false;
@@ -797,7 +809,7 @@ function initAddToCartForm(product) {
                 return;
             }
             
-            const availableStock = window.InventoryAPI.get(product.id, size);
+            const availableStock = await window.InventoryAPI.get(product.id, size);
             if (quantity > availableStock) {
                 showNotification(`Only ${availableStock} available in this size. Please reduce quantity.`);
                 // Reset quantity to available stock
@@ -1453,7 +1465,7 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 if (addToCartAfterEmail && window.cart) {
                     // Check inventory before adding
                     if (window.InventoryAPI) {
-                        const inStock = window.InventoryAPI.isInStock(product.id, size);
+                        const inStock = await window.InventoryAPI.isInStock(product.id, size);
                         if (inStock) {
                             window.cart.addItem(product.id, size, color, quantity);
                             
