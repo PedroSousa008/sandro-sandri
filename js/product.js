@@ -100,6 +100,26 @@ function initProductPage() {
             initSizeSelection(product);
         }
     });
+    
+    // Listen for chapter mode updates to refresh button text
+    window.addEventListener('chapterModeUpdated', () => {
+        console.log('📋 Chapter mode updated, refreshing product button...');
+        updateProductButtonForMode(product);
+    });
+    
+    // Also check periodically if ChapterMode becomes available
+    let checkCount = 0;
+    const checkChapterMode = setInterval(() => {
+        checkCount++;
+        if (window.ChapterMode && window.ChapterMode.isInitialized) {
+            console.log('📋 ChapterMode initialized, updating button...');
+            updateProductButtonForMode(product);
+            clearInterval(checkChapterMode);
+        } else if (checkCount > 20) {
+            // Stop checking after 2 seconds (20 * 100ms)
+            clearInterval(checkChapterMode);
+        }
+    }, 100);
     loadRelatedProducts(product);
     
     // Initialize swipe navigation on mobile
