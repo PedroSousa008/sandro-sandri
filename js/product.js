@@ -404,19 +404,32 @@ function initSizeSelection(product) {
             const sizeSelected = size && size.trim() !== '';
             
             if (inStock && sizeSelected) {
-                // Get active chapter mode to determine button text
-                const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
-                const isWaitlist = window.ChapterMode?.isWaitlistMode();
-                const isEarlyAccess = window.ChapterMode?.isEarlyAccessMode();
+                // Check if product belongs to active chapter
+                const activeChapterId = window.ChapterMode?.getActiveChapterId();
+                const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                                      product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+                const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
                 
-                if (isWaitlist) {
-                    addToCartBtn.textContent = 'Join the Waitlist';
-                    addToCartBtn.classList.add('waitlist-btn');
-                } else if (isEarlyAccess) {
-                    addToCartBtn.textContent = 'Add to Cart (Early Access)';
-                    addToCartBtn.classList.add('early-access-btn');
+                // Only apply waitlist/early access mode to products from active chapter
+                // Products from non-active chapters (e.g., Chapter I when Chapter II is active) always show "Add to Cart"
+                if (isActiveChapterProduct) {
+                    const isWaitlist = window.ChapterMode?.isWaitlistMode();
+                    const isEarlyAccess = window.ChapterMode?.isEarlyAccessMode();
+                    
+                    if (isWaitlist) {
+                        addToCartBtn.textContent = 'Join the Waitlist';
+                        addToCartBtn.classList.add('waitlist-btn');
+                    } else if (isEarlyAccess) {
+                        addToCartBtn.textContent = 'Add to Cart (Early Access)';
+                        addToCartBtn.classList.add('early-access-btn');
+                    } else {
+                        addToCartBtn.textContent = 'Add to Cart';
+                        addToCartBtn.classList.remove('waitlist-btn', 'early-access-btn');
+                    }
                 } else {
+                    // Product from non-active chapter - always "Add to Cart"
                     addToCartBtn.textContent = 'Add to Cart';
+                    addToCartBtn.classList.remove('waitlist-btn', 'early-access-btn');
                 }
                 addToCartBtn.disabled = false;
                 addToCartBtn.style.background = '#1a1a2e';
@@ -580,23 +593,33 @@ function updateProductButtonForMode(product) {
     const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                           product.chapter === 'chapter_ii' ? 'chapter-2' : null;
     
+    // IMPORTANT: Products from non-active chapters (e.g., Chapter I when Chapter II is active)
+    // ALWAYS show "Add to Cart" regardless of active chapter mode
+    if (activeChapterId && productChapter && productChapter !== activeChapterId) {
+        // This is a product from a non-active chapter - always "Add to Cart"
+        submitBtn.textContent = 'Add to Cart';
+        submitBtn.classList.remove('waitlist-btn', 'early-access-btn');
+        return;
+    }
+    
     // Only apply mode if product is from active chapter
     if (activeChapterId && productChapter === activeChapterId) {
         // Check chapter mode - show "Join the Waitlist" in WAITLIST mode
         if (window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
             submitBtn.textContent = 'Join the Waitlist';
             submitBtn.classList.add('waitlist-btn');
+            submitBtn.classList.remove('early-access-btn');
         } else if (window.ChapterMode && window.ChapterMode.isEarlyAccessMode()) {
             submitBtn.textContent = 'Add to Cart';
-            submitBtn.classList.remove('waitlist-btn');
+            submitBtn.classList.remove('waitlist-btn', 'early-access-btn');
         } else {
             submitBtn.textContent = 'Add to Cart';
-            submitBtn.classList.remove('waitlist-btn');
+            submitBtn.classList.remove('waitlist-btn', 'early-access-btn');
         }
     } else {
-        // Products from non-active chapters always show "Add to Cart"
+        // Fallback: Products from non-active chapters or when no active chapter - always "Add to Cart"
         submitBtn.textContent = 'Add to Cart';
-        submitBtn.classList.remove('waitlist-btn');
+        submitBtn.classList.remove('waitlist-btn', 'early-access-btn');
     }
 }
 
