@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
     try {
         // ACTIVITY TRACKING (POST with action=activity)
         if (req.method === 'POST' && action === 'activity') {
-            const { sessionId, email, page, pageName, isCheckout, userAgent } = req.body;
+            const { sessionId, email, page, pageName, isCheckout, userAgent, cart, chapters } = req.body;
 
             if (!sessionId) {
                 return res.status(400).json({ error: 'Session ID is required' });
@@ -54,12 +54,36 @@ module.exports = async (req, res) => {
             const currentPage = page || pageName || 'unknown';
             const onCheckoutPage = isCheckout === true || currentPage.toLowerCase().includes('checkout');
 
+            // Determine chapters from cart if provided
+            let chaptersInCart = [];
+            if (chapters && Array.isArray(chapters)) {
+                chaptersInCart = chapters;
+            } else if (cart && Array.isArray(cart)) {
+                // Extract chapters from cart items
+                const chapterSet = new Set();
+                cart.forEach(item => {
+                    if (item.productId >= 1 && item.productId <= 5) {
+                        chapterSet.add('chapter-1');
+                    } else if (item.productId >= 6 && item.productId <= 10) {
+                        chapterSet.add('chapter-2');
+                    }
+                    // Also check if item has explicit chapter field
+                    if (item.chapter) {
+                        chapterSet.add(item.chapter);
+                    } else if (item.chapter_id) {
+                        chapterSet.add(item.chapter_id);
+                    }
+                });
+                chaptersInCart = Array.from(chapterSet);
+            }
+
             activityData[sessionId] = {
                 sessionId: sessionId,
                 email: email || null,
                 page: currentPage,
                 isCheckout: onCheckoutPage,
                 userAgent: userAgent || 'unknown',
+                chapters: chaptersInCart,
                 lastActivity: new Date().toISOString(),
                 createdAt: activityData[sessionId]?.createdAt || new Date().toISOString()
             };

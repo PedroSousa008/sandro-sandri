@@ -138,6 +138,34 @@ class ActivityMonitor {
                           window.location.href.includes('checkout') ||
                           window.location.href.includes('cart');
         
+        // Get cart to determine chapters
+        let cart = [];
+        let chapters = [];
+        try {
+            const cartData = localStorage.getItem('sandroSandriCart');
+            if (cartData) {
+                cart = JSON.parse(cartData);
+                // Extract chapters from cart
+                const chapterSet = new Set();
+                cart.forEach(item => {
+                    if (item.productId >= 1 && item.productId <= 5) {
+                        chapterSet.add('chapter-1');
+                    } else if (item.productId >= 6 && item.productId <= 10) {
+                        chapterSet.add('chapter-2');
+                    }
+                    // Also check if item has explicit chapter field
+                    if (item.chapter) {
+                        chapterSet.add(item.chapter);
+                    } else if (item.chapter_id) {
+                        chapterSet.add(item.chapter_id);
+                    }
+                });
+                chapters = Array.from(chapterSet);
+            }
+        } catch (e) {
+            console.warn('Error reading cart for activity tracking:', e);
+        }
+
         try {
             const response = await fetch('/api/admin?endpoint=activity', {
                 method: 'POST',
@@ -150,7 +178,9 @@ class ActivityMonitor {
                     page: page,
                     pageName: pageName,
                     isCheckout: isCheckout,
-                    userAgent: navigator.userAgent.substring(0, 100)
+                    userAgent: navigator.userAgent.substring(0, 100),
+                    cart: cart,
+                    chapters: chapters
                 })
             });
 

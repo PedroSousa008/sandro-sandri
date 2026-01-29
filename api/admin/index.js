@@ -128,12 +128,36 @@ module.exports = async (req, res) => {
                                       currentPage.includes('checkout') || 
                                       currentPage.includes('cart');
 
+                // Determine chapters from cart if provided
+                let chaptersInCart = [];
+                if (req.body.chapters && Array.isArray(req.body.chapters)) {
+                    chaptersInCart = req.body.chapters;
+                } else if (req.body.cart && Array.isArray(req.body.cart)) {
+                    // Extract chapters from cart items
+                    const chapterSet = new Set();
+                    req.body.cart.forEach(item => {
+                        if (item.productId >= 1 && item.productId <= 5) {
+                            chapterSet.add('chapter-1');
+                        } else if (item.productId >= 6 && item.productId <= 10) {
+                            chapterSet.add('chapter-2');
+                        }
+                        // Also check if item has explicit chapter field
+                        if (item.chapter) {
+                            chapterSet.add(item.chapter);
+                        } else if (item.chapter_id) {
+                            chapterSet.add(item.chapter_id);
+                        }
+                    });
+                    chaptersInCart = Array.from(chapterSet);
+                }
+
                 activityData[sessionId] = {
                     sessionId: sessionId,
                     email: email || null,
                     page: currentPage,
                     isCheckout: onCheckoutPage,
                     userAgent: userAgent || 'unknown',
+                    chapters: chaptersInCart,
                     lastActivity: new Date().toISOString(),
                     createdAt: activityData[sessionId]?.createdAt || new Date().toISOString()
                 };
@@ -190,10 +214,36 @@ module.exports = async (req, res) => {
                     return s.isCheckout === true && s.email !== 'sandrosandri.bysousa@gmail.com';
                 }).length;
 
+                // Group checkout users by chapter
+                const checkoutUsersByChapter = {
+                    'chapter-1': 0,
+                    'chapter-2': 0,
+                    'both': 0,
+                    'unknown': 0
+                };
+
+                activeSessions.forEach(session => {
+                    if (session.isCheckout === true && session.email !== 'sandrosandri.bysousa@gmail.com') {
+                        const chapters = session.chapters || [];
+                        if (chapters.length === 0) {
+                            checkoutUsersByChapter.unknown++;
+                        } else if (chapters.includes('chapter-1') && chapters.includes('chapter-2')) {
+                            checkoutUsersByChapter.both++;
+                        } else if (chapters.includes('chapter-1')) {
+                            checkoutUsersByChapter['chapter-1']++;
+                        } else if (chapters.includes('chapter-2')) {
+                            checkoutUsersByChapter['chapter-2']++;
+                        } else {
+                            checkoutUsersByChapter.unknown++;
+                        }
+                    }
+                });
+
                 res.status(200).json({
                     success: true,
                     onlineUsers: onlineUsers,
                     checkoutUsers: checkoutUsers,
+                    checkoutUsersByChapter: checkoutUsersByChapter,
                     activeSessions: activeSessions.length,
                     totalSessions: Object.keys(activityData).length,
                     sessions: activeSessions

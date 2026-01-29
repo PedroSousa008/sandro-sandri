@@ -179,6 +179,11 @@
                 <div style="font-size: 0.75rem; color: var(--color-text-light); margin-top: var(--space-xs);">
                     Active purchase intent
                 </div>
+                <div id="checkout-by-chapter" style="font-size: 0.7rem; color: var(--color-text-light); margin-top: var(--space-xs); display: none;">
+                    <div>Chapter I: <span id="checkout-chapter-1">0</span></div>
+                    <div>Chapter II: <span id="checkout-chapter-2">0</span></div>
+                    <div>Both: <span id="checkout-both">0</span></div>
+                </div>
             </div>
         </div>
 
@@ -448,10 +453,22 @@
                     if (data.success) {
                         const onlineCount = data.onlineUsers || 0;
                         const checkoutCount = data.checkoutUsers || 0;
+                        const checkoutByChapter = data.checkoutUsersByChapter || {};
                         
                         // Update dashboard stats
                         document.getElementById('dashboard-online-count').textContent = onlineCount;
                         document.getElementById('dashboard-checkout-count').textContent = checkoutCount;
+                        
+                        // Update chapter-specific checkout stats
+                        const checkoutChapterEl = document.getElementById('checkout-by-chapter');
+                        if (checkoutByChapter && Object.keys(checkoutByChapter).length > 0) {
+                            document.getElementById('checkout-chapter-1').textContent = checkoutByChapter['chapter-1'] || 0;
+                            document.getElementById('checkout-chapter-2').textContent = checkoutByChapter['chapter-2'] || 0;
+                            document.getElementById('checkout-both').textContent = checkoutByChapter.both || 0;
+                            checkoutChapterEl.style.display = 'block';
+                        } else {
+                            checkoutChapterEl.style.display = 'none';
+                        }
                         
                         // Update header admin bar counter (same tracking method)
                         const adminOnlineCount = document.getElementById('admin-online-count');
@@ -978,14 +995,35 @@
                 });
                 const sizesList = Array.from(allSizes).sort().join(', ') || 'None';
                 
-                // Get all chapters purchased
+                // Get all chapters purchased and calculate chapter-specific stats
                 const allChapters = new Set();
+                const chapterStats = {
+                    'Chapter I': { orders: 0, spent: 0 },
+                    'Chapter II': { orders: 0, spent: 0 }
+                };
+                
                 customer.orders.forEach(order => {
                     if (order.chaptersPurchased && Array.isArray(order.chaptersPurchased)) {
-                        order.chaptersPurchased.forEach(chapter => allChapters.add(chapter));
+                        order.chaptersPurchased.forEach(chapter => {
+                            allChapters.add(chapter);
+                            if (chapterStats[chapter]) {
+                                chapterStats[chapter].orders++;
+                                chapterStats[chapter].spent += (order.total || 0);
+                            }
+                        });
                     }
                 });
                 const chaptersList = Array.from(allChapters).join(', ') || 'None';
+                
+                // Build chapter stats display
+                let chapterStatsDisplay = [];
+                if (chapterStats['Chapter I'].orders > 0) {
+                    chapterStatsDisplay.push(`I: ${chapterStats['Chapter I'].orders} order${chapterStats['Chapter I'].orders !== 1 ? 's' : ''} (€${chapterStats['Chapter I'].spent.toFixed(2)})`);
+                }
+                if (chapterStats['Chapter II'].orders > 0) {
+                    chapterStatsDisplay.push(`II: ${chapterStats['Chapter II'].orders} order${chapterStats['Chapter II'].orders !== 1 ? 's' : ''} (€${chapterStats['Chapter II'].spent.toFixed(2)})`);
+                }
+                const chapterStatsText = chapterStatsDisplay.length > 0 ? chapterStatsDisplay.join(' | ') : 'None';
                 
                 // Get unique payment methods
                 const paymentMethods = new Set();
@@ -1046,7 +1084,8 @@
                             ${sizesList}
                         </td>
                         <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); font-size: 0.75rem;">
-                            ${chaptersList}
+                            <div>${chaptersList}</div>
+                            ${chapterStatsText !== 'None' ? `<div style="font-size: 0.7rem; color: var(--color-text-light); margin-top: 2px;">${chapterStatsText}</div>` : ''}
                         </td>
                         <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
                             ${customer.favorites.length}
