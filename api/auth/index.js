@@ -23,7 +23,12 @@ module.exports = async (req, res) => {
     }
 
     // Get the action from query parameter or path
-    const action = req.query.action || (req.url.includes('/login') ? 'login' : req.url.includes('/signup') ? 'signup' : req.url.includes('/session') ? 'session' : null);
+    const action = req.query.action || 
+                   (req.url.includes('/verify-email') ? 'verify-email' : 
+                    req.url.includes('/resend-verification') ? 'resend-verification' :
+                    req.url.includes('/login') ? 'login' : 
+                    req.url.includes('/signup') ? 'signup' : 
+                    req.url.includes('/session') ? 'session' : null);
 
     try {
         // SESSION VERIFICATION (GET)
@@ -283,6 +288,183 @@ module.exports = async (req, res) => {
                 email: normalizedEmail,
                 emailSent: false,
                 emailError: null
+            });
+            return;
+        }
+
+        // VERIFY EMAIL (GET or POST with action=verify-email)
+        if (action === 'verify-email') {
+            let { email, token } = req.method === 'GET' ? req.query : req.body;
+            
+            // Normalize email
+            if (email) {
+                email = email.toLowerCase().trim();
+            }
+            
+            // Decode token if URL encoded
+            if (token) {
+                try {
+                    token = decodeURIComponent(token);
+                } catch (e) {
+                    // Token might not be encoded
+                }
+            }
+
+            if (!email || !token) {
+                return res.status(400).json({ 
+                    error: 'Email and token are required' 
+                });
+            }
+
+            await db.initDb();
+            const userData = await db.getUserData();
+            const user = userData[email] || userData[email.toLowerCase()] || userData[email.toUpperCase()];
+
+            if (!user) {
+                return res.status(404).json({ 
+                    error: 'User not found' 
+                });
+            }
+
+            if (user.email_verified === true) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Email already verified',
+                    alreadyVerified: true
+                });
+            }
+
+            const tokens = await db.getEmailVerificationTokens();
+            const now = new Date();
+            let tokenFound = null;
+            let tokenId = null;
+
+            for (const [id, tokenData] of Object.entries(tokens)) {
+                const storedEmail = tokenData.email ? tokenData.email.toLowerCase().trim() : null;
+                if (storedEmail === email && !tokenData.usedAt) {
+                    const expiresAt = new Date(tokenData.expiresAt);
+                    if (expiresAt > now) {
+                        const isValid = await bcrypt.compare(token, tokenData.tokenHash);
+                        if (isValid) {
+                            tokenFound = tokenData;
+                            tokenId = id;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!tokenFound) {
+                return res.status(400).json({ 
+                    error: 'Invalid or expired verification token. Please request a new verification email.' 
+                });
+            }
+
+            tokens[tokenId].usedAt = new Date().toISOString();
+            await db.saveEmailVerificationTokens(tokens);
+
+            let userKey = email;
+            for (const key in userData) {
+                if (key.toLowerCase() === email.toLowerCase()) {
+                    userKey = key;
+                    break;
+                }
+            }
+            
+            userData[userKey] = {
+                ...user,
+                email_verified: true,
+                email_verified_at: new Date().toISOString()
+            };
+
+            await db.saveUserData(userData);
+
+            res.status(200).json({
+                success: true,
+                message: 'Email verified successfully. You can now login.',
+                email: email
+            });
+            return;
+        }
+
+        // RESEND VERIFICATION EMAIL (POST with action=resend-verification)
+        if (action === 'resend-verification') {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({ 
+                    error: 'Email is required' 
+                });
+            }
+
+            await db.initDb();
+            const userData = await db.getUserData();
+            const user = userData[email];
+
+            if (!user) {
+                return res.status(404).json({ 
+                    error: 'User not found' 
+                });
+            }
+
+            if (user.email_verified === true) {
+                return res.status(400).json({ 
+                    error: 'Email is already verified' 
+                });
+            }
+
+            const tokens = await db.getEmailVerificationTokens();
+            Object.keys(tokens).forEach(key => {
+                if (tokens[key].email === email) {
+                    delete tokens[key];
+                }
+            });
+
+            const rawToken = crypto.randomBytes(32).toString('hex');
+            const tokenHash = await bcrypt.hash(rawToken, 10);
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
+
+            const tokenId = `token_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+            tokens[tokenId] = {
+                email: email,
+                tokenHash: tokenHash,
+                expiresAt: expiresAt.toISOString(),
+                createdAt: new Date().toISOString(),
+                usedAt: null
+            };
+
+            await db.saveEmailVerificationTokens(tokens);
+
+            userData[email] = {
+                ...user,
+                lastVerificationEmailSent: new Date().toISOString()
+            };
+            await db.saveUserData(userData);
+
+            try {
+                await emailService.sendVerificationEmail(email, rawToken);
+            } catch (emailError) {
+                let errorMessage = 'Failed to send verification email.';
+                const errorMsg = emailError?.message || String(emailError) || '';
+                const errorCode = emailError?.code || '';
+                
+                if (errorCode === 'MISSING_API_KEY' || errorMsg.includes('RESEND_API_KEY is missing') || errorMsg.includes('not configured')) {
+                    errorMessage = 'Email service is not configured. Please add RESEND_API_KEY to Vercel environment variables and redeploy.';
+                } else if (errorMsg && !errorMsg.includes('RESEND_FROM_EMAIL')) {
+                    errorMessage = errorMsg;
+                }
+                
+                return res.status(500).json({
+                    error: errorMessage,
+                    message: 'Please try again later or contact support if the issue persists.',
+                    details: process.env.NODE_ENV === 'development' ? errorMsg : undefined
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Verification email sent. Please check your inbox.'
             });
             return;
         }

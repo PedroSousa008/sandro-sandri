@@ -32,6 +32,18 @@
     {
       "source": "/api/chapter-mode",
       "destination": "/api/chapter-mode"
+    },
+    {
+      "source": "/api/auth/verify-email",
+      "destination": "/api/auth?action=verify-email"
+    },
+    {
+      "source": "/api/auth/resend-verification",
+      "destination": "/api/auth?action=resend-verification"
+    },
+    {
+      "source": "/api/admin/setup-owner",
+      "destination": "/api/admin?endpoint=setup-owner"
     }
   ],
   "headers": [

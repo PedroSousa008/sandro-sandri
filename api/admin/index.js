@@ -19,6 +19,60 @@ module.exports = async (req, res) => {
 
     const { endpoint } = req.query;
     
+    // SETUP OWNER (POST with endpoint=setup-owner)
+    if (endpoint === 'setup-owner') {
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
+
+        try {
+            const { password } = req.body;
+            const OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
+
+            if (!password) {
+                return res.status(400).json({ 
+                    error: 'Password is required' 
+                });
+            }
+
+            if (password.length < 6) {
+                return res.status(400).json({ 
+                    error: 'Password must be at least 6 characters' 
+                });
+            }
+
+            await db.initDb();
+            const userData = await db.getUserData();
+            const bcrypt = require('bcryptjs');
+            const passwordHash = await bcrypt.hash(password, 10);
+
+            const ownerUser = userData[OWNER_EMAIL] || {
+                email: OWNER_EMAIL,
+                cart: [],
+                profile: null,
+                favorites: [],
+                orders: [],
+                createdAt: new Date().toISOString()
+            };
+
+            ownerUser.passwordHash = passwordHash;
+            ownerUser.updatedAt = new Date().toISOString();
+
+            userData[OWNER_EMAIL] = ownerUser;
+            await db.saveUserData(userData);
+
+            res.status(200).json({
+                success: true,
+                message: 'Owner password set successfully. You can now login.',
+                email: OWNER_EMAIL
+            });
+            return;
+        } catch (error) {
+            errorHandler.sendSecureError(res, error, 500, 'Failed to set owner password. Please try again.', 'SETUP_OWNER_ERROR');
+            return;
+        }
+    }
+    
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
     if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {
         const adminCheck = auth.requireAdmin(req);
