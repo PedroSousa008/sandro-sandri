@@ -227,8 +227,8 @@ const PRODUCTS = [
             "images/maldives2.png"
         ],
         collection: {
-            title: "Chapter II Collection",
-            description: "The new collection from Sandro Sandri"
+            title: "Voglia di Viaggiare Signature",
+            description: "For those who see travel as a philosophy, a journey of discovery and beauty."
         },
         sku: "SS-006",
         inStock: true,
@@ -267,8 +267,8 @@ const PRODUCTS = [
             "images/palma4.png"
         ],
         collection: {
-            title: "Chapter II Collection",
-            description: "The new collection from Sandro Sandri"
+            title: "Voglia di Viaggiare Signature",
+            description: "For those who see travel as a philosophy, a journey of discovery and beauty."
         },
         sku: "SS-007",
         inStock: true,
@@ -307,8 +307,8 @@ const PRODUCTS = [
             "images/lago4.png"
         ],
         collection: {
-            title: "Chapter II Collection",
-            description: "The new collection from Sandro Sandri"
+            title: "L'Italia per un viaggio indimenticabile Signature",
+            description: "The spirit of Italian charm, evoking the allure of an unfurgettable escape."
         },
         sku: "SS-008",
         inStock: true,
@@ -347,8 +347,8 @@ const PRODUCTS = [
             "images/gisele4.png"
         ],
         collection: {
-            title: "Chapter II Collection",
-            description: "The new collection from Sandro Sandri"
+            title: "Connoisseur Signature",
+            description: "For those who appreciate the finer things in life."
         },
         sku: "SS-009",
         inStock: true,
@@ -387,8 +387,8 @@ const PRODUCTS = [
             "images/pourville4.png"
         ],
         collection: {
-            title: "Chapter II Collection",
-            description: "The new collection from Sandro Sandri"
+            title: "Rinascimento Couture Signature",
+            description: "A tribute for artistic rebirth, blending heritage with modern refinement."
         },
         sku: "SS-010",
         inStock: true,

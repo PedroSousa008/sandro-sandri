@@ -137,14 +137,15 @@ function initCollection() {
         // Force refresh products data to ensure we have latest names
         let products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
         
-        // Filter by chapter
-        if (currentChapter) {
-            products = filterByChapter(products, currentChapter);
-        }
-        
-        // Filter by collection if set (from footer links)
+        // Filter by collection if set (from footer links) - this should show products from BOTH chapters
         if (currentCollection) {
             products = filterByCollection(products, currentCollection);
+            // When filtering by collection, don't filter by chapter - show all matching products from both chapters
+        } else {
+            // Only filter by chapter if no collection filter is active
+            if (currentChapter) {
+                products = filterByChapter(products, currentChapter);
+            }
         }
         
         // Sort products
