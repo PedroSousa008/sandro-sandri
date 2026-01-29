@@ -540,31 +540,40 @@ function createInlineSizeSelector(button, product) {
                     // Remove size selector
                     sizeSelector.remove();
                 } else {
-                    // User is logged in - send Formspree and add to cart
+                    // User is logged in - save waitlist entry to database
                     // Get user information
                     const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
                     const userEmail = currentUser?.email || '';
                     const profile = JSON.parse(localStorage.getItem('sandroSandriProfile') || 'null');
                     const userName = profile?.name || userEmail.split('@')[0] || 'Customer';
                     
-                    // Send to Formspree for logged-in users
+                    // Get active chapter info
+                    const activeChapterId = window.ChapterMode?.getActiveChapterId();
+                    const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
+                    const chapterNum = activeChapterId ? parseInt(activeChapterId.replace('chapter-', '')) : 1;
+                    const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+                    const chapterName = `Chapter ${roman[chapterNum - 1] || chapterNum}`;
+                    
+                    // Save waitlist entry to database
                     try {
                         const waitlistData = {
-                            _subject: `Waitlist Request - ${product.name} (Logged In User)`,
+                            customer_name: userName,
+                            customer_email: userEmail,
                             product_id: product.id,
                             product_name: product.name,
+                            product_sku: product.sku || 'N/A',
                             size: size,
                             color: null,
                             quantity: 1,
-                            customer_email: userEmail,
-                            customer_name: userName,
-                            timestamp: new Date().toISOString(),
-                            _replyto: userEmail,
+                            chapter: chapterName,
+                            chapter_id: activeChapterId || 'chapter-1',
+                            chapter_mode: activeChapterMode || 'waitlist',
+                            page_url: window.location.href,
                             user_status: 'Logged In'
                         };
                         
-                        // Send to Formspree (fire and forget - don't wait for response)
-                        fetch('https://formspree.io/f/meoyldeq', {
+                        // Send to database (fire and forget - don't wait for response)
+                        fetch('/api/waitlist', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -572,11 +581,11 @@ function createInlineSizeSelector(button, product) {
                             },
                             body: JSON.stringify(waitlistData)
                         }).catch(err => {
-                            console.error('Error sending waitlist Formspree for logged-in user:', err);
+                            console.error('Error saving waitlist entry for logged-in user:', err);
                             // Don't show error to user - just log it
                         });
                     } catch (error) {
-                        console.error('Error preparing waitlist Formspree for logged-in user:', error);
+                        console.error('Error preparing waitlist entry for logged-in user:', error);
                     }
                     
                     // Add to cart

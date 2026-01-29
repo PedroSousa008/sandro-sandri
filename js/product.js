@@ -587,31 +587,28 @@ function initAddToCartForm(product) {
                 const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
                 const chapterName = `Chapter ${roman[chapterNum - 1] || chapterNum}`;
                 
-                // Send to Formspree for logged-in users
+                // Submit waitlist entry to database for logged-in users
                 try {
                     const waitlistData = {
-                        _subject: `Waitlist Request - ${product.name} (${chapterName})`,
-                        _replyto: userEmail,
+                        customer_name: userName,
+                        customer_email: userEmail,
                         product_id: product.id,
                         product_name: product.name,
                         product_sku: product.sku || 'N/A',
                         size: size,
                         color: color || 'Navy',
                         quantity: quantity,
-                        customer_email: userEmail,
-                        customer_name: userName,
                         chapter: chapterName,
                         chapter_id: activeChapterId || 'chapter-1',
                         chapter_mode: activeChapterMode || 'waitlist',
                         page_url: window.location.href,
-                        timestamp: new Date().toISOString(),
                         user_status: 'Logged In'
                     };
                     
-                    console.log('📧 Submitting waitlist to Formspree (logged in):', waitlistData);
+                    console.log('📧 Submitting waitlist entry (logged in):', waitlistData);
                     
-                    // Send to Formspree (fire and forget - don't wait for response)
-                    fetch('https://formspree.io/f/meoyldeq', {
+                    // Send to database (fire and forget - don't wait for response)
+                    fetch('/api/waitlist', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -619,13 +616,13 @@ function initAddToCartForm(product) {
                         },
                         body: JSON.stringify(waitlistData)
                     }).then(response => {
-                        console.log('📧 Formspree response (logged in):', response.status);
+                        console.log('📧 Waitlist API response (logged in):', response.status);
                     }).catch(err => {
-                        console.error('Error sending waitlist Formspree for logged-in user:', err);
+                        console.error('Error saving waitlist entry for logged-in user:', err);
                         // Don't show error to user - just log it
                     });
                 } catch (error) {
-                    console.error('Error preparing waitlist Formspree for logged-in user:', error);
+                    console.error('Error preparing waitlist entry for logged-in user:', error);
                 }
                 
                 // Check inventory before adding to cart
@@ -1329,29 +1326,26 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
             const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
             const chapterName = `Chapter ${roman[chapterNum - 1] || chapterNum}`;
             
-            // Submit to Formspree (email configured in Formspree dashboard: sandrosandri.bysousa@gmail.com)
+            // Submit waitlist entry to database
             const waitlistData = {
-                _subject: `Waitlist Request - ${product.name} (${chapterName})`,
-                _replyto: email,
+                customer_name: name,
+                customer_email: email,
                 product_id: product.id,
                 product_name: product.name,
                 product_sku: product.sku || 'N/A',
                 size: size,
                 color: color || 'Navy',
                 quantity: quantity,
-                customer_name: name,
-                customer_email: email,
                 chapter: chapterName,
                 chapter_id: activeChapterId || 'chapter-1',
                 chapter_mode: activeChapterMode || 'waitlist',
                 page_url: window.location.href,
-                timestamp: new Date().toISOString(),
                 user_status: isLoggedIn ? 'Logged In' : 'Guest'
             };
             
-            console.log('📧 Submitting waitlist to Formspree:', waitlistData);
+            console.log('📧 Submitting waitlist entry:', waitlistData);
             
-            const response = await fetch('https://formspree.io/f/meoyldeq', {
+            const response = await fetch('/api/waitlist', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1360,11 +1354,11 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 body: JSON.stringify(waitlistData)
             });
             
-            console.log('📧 Formspree response status:', response.status);
+            console.log('📧 Waitlist API response status:', response.status);
             
             if (response.ok) {
                 const responseData = await response.json().catch(() => ({}));
-                console.log('✅ Formspree submission successful:', responseData);
+                console.log('✅ Waitlist entry saved successfully:', responseData);
                 
                 successEl.textContent = 'Successfully joined the waitlist! You will be notified when this product becomes available.';
                 successEl.style.display = 'block';
