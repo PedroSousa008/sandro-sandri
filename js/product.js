@@ -603,12 +603,25 @@ function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
     
-    // Get product's chapter ID
-    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                          product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+    // Determine product's chapter - check both chapter property and product ID
+    let productChapter = null;
+    if (product.chapter === 'chapter_i' || product.id >= 1 && product.id <= 5) {
+        productChapter = 'chapter-1';
+    } else if (product.chapter === 'chapter_ii' || product.id >= 6 && product.id <= 10) {
+        productChapter = 'chapter-2';
+    }
     
-    if (!productChapter || !window.ChapterMode || !window.ChapterMode.isInitialized) {
-        // Default to Add to Cart if chapter mode not available
+    // If we can't determine chapter, default to Add to Cart
+    if (!productChapter) {
+        console.log('Product page: Cannot determine chapter for product', product.id, '- defaulting to Add to Cart');
+        submitBtn.textContent = 'Add to Cart';
+        submitBtn.classList.remove('waitlist-btn');
+        return;
+    }
+    
+    // If ChapterMode is not initialized, default based on chapter
+    if (!window.ChapterMode || !window.ChapterMode.isInitialized) {
+        console.log('Product page: ChapterMode not initialized for product', product.id, 'chapter', productChapter, '- defaulting to Add to Cart');
         submitBtn.textContent = 'Add to Cart';
         submitBtn.classList.remove('waitlist-btn');
         return;
@@ -617,7 +630,8 @@ function updateProductButtonForMode(product) {
     // Check if this chapter is created
     const isCreated = window.ChapterMode.isChapterCreated(productChapter);
     if (!isCreated) {
-        // Chapter not created - default to Add to Cart (shouldn't appear, but just in case)
+        // Chapter not created - default to Add to Cart
+        console.log('Product page: Chapter', productChapter, 'not created - defaulting to Add to Cart');
         submitBtn.textContent = 'Add to Cart';
         submitBtn.classList.remove('waitlist-btn');
         return;
@@ -625,6 +639,7 @@ function updateProductButtonForMode(product) {
     
     // Get the mode for THIS product's chapter (from the table)
     const chapterMode = window.ChapterMode.getChapterMode(productChapter);
+    console.log('Product page: Product', product.id, 'Chapter', productChapter, 'Mode from table:', chapterMode);
     
     // Apply mode based on the chapter's mode from the table
     if (chapterMode === 'waitlist') {
@@ -634,6 +649,22 @@ function updateProductButtonForMode(product) {
         // 'add_to_cart' or 'early_access' - both show "Add to Cart"
         submitBtn.textContent = 'Add to Cart';
         submitBtn.classList.remove('waitlist-btn');
+    }
+    
+    // CRITICAL: If this is a Chapter I product (IDs 1-5), ensure it shows "Add to Cart"
+    // This is a safety check in case the table has incorrect data
+    if (product.id >= 1 && product.id <= 5) {
+        const chapterModeForChapter1 = window.ChapterMode.getChapterMode('chapter-1');
+        console.log('Product page: Chapter I product detected (ID', product.id, '), Chapter-1 mode:', chapterModeForChapter1);
+        
+        // If Chapter I mode is not 'add_to_cart', log a warning but still show what the table says
+        // However, if the table says 'waitlist' for Chapter I, we should override it to 'add_to_cart'
+        // because Chapter I should always be locked to Add to Cart when it's not the active chapter
+        if (chapterModeForChapter1 === 'waitlist') {
+            console.warn('Product page: WARNING - Chapter I is set to waitlist in table, but Chapter I should be locked to Add to Cart. Overriding to Add to Cart.');
+            submitBtn.textContent = 'Add to Cart';
+            submitBtn.classList.remove('waitlist-btn');
+        }
     }
 }
 
@@ -679,19 +710,30 @@ function initAddToCartForm(product) {
             return;
         }
         
-        // Get product's chapter ID
-        const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                              product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+        // Determine product's chapter - check both chapter property and product ID
+        let productChapter = null;
+        if (product.chapter === 'chapter_i' || product.id >= 1 && product.id <= 5) {
+            productChapter = 'chapter-1';
+        } else if (product.chapter === 'chapter_ii' || product.id >= 6 && product.id <= 10) {
+            productChapter = 'chapter-2';
+        }
         
-        // Check if this chapter is created and get its mode from the table
-        const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
-        const chapterMode = productChapter ? window.ChapterMode?.getChapterMode(productChapter) : null;
-        
-        // Handle WAITLIST mode - show email form if not logged in
-        // Apply waitlist mode if THIS product's chapter is in waitlist mode (from table)
-        if (isCreated && chapterMode === 'waitlist') {
-            // Check if user is logged in
-            const isLoggedIn = window.ChapterMode.isUserLoggedIn();
+        // If Chapter I product, always allow checkout (should be Add to Cart mode)
+        if (product.id >= 1 && product.id <= 5) {
+            // Chapter I products should always be in Add to Cart mode
+            // Skip waitlist form and proceed with normal add to cart
+            console.log('Product page: Chapter I product (ID', product.id, ') - skipping waitlist, proceeding with Add to Cart');
+            // Continue with normal add to cart flow below
+        } else {
+            // For other chapters, check if this chapter is created and get its mode from the table
+            const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
+            const chapterMode = productChapter ? window.ChapterMode?.getChapterMode(productChapter) : null;
+            
+            // Handle WAITLIST mode - show email form if not logged in
+            // Apply waitlist mode if THIS product's chapter is in waitlist mode (from table)
+            if (isCreated && chapterMode === 'waitlist') {
+                // Check if user is logged in
+                const isLoggedIn = window.ChapterMode.isUserLoggedIn();
             
             if (!isLoggedIn) {
                 // Show email form FIRST, then add to cart after email is submitted
@@ -780,8 +822,59 @@ function initAddToCartForm(product) {
                     }
                 }
                 
-                // Ensure quantity is valid
-                if (quantity < 1) {
+                // Add to cart for waitlist mode (logged in user)
+                if (window.cart) {
+                    const added = window.cart.addItem(product.id, size, color, quantity);
+                    if (added) {
+                        showNotification('Item added to cart!', 'success');
+                        // Update button state after adding
+                        if (window.updateAddToCartButton) {
+                            window.updateAddToCartButton(product.id, size);
+                        }
+                    }
+                }
+                
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+        }
+        
+        // Normal add to cart flow (for Chapter I or non-waitlist chapters)
+        // Check inventory before adding to cart
+        if (window.InventoryAPI) {
+            const inStock = await window.InventoryAPI.isInStock(product.id, size);
+            if (!inStock) {
+                showNotification('This size is sold out');
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+            
+            const availableStock = await window.InventoryAPI.get(product.id, size);
+            if (quantity > availableStock) {
+                showNotification(`Only ${availableStock} available in this size. Please reduce quantity.`);
+                if (quantityInput) {
+                    quantityInput.value = availableStock;
+                }
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+            
+            if (quantity > availableStock) {
+                quantity = availableStock;
+                if (quantityInput) {
+                    quantityInput.value = quantity;
+                }
+            }
+        }
+        
+        // Ensure quantity is valid
+        if (quantity < 1) {
                     console.error('Invalid quantity:', quantity);
                     showNotification('Please enter a valid quantity');
                     isSubmitting = false;
