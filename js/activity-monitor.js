@@ -213,11 +213,28 @@ class ActivityMonitor {
             });
 
             if (!response.ok) {
-                console.warn('Activity tracking failed:', response.status);
+                console.warn('Activity tracking failed:', response.status, response.statusText);
+                // Try to get error details for debugging
+                try {
+                    const errorData = await response.json();
+                    console.warn('Activity tracking error details:', errorData);
+                } catch (e) {
+                    // Ignore JSON parse errors
+                }
+            } else {
+                // Success - activity was recorded
+                try {
+                    const data = await response.json();
+                    if (data.success) {
+                        // Activity successfully recorded
+                    }
+                } catch (e) {
+                    // Ignore JSON parse errors
+                }
             }
         } catch (error) {
-            // Silently fail - don't interrupt user experience
-            console.warn('Activity tracking error:', error);
+            // Log error but don't interrupt user experience
+            console.error('Activity tracking network error:', error);
         }
     }
 }
