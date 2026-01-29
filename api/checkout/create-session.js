@@ -272,7 +272,7 @@ module.exports = async (req, res) => {
             console.error('Error fetching chapter mode:', error);
         }
         
-        // Determine which chapter the cart items belong to
+        // Get cart and customer info
         const { cart, customerInfo } = req.body;
         
         if (!cart || !Array.isArray(cart) || cart.length === 0) {
@@ -289,34 +289,29 @@ module.exports = async (req, res) => {
             }
         });
         
-        // Check if any chapter in cart is in waitlist mode
+        // Check if any chapter in cart is in waitlist mode or not created
         if (chapterModeData && chapterModeData.chapters) {
             for (const chapterId of cartChapters) {
                 const chapter = chapterModeData.chapters[chapterId];
-                if (chapter && chapter.created) {
-                    // Chapter is created - check its mode
-                    if (chapter.mode === 'waitlist') {
-                        // Get chapter name for error message
+                if (chapter) {
+                    if (!chapter.created) {
+                        // Chapter not created yet - block checkout
+                        const chapterName = chapter.name || chapterId.replace('chapter-', 'Chapter ');
+                        return res.status(403).json({
+                            error: 'CHECKOUT_DISABLED',
+                            message: `${chapterName} is not available yet.`
+                        });
+                    } else if (chapter.mode === 'waitlist') {
+                        // Chapter is in waitlist mode - block checkout
                         const chapterName = chapter.name || chapterId.replace('chapter-', 'Chapter ');
                         return res.status(403).json({
                             error: 'CHECKOUT_DISABLED',
                             message: `${chapterName} is in waitlist mode. Join the waitlist to be notified when it becomes available.`
                         });
                     }
-                    // If mode is 'add_to_cart' or 'early_access', allow checkout
-                } else if (chapter && !chapter.created) {
-                    // Chapter not created yet - block checkout
-                    const chapterName = chapter.name || chapterId.replace('chapter-', 'Chapter ');
-                    return res.status(403).json({
-                        error: 'CHECKOUT_DISABLED',
-                        message: `${chapterName} is not available yet.`
-                    });
+                    // If mode is 'add_to_cart' or 'early_access', allow checkout (continue)
                 }
             }
-        }
-        
-        if (!cart || !Array.isArray(cart) || cart.length === 0) {
-            return res.status(400).json({ error: 'INVALID_CART', message: 'Cart is empty or invalid' });
         }
         
         if (!customerInfo || !customerInfo.email) {
