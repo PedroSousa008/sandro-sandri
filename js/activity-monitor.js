@@ -194,8 +194,11 @@ class ActivityMonitor {
         }
 
         try {
-            // Use public endpoint for activity tracking (works for logged in and non-logged in users)
-            const response = await fetch('/api/user?action=activity', {
+            // IMPORTANT: Use public endpoint for activity tracking (works for logged in and non-logged in users)
+            // DO NOT use /api/admin?endpoint=activity - that requires authentication
+            const endpoint = '/api/user?action=activity';
+            
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
