@@ -83,6 +83,16 @@ function initProductPage() {
         }
     });
     
+    // Listen for chapter mode updates to re-update button text
+    window.addEventListener('chapterModeUpdated', () => {
+        updateProductButtonForMode(product);
+        // Also update the add to cart button if size is selected
+        const sizeInput = document.getElementById('selected-size-input');
+        if (sizeInput && sizeInput.value && window.updateAddToCartButton) {
+            window.updateAddToCartButton(product.id, sizeInput.value);
+        }
+    });
+    
     // Listen for inventory sync events to refresh inventory display
     window.addEventListener('inventorySynced', () => {
         console.log('📦 Inventory synced, refreshing product page...');
