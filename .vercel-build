@@ -1,0 +1,4 @@
+# Build trigger file
+# This file forces Vercel to rebuild the project
+# Last updated: $(date)
+
