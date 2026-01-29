@@ -72,17 +72,40 @@ class UserSync {
     updateUserEmail() {
         // Try AuthSystem first
         if (window.AuthSystem) {
+            // Method 1: Check currentUser property
             if (window.AuthSystem.currentUser && window.AuthSystem.currentUser.email) {
                 this.userEmail = window.AuthSystem.currentUser.email;
+                console.log('✅ Email found via AuthSystem.currentUser:', this.userEmail);
                 return;
             }
-            // Try isLoggedIn and getCurrentUser
+            
+            // Method 2: Try isLoggedIn and loadUser
             if (window.AuthSystem.isLoggedIn && window.AuthSystem.isLoggedIn()) {
                 const user = window.AuthSystem.loadUser();
                 if (user && user.email) {
                     this.userEmail = user.email;
+                    console.log('✅ Email found via AuthSystem.loadUser():', this.userEmail);
                     return;
                 }
+            }
+            
+            // Method 3: Try getCurrentUser if it exists
+            if (window.AuthSystem.getCurrentUser && typeof window.AuthSystem.getCurrentUser === 'function') {
+                const user = window.AuthSystem.getCurrentUser();
+                if (user && user.email) {
+                    this.userEmail = user.email;
+                    console.log('✅ Email found via AuthSystem.getCurrentUser():', this.userEmail);
+                    return;
+                }
+            }
+        }
+        
+        // Try window.auth as fallback (alternative auth system)
+        if (window.auth) {
+            if (window.auth.currentUser && window.auth.currentUser.email) {
+                this.userEmail = window.auth.currentUser.email;
+                console.log('✅ Email found via window.auth.currentUser:', this.userEmail);
+                return;
             }
         }
         
@@ -92,16 +115,57 @@ class UserSync {
             try {
                 const user = JSON.parse(userData);
                 // Check if session is still valid
-                if (user.expiresAt && new Date(user.expiresAt) > new Date()) {
-                    this.userEmail = user.email;
-                    return;
+                if (user.email) {
+                    // Check expiration if it exists
+                    if (!user.expiresAt || new Date(user.expiresAt) > new Date()) {
+                        this.userEmail = user.email;
+                        console.log('✅ Email found via localStorage (sandroSandri_user):', this.userEmail);
+                        return;
+                    } else {
+                        console.warn('⚠️ User session expired');
+                    }
                 }
             } catch (e) {
                 console.error('Error parsing user data:', e);
             }
         }
         
+        // Try alternative localStorage keys
+        const altUserData = localStorage.getItem('sandroSandriUser') || localStorage.getItem('user');
+        if (altUserData) {
+            try {
+                const user = typeof altUserData === 'string' ? JSON.parse(altUserData) : altUserData;
+                if (user && user.email) {
+                    this.userEmail = user.email;
+                    console.log('✅ Email found via alternative localStorage key:', this.userEmail);
+                    return;
+                }
+            } catch (e) {
+                // Ignore parse errors for alternative keys
+            }
+        }
+        
+        // Check session token for email (if stored)
+        const sessionToken = localStorage.getItem('sandroSandri_session_token');
+        if (sessionToken) {
+            try {
+                // Try to decode JWT token (if it's a JWT)
+                const parts = sessionToken.split('.');
+                if (parts.length === 3) {
+                    const payload = JSON.parse(atob(parts[1]));
+                    if (payload.email) {
+                        this.userEmail = payload.email;
+                        console.log('✅ Email found via session token:', this.userEmail);
+                        return;
+                    }
+                }
+            } catch (e) {
+                // Not a JWT or can't decode - ignore
+            }
+        }
+        
         this.userEmail = null;
+        console.log('⚠️ No user email found - user may not be logged in');
     }
 
     async loadAllData() {
