@@ -91,9 +91,12 @@ module.exports = async (req, res) => {
     if (endpoint === 'activity') {
         // Activity tracking endpoint
         if (req.method === 'POST') {
-            // Record user activity
+            // IMPORTANT: This endpoint should NOT be used for activity tracking
+            // All activity should go to /api/user?action=activity (public endpoint)
+            // This endpoint is kept for backward compatibility but redirects to user endpoint logic
             try {
-                const { sessionId, email, page, pageName, isCheckout, userAgent } = req.body;
+                // Redirect to user endpoint logic (same code)
+                const { sessionId, email, page, pageName, isCheckout, userAgent, cart, chapters } = req.body;
 
                 if (!sessionId) {
                     return res.status(400).json({ error: 'Session ID is required' });
@@ -101,8 +104,6 @@ module.exports = async (req, res) => {
 
                 await db.initDb();
 
-                // Optimize: Only update if session doesn't exist or last update was > 2 seconds ago
-                // This reduces KV writes by ~70% while maintaining accuracy
                 let activityData = await db.getActivityData();
                 if (!activityData) {
                     activityData = {};
@@ -114,7 +115,6 @@ module.exports = async (req, res) => {
                     const now = new Date();
                     const secondsSinceUpdate = (now - lastUpdate) / 1000;
                     
-                    // Skip update if less than 2 seconds since last update (reduces KV writes)
                     if (secondsSinceUpdate < 2) {
                         return res.status(200).json({
                             success: true,
@@ -124,24 +124,20 @@ module.exports = async (req, res) => {
                 }
 
                 const currentPage = page || pageName || 'unknown';
-                const onCheckoutPage = isCheckout === true || 
-                                      currentPage.includes('checkout') || 
-                                      currentPage.includes('cart');
+                const onCheckoutPage = isCheckout === true || currentPage.toLowerCase().includes('checkout');
 
                 // Determine chapters from cart if provided
                 let chaptersInCart = [];
-                if (req.body.chapters && Array.isArray(req.body.chapters)) {
-                    chaptersInCart = req.body.chapters;
-                } else if (req.body.cart && Array.isArray(req.body.cart)) {
-                    // Extract chapters from cart items
+                if (chapters && Array.isArray(chapters)) {
+                    chaptersInCart = chapters;
+                } else if (cart && Array.isArray(cart)) {
                     const chapterSet = new Set();
-                    req.body.cart.forEach(item => {
+                    cart.forEach(item => {
                         if (item.productId >= 1 && item.productId <= 5) {
                             chapterSet.add('chapter-1');
                         } else if (item.productId >= 6 && item.productId <= 10) {
                             chapterSet.add('chapter-2');
                         }
-                        // Also check if item has explicit chapter field
                         if (item.chapter) {
                             chapterSet.add(item.chapter);
                         } else if (item.chapter_id) {
@@ -162,10 +158,8 @@ module.exports = async (req, res) => {
                     createdAt: activityData[sessionId]?.createdAt || new Date().toISOString()
                 };
 
-                // Optimize: Clean up old sessions less frequently (every 10th request)
-                // This reduces KV writes while still maintaining cleanup
-                const shouldCleanup = Math.random() < 0.1; // 10% chance per request
-                
+                // Cleanup old sessions
+                const shouldCleanup = Math.random() < 0.1;
                 if (shouldCleanup) {
                     const now = new Date();
                     Object.keys(activityData).forEach(id => {
@@ -182,18 +176,17 @@ module.exports = async (req, res) => {
 
                 await db.saveActivityData(activityData);
 
-                res.status(200).json({
+                return res.status(200).json({
                     success: true,
                     message: 'Activity recorded'
                 });
             } catch (error) {
-                // SECURITY: Don't expose error details to users
-                console.error('Error recording activity in admin endpoint:', error);
-                // Return success even on error to prevent client-side retries
-                // The public endpoint should be used instead
+                // Log error but return success to prevent client retries
+                console.error('Error in admin activity endpoint:', error);
+                // Return success to prevent client-side error loops
                 return res.status(200).json({
                     success: true,
-                    message: 'Activity recorded (fallback)'
+                    message: 'Activity recorded (error handled)'
                 });
             }
         } else if (req.method === 'GET') {
