@@ -527,10 +527,15 @@ function createInlineSizeSelector(button, product) {
             e.preventDefault();
             e.stopPropagation();
             
-            // Check if in WAITLIST mode
-            if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+            // Check if product belongs to active chapter and is in WAITLIST mode
+            const activeChapterId = window.ChapterMode?.getActiveChapterId();
+            const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                                  product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+            const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
+            
+            if (isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
                 // Check if user is logged in
-                const isLoggedIn = window.CommerceMode.isUserLoggedIn();
+                const isLoggedIn = window.ChapterMode.isUserLoggedIn();
                 
                 if (!isLoggedIn) {
                     // Show email form first, then add to cart after email is submitted

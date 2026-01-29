@@ -842,17 +842,22 @@ img {
     bottom: 90px;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
-    font-family: var(--font-serif);
-    font-size: 0.8rem;
-    font-style: italic;
-    letter-spacing: 0.05em;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    font-style: normal;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     color: var(--color-white);
     background: var(--color-navy);
-    padding: 12px 24px;
+    padding: 18px 24px;
+    min-height: 56px;
     opacity: 0;
     visibility: hidden;
     transition: all 0.4s ease;
     white-space: nowrap;
+    border: none;
+    cursor: pointer;
 }
 
 .product-card:hover .quick-add {
