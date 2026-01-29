@@ -14,19 +14,46 @@ class UserSync {
     // SECURITY: Password syncing removed - passwords should never be synced
 
     init() {
-        // Wait a bit for auth system to initialize
-        setTimeout(() => {
+        // Wait a bit for auth system to initialize, then retry if needed
+        const tryInit = (attempt = 1, maxAttempts = 5) => {
             this.updateUserEmail();
-            console.log('UserSync initialized. Email:', this.userEmail);
             
-            // Initial load if user is logged in - CRITICAL for mobile devices
             if (this.userEmail) {
+                console.log('✅ UserSync initialized. Email:', this.userEmail);
+                // Initial load if user is logged in - CRITICAL for mobile devices
                 console.log('🔄 Initial data load for logged-in user...');
                 this.loadAllData();
             } else {
-                console.warn('⚠️ No user email found - sync will not work until user logs in');
+                if (attempt < maxAttempts) {
+                    // Retry after a delay - auth system might still be initializing
+                    setTimeout(() => tryInit(attempt + 1, maxAttempts), 500);
+                } else {
+                    // After max attempts, only warn if we're sure user should be logged in
+                    // Check if there's any indication user was logged in recently
+                    const userData = localStorage.getItem('sandroSandri_user');
+                    if (userData) {
+                        try {
+                            const user = JSON.parse(userData);
+                            if (user.email && user.expiresAt && new Date(user.expiresAt) > new Date()) {
+                                // User data exists but email not found - this is a real issue
+                                console.warn('⚠️ User data found but email not accessible - sync may not work');
+                            } else {
+                                // Session expired or no valid user - this is normal
+                                console.log('ℹ️ No active user session - sync will activate after login');
+                            }
+                        } catch (e) {
+                            console.log('ℹ️ No active user session - sync will activate after login');
+                        }
+                    } else {
+                        // No user data at all - user is simply not logged in (normal)
+                        console.log('ℹ️ No active user session - sync will activate after login');
+                    }
+                }
             }
-        }, 500);
+        };
+        
+        // Start initialization attempts
+        setTimeout(() => tryInit(), 500);
         
         // Listen for login/logout events
         window.addEventListener('storage', (e) => {
