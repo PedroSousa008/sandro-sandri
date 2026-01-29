@@ -837,20 +837,63 @@ img {
     color: var(--color-text-light);
 }
 
-/* Collection page quick-add button - matches home page size exactly */
+/* Home page quick-add button (collection-preview section) */
+.collection-preview .quick-add {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-white);
+    background: var(--color-navy);
+    padding: 0.75rem 1.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition-medium);
+    white-space: nowrap;
+}
+
+/* Collection page quick-add button - smaller size to match home page */
+.collection-grid .quick-add,
+#products-grid.collection-grid .quick-add,
+.page-main .collection-grid .quick-add {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    font-family: var(--font-sans);
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-white);
+    background: var(--color-navy);
+    padding: 0.3rem 0.65rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s ease;
+    white-space: nowrap;
+    border-radius: 2px;
+}
+
+/* General quick-add fallback */
 .quick-add {
     position: absolute;
     bottom: 90px;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
     font-family: var(--font-sans);
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 500;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-white);
     background: var(--color-navy);
-    padding: 0.35rem 0.75rem;
+    padding: 0.3rem 0.65rem;
     opacity: 0;
     visibility: hidden;
     transition: all 0.4s ease;
