@@ -338,7 +338,144 @@ module.exports = async (req, res) => {
             return res.status(405).json({ error: 'Method not allowed' });
         }
     } else {
-        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity or ?endpoint=customers' });
+    } else if (endpoint === 'init-inventory') {
+        // Initialize chapter inventory endpoint (owner only)
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
+
+        const adminCheck = auth.requireAdmin(req);
+        if (!adminCheck.authorized) {
+            await securityLog.logUnauthorizedAccess(req, `/api/admin?endpoint=init-inventory`, adminCheck.error);
+            return res.status(adminCheck.statusCode).json({
+                success: false,
+                error: adminCheck.error || 'Unauthorized. Only the owner can initialize inventory.'
+            });
+        }
+
+        try {
+            await db.initDb();
+
+            const { chapterId, force } = req.body;
+
+            if (!chapterId) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'chapterId is required'
+                });
+            }
+
+            // Validate chapter ID
+            if (!/^chapter-(10|[1-9])$/.test(chapterId)) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid chapterId format'
+                });
+            }
+
+            // Helper: Get models for a chapter
+            function getModelsForChapter(chapterId) {
+                const chapterModels = {
+                    'chapter-2': [
+                        { id: 6, name: 'Maldives', sku: 'SS-006' },
+                        { id: 7, name: 'Palma Mallorca', sku: 'SS-007' },
+                        { id: 8, name: 'Lago di Como', sku: 'SS-008' },
+                        { id: 9, name: 'Gisele', sku: 'SS-009' },
+                        { id: 10, name: 'Pourville', sku: 'SS-010' }
+                    ],
+                    'chapter-1': [
+                        { id: 1, name: 'Isole Cayman', sku: 'SS-001' },
+                        { id: 2, name: 'Isola di Necker', sku: 'SS-002' },
+                        { id: 3, name: "Monroe's Kisses", sku: 'SS-003' },
+                        { id: 4, name: 'La Dolce Vita', sku: 'SS-004' },
+                        { id: 5, name: 'Port-Coton', sku: 'SS-005' }
+                    ]
+                };
+                return chapterModels[chapterId] || [];
+            }
+
+            const models = getModelsForChapter(chapterId);
+            if (!models || models.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: `No models found for ${chapterId}`
+                });
+            }
+
+            // Check if already initialized
+            const existing = await db.getChapterInventory(chapterId);
+            if (existing && existing.initialized && !force) {
+                return res.status(200).json({
+                    success: true,
+                    message: `Inventory for ${chapterId} already initialized. Use force=true to reinitialize.`,
+                    inventory: existing
+                });
+            }
+
+            // Initialize inventory (will overwrite if force=true)
+            let inventory = await db.initChapterInventoryIfNeeded(chapterId, models);
+            
+            // If force=true, we need to reset it
+            if (force && existing) {
+                // Reinitialize with full stock
+                const sizeDistribution = {
+                    XS: 10,
+                    S: 20,
+                    M: 50,
+                    L: 50,
+                    XL: 20
+                };
+                
+                const newInventory = {
+                    initialized: true,
+                    initializedAt: new Date().toISOString(),
+                    models: {}
+                };
+                
+                models.forEach(model => {
+                    newInventory.models[model.id.toString()] = {
+                        name: model.name,
+                        sku: model.sku,
+                        stock: { ...sizeDistribution }
+                    };
+                });
+                
+                await db.saveChapterInventory(chapterId, newInventory);
+                inventory = newInventory;
+                
+                // Log admin action
+                req.user = adminCheck.user;
+                await securityLog.logAdminAction(req, 'INIT_INVENTORY', {
+                    chapterId,
+                    force: true,
+                    models: models.length
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: `Inventory for ${chapterId} reinitialized with full stock`,
+                    inventory: newInventory
+                });
+            }
+
+            // Log admin action
+            req.user = adminCheck.user;
+            await securityLog.logAdminAction(req, 'INIT_INVENTORY', {
+                chapterId,
+                models: models.length
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: `Inventory for ${chapterId} initialized successfully`,
+                inventory: inventory
+            });
+        } catch (error) {
+            errorHandler.sendSecureError(res, error, 500, 'Failed to initialize inventory. Please try again.', 'INIT_INVENTORY_ERROR');
+            return;
+        }
+    } else {
+        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, ?endpoint=customers, or ?endpoint=init-inventory' });
     }
 };
 

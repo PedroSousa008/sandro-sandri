@@ -147,6 +147,15 @@ module.exports = async (req, res) => {
                             await db.initChapterInventoryIfNeeded(chapterId, models);
                             console.log(`✅ Inventory initialized for ${chapterId} with ${models.length} models`);
                         }
+                        
+                        // Also initialize Chapter I if it hasn't been initialized yet
+                        if (chapterId === 'chapter-2') {
+                            const chapter1Models = getModelsForChapter('chapter-1');
+                            if (chapter1Models && chapter1Models.length > 0) {
+                                await db.initChapterInventoryIfNeeded('chapter-1', chapter1Models);
+                                console.log(`✅ Inventory initialized for chapter-1 with ${chapter1Models.length} models`);
+                            }
+                        }
                     } catch (invError) {
                         console.error(`Error initializing inventory for ${chapterId}:`, invError);
                         // Don't fail the request if inventory init fails, just log it
