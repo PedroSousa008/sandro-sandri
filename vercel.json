@@ -48,10 +48,6 @@
     {
       "source": "/api/inventory",
       "destination": "/api/inventory"
-    },
-    {
-      "source": "/api/admin/init-inventory",
-      "destination": "/api/admin/init-inventory"
     }
   ],
   "headers": [

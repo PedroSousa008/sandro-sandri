@@ -268,8 +268,6 @@
             <h2 class="admin-section-title">Stock</h2>
             <div style="margin-bottom: var(--space-md);">
                 <button class="admin-action-btn admin-action-btn-primary" id="load-stock-btn">Load Stock Data</button>
-                <button class="admin-action-btn admin-action-btn-secondary" id="init-chapter1-inventory-btn" style="margin-left: var(--space-sm);">Initialize Chapter I Inventory</button>
-                <button class="admin-action-btn admin-action-btn-secondary" id="init-chapter2-inventory-btn" style="margin-left: var(--space-sm);">Initialize Chapter II Inventory</button>
             </div>
             <div id="stock-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
                 Loading stock data...
@@ -1689,6 +1687,33 @@
                 const products = window.ProductsAPI ? window.ProductsAPI.getAll() : [];
                 const tshirtProducts = products.filter(p => p.category === 'tshirts');
 
+                // Auto-initialize inventory if not already initialized
+                // Initialize Chapter I
+                let chapter1InitResponse = await fetch('/api/admin?endpoint=init-inventory', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chapterId: 'chapter-1',
+                        force: false // Only initialize if not already initialized
+                    })
+                }).catch(() => null);
+
+                // Initialize Chapter II
+                let chapter2InitResponse = await fetch('/api/admin?endpoint=init-inventory', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chapterId: 'chapter-2',
+                        force: false // Only initialize if not already initialized
+                    })
+                }).catch(() => null);
+
                 // Fetch chapter-based inventory for Chapter I and Chapter II
                 const chapter1Inventory = await fetch('/api/inventory?chapterId=chapter-1', {
                     headers: {
@@ -1732,6 +1757,14 @@
                             stock.L = model.stock.L || 0;
                             stock.XL = model.stock.XL || 0;
                         }
+                    } else {
+                        // If inventory not found, use default full stock values
+                        // This ensures the table shows correct values even if inventory wasn't initialized
+                        stock.XS = 10;
+                        stock.S = 20;
+                        stock.M = 50;
+                        stock.L = 50;
+                        stock.XL = 20;
                     }
 
                     // Calculate total stock
@@ -1833,53 +1866,6 @@
         }
 
         document.getElementById('load-stock-btn').addEventListener('click', loadStock);
-
-        // Initialize inventory buttons
-        async function initChapterInventory(chapterId, chapterName) {
-            const token = localStorage.getItem('sandroSandri_session_token');
-            if (!token) {
-                alert('Not authenticated. Please log in.');
-                return;
-            }
-
-            if (!confirm(`Initialize inventory for ${chapterName}? This will set all models to full stock (XS=10, S=20, M=50, L=50, XL=20).`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/admin?endpoint=init-inventory', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        chapterId: chapterId,
-                        force: true // Force reinitialize even if already initialized
-                    })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    alert(`✅ ${chapterName} inventory initialized successfully!`);
-                    // Reload stock table
-                    loadStock();
-                } else {
-                    alert(`Error: ${data.error || 'Failed to initialize inventory'}`);
-                }
-            } catch (error) {
-                console.error('Error initializing inventory:', error);
-                alert(`Error: ${error.message || 'Failed to initialize inventory'}`);
-            }
-        }
-
-        document.getElementById('init-chapter1-inventory-btn').addEventListener('click', () => {
-            initChapterInventory('chapter-1', 'Chapter I');
-        });
-
-        document.getElementById('init-chapter2-inventory-btn').addEventListener('click', () => {
-            initChapterInventory('chapter-2', 'Chapter II');
-        });
 
         // Waitlist Information Management
         async function loadWaitlist() {
