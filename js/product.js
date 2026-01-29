@@ -719,11 +719,10 @@ function initAddToCartForm(product) {
         }
         
         // If Chapter I product, always allow checkout (should be Add to Cart mode)
+        // Skip waitlist form and proceed with normal add to cart
         if (product.id >= 1 && product.id <= 5) {
-            // Chapter I products should always be in Add to Cart mode
-            // Skip waitlist form and proceed with normal add to cart
             console.log('Product page: Chapter I product (ID', product.id, ') - skipping waitlist, proceeding with Add to Cart');
-            // Continue with normal add to cart flow below
+            // Continue to normal add to cart flow below (skip the waitlist block)
         } else {
             // For other chapters, check if this chapter is created and get its mode from the table
             const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
@@ -734,11 +733,15 @@ function initAddToCartForm(product) {
             if (isCreated && chapterMode === 'waitlist') {
                 // Check if user is logged in
                 const isLoggedIn = window.ChapterMode.isUserLoggedIn();
-            
-            if (!isLoggedIn) {
-                // Show email form FIRST, then add to cart after email is submitted
-                showWaitlistEmailForm(product, size, color, quantity, true); // true = add to cart after email
-            } else {
+                
+                if (!isLoggedIn) {
+                    // Show email form FIRST, then add to cart after email is submitted
+                    showWaitlistEmailForm(product, size, color, quantity, true); // true = add to cart after email
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                } else {
                 // User is logged in - send Formspree and add to cart
                 // Get user information
                 const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
