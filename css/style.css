@@ -837,6 +837,7 @@ img {
     color: var(--color-text-light);
 }
 
+/* Collection page quick-add button - matches home page size */
 .quick-add {
     position: absolute;
     bottom: 90px;
@@ -849,11 +850,12 @@ img {
     text-transform: uppercase;
     color: var(--color-white);
     background: var(--color-navy);
-    padding: 0.75rem 1.5rem;
+    padding: 0.4rem 0.9rem;
     opacity: 0;
     visibility: hidden;
     transition: all 0.4s ease;
     white-space: nowrap;
+    border-radius: 2px;
 }
 
 .product-card:hover .quick-add {
