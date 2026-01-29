@@ -94,16 +94,33 @@ class ActivityMonitor {
             this.sendActivity();
         });
 
-        // Heartbeat: send activity every 60 seconds to keep session alive (reduced frequency)
+        // Heartbeat: send activity every 30 seconds to keep session alive
+        // This ensures users stay marked as online even if they're just reading/not clicking
         setInterval(() => {
             this.sendActivity();
-        }, 60000); // Increased to 60 seconds to reduce server load
+        }, 30000); // 30 seconds - keeps users online while reducing server load
     }
 
     updateUserEmail() {
-        if (window.auth && window.auth.currentUser) {
+        // Try multiple auth systems to get user email
+        if (window.AuthSystem && window.AuthSystem.currentUser && window.AuthSystem.currentUser.email) {
+            this.userEmail = window.AuthSystem.currentUser.email;
+        } else if (window.auth && window.auth.currentUser && window.auth.currentUser.email) {
             this.userEmail = window.auth.currentUser.email;
         } else {
+            // Check localStorage for user session
+            try {
+                const userData = localStorage.getItem('sandroSandri_user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    if (user.email && user.expiresAt && new Date(user.expiresAt) > new Date()) {
+                        this.userEmail = user.email;
+                        return;
+                    }
+                }
+            } catch (e) {
+                // Ignore parse errors
+            }
             this.userEmail = null; // Guest user
         }
     }
