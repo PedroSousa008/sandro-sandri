@@ -580,18 +580,6 @@ function updateProductButtonForMode(product) {
     const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                           product.chapter === 'chapter_ii' ? 'chapter-2' : null;
     
-    // Special rule: If Chapter II is created and active, Chapter I products always show "Add to Cart"
-    const chapterIICreated = window.ChapterMode?.chapters?.['chapter-2']?.created === true;
-    const isChapterIProduct = productChapter === 'chapter-1';
-    const isChapterIIActive = activeChapterId === 'chapter-2';
-    
-    if (chapterIICreated && isChapterIIActive && isChapterIProduct) {
-        // Chapter I products always show "Add to Cart" when Chapter II is active
-        submitBtn.textContent = 'Add to Cart';
-        submitBtn.classList.remove('waitlist-btn');
-        return;
-    }
-    
     // Only apply mode if product is from active chapter
     if (activeChapterId && productChapter === activeChapterId) {
         // Check chapter mode - show "Join the Waitlist" in WAITLIST mode
@@ -660,17 +648,9 @@ function initAddToCartForm(product) {
                               product.chapter === 'chapter_ii' ? 'chapter-2' : null;
         const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
         
-        // Special rule: If Chapter II is created and active, Chapter I products always allow checkout
-        const chapterIICreated = window.ChapterMode?.chapters?.['chapter-2']?.created === true;
-        const isChapterIProduct = productChapter === 'chapter-1';
-        const isChapterIIActive = activeChapterId === 'chapter-2';
-        
-        // Skip waitlist mode for Chapter I products when Chapter II is active
-        const shouldSkipWaitlist = chapterIICreated && isChapterIIActive && isChapterIProduct;
-        
         // Handle WAITLIST mode - show email form if not logged in, then add to cart
-        // Only apply waitlist mode to products from active chapter (unless Chapter I when Chapter II is active)
-        if (!shouldSkipWaitlist && isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
+        // Only apply waitlist mode to products from active chapter
+        if (isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
             // Check if user is logged in
             const isLoggedIn = window.ChapterMode.isUserLoggedIn();
             

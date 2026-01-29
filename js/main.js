@@ -527,8 +527,18 @@ function createInlineSizeSelector(button, product) {
             e.preventDefault();
             e.stopPropagation();
             
-            // Check if in WAITLIST mode
-            if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+            // Determine product's chapter
+            const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                                  product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+            const activeChapterId = window.ChapterMode?.getActiveChapterId();
+            
+            // Check if product is from active chapter and if active chapter is in WAITLIST mode
+            const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
+            const isWaitlistMode = window.ChapterMode && window.ChapterMode.isWaitlistMode();
+            
+            // Only apply waitlist mode to products from active chapter
+            // Older chapters (e.g., Chapter I when Chapter II is active) always use "Add to Cart"
+            if (isActiveChapterProduct && isWaitlistMode) {
                 // Check if user is logged in
                 const isLoggedIn = window.CommerceMode.isUserLoggedIn();
                 

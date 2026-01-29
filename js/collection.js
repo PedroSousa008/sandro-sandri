@@ -57,37 +57,20 @@ function initCollection() {
     });
 
     // Set initial chapter based on active chapter from server
-    // If Chapter II is active and created, show both buttons and default to Chapter II
+    // If Chapter II is active, show both buttons and default to Chapter II
     // If Chapter I is active, show only Chapter I button
-    // Load chapter mode to check if Chapter II is created
-    function updateChapterForCollection() {
-        const chapterIICreated = window.ChapterMode?.chapters?.['chapter-2']?.created === true;
-        
-        if (window.ActiveChapter) {
-            const isChapterIIActive = window.ActiveChapter.isChapterII();
-            if (isChapterIIActive && chapterIICreated) {
-                // Chapter II is active and created - show both buttons, default to Chapter II
-                currentChapter = 'chapter-2';
-            } else {
-                // Chapter I is active - show only Chapter I, default to Chapter I
-                currentChapter = 'chapter-1';
-            }
+    if (window.ActiveChapter) {
+        const isChapterIIActive = window.ActiveChapter.isChapterII();
+        if (isChapterIIActive) {
+            // Chapter II is active - show both buttons, default to Chapter II
+            currentChapter = 'chapter-2';
         } else {
-            // Fallback: default to Chapter I
+            // Chapter I is active - show only Chapter I, default to Chapter I
             currentChapter = 'chapter-1';
         }
-        
-        // Initial render
-        renderProducts();
-    }
-    
-    // Load chapter mode first, then set initial chapter
-    if (window.ChapterMode && !window.ChapterMode.isInitialized) {
-        window.ChapterMode.loadMode().then(() => {
-            updateChapterForCollection();
-        });
     } else {
-        updateChapterForCollection();
+        // Fallback: default to Chapter I
+        currentChapter = 'chapter-1';
     }
     
     // Update active button
@@ -174,24 +157,6 @@ function initCollection() {
             // For Chapter I products (IDs 1-5), use image index 1 (tshirt-*b.png)
             const imageUrl = product.images && product.images.length > 1 ? product.images[1] : (product.images[0] || '');
             console.log(`Collection - Product ${product.id} (${product.name}): Using image:`, imageUrl, 'All images:', product.images);
-            
-            // Determine button text: Chapter I products always show "Add to Cart" when Chapter II is active
-            const activeChapterId = window.ChapterMode?.getActiveChapterId();
-            const chapterIICreated = window.ChapterMode?.chapters?.['chapter-2']?.created === true;
-            const isChapterIProduct = product.id >= 1 && product.id <= 5;
-            const isChapterIIActive = activeChapterId === 'chapter-2';
-            
-            let buttonText = 'Add to Cart';
-            if (!(chapterIICreated && isChapterIIActive && isChapterIProduct)) {
-                // Only check waitlist mode if it's not a Chapter I product when Chapter II is active
-                const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
-                if (activeChapterMode === 'waitlist' && activeChapterId && 
-                    ((isChapterIProduct && activeChapterId === 'chapter-1') || 
-                     (!isChapterIProduct && activeChapterId === 'chapter-2'))) {
-                    buttonText = 'Join the Waitlist';
-                }
-            }
-            
             return `
             <article class="product-card" data-product-id="${product.id}">
                 <a href="product.html?id=${product.id}" class="product-link">
@@ -203,7 +168,7 @@ function initCollection() {
                         <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                     </div>
                 </a>
-                <button class="quick-add" data-product-id="${product.id}">${buttonText}</button>
+                <button class="quick-add" data-product-id="${product.id}" data-chapter="${product.chapter || 'chapter_i'}">${getButtonTextForProduct(product)}</button>
             </article>
         `;
         }).join('');
@@ -246,27 +211,15 @@ function initCollection() {
             'chapter-2': [6, 7, 8, 9, 10] // Chapter II products
         };
         
-        // Special rule: If Chapter II is created and active, show both chapters
-        const chapterIICreated = window.ChapterMode?.chapters?.['chapter-2']?.created === true;
-        const activeChapterId = window.ChapterMode?.getActiveChapterId();
-        
-        if (chapterIICreated && activeChapterId === 'chapter-2' && chapterId === 'chapter-2') {
-            // When filtering for Chapter II and it's active, also include Chapter I products
-            const chapterIIIds = chapterProductMap['chapter-2'] || [];
-            const chapterIIds = chapterProductMap['chapter-1'] || [];
-            const allIds = [...chapterIIIds, ...chapterIIds];
-            const filtered = products.filter(product => allIds.includes(product.id));
-            return filtered; // Return all products from both chapters
-        }
-        
         const productIds = chapterProductMap[chapterId];
         if (!productIds) return products; // If chapter not mapped, show all
         
-        // Filter products and ensure we only return 5 products
+        // Filter products
         const filtered = products.filter(product => productIds.includes(product.id));
         
-        // Limit to 5 products maximum (unless showing both chapters)
-        return filtered.slice(0, 5);
+        // IMPORTANT: When Chapter II is active, show ALL products from both chapters on Collection page
+        // Don't limit to 5 - show all products from the selected chapter
+        return filtered;
     }
 
     function filterByCollection(products, collectionKey) {
@@ -335,8 +288,18 @@ function initCollection() {
                 // Get default size from product or use 'M'
                 const defaultSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M';
                 
-                // Check if in WAITLIST mode
-                if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+                // Determine product's chapter
+                const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                                      product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+                const activeChapterId = window.ChapterMode?.getActiveChapterId();
+                
+                // Check if product is from active chapter and if active chapter is in WAITLIST mode
+                const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
+                const isWaitlistMode = window.ChapterMode && window.ChapterMode.isWaitlistMode();
+                
+                // Only apply waitlist mode to products from active chapter
+                // Older chapters (e.g., Chapter I when Chapter II is active) always use "Add to Cart"
+                if (isActiveChapterProduct && isWaitlistMode) {
                     // Check if user is logged in
                     const isLoggedIn = window.CommerceMode.isUserLoggedIn();
                     
