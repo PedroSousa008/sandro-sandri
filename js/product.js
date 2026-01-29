@@ -1278,6 +1278,10 @@ function loadRelatedProducts(currentProduct) {
                 </div>
             </a>
             <button class="quick-add" data-product-id="${product.id}">${(() => {
+                // CRITICAL: Chapter I products (IDs 1-5) ALWAYS show "Add to Cart"
+                if (product.id >= 1 && product.id <= 5) {
+                    return 'Add to Cart';
+                }
                 const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                                       product.chapter === 'chapter_ii' ? 'chapter-2' : null;
                 const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
