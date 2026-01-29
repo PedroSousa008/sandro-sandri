@@ -290,10 +290,20 @@ module.exports = async (req, res) => {
         });
         
         // Check if any chapter in cart is in waitlist mode or not created
+        // Special rule: If Chapter II is created, Chapter I products are always available for checkout
+        const chapterIICreated = chapterModeData?.chapters?.['chapter-2']?.created === true;
+        const activeChapterId = chapterModeData?.activeChapterId;
+        
         if (chapterModeData && chapterModeData.chapters) {
             for (const chapterId of cartChapters) {
                 const chapter = chapterModeData.chapters[chapterId];
                 if (chapter) {
+                    // Special case: Chapter I products are always available when Chapter II is created and active
+                    if (chapterId === 'chapter-1' && chapterIICreated && activeChapterId === 'chapter-2') {
+                        // Allow checkout for Chapter I products when Chapter II is active
+                        continue;
+                    }
+                    
                     if (!chapter.created) {
                         // Chapter not created yet - block checkout
                         const chapterName = chapter.name || chapterId.replace('chapter-', 'Chapter ');

@@ -248,6 +248,11 @@
     <script>
         // Update homepage based on active chapter
         async function updateHomepageForChapter() {
+            // Load chapter mode first to check if Chapter II is created
+            if (window.ChapterMode && !window.ChapterMode.isInitialized) {
+                await window.ChapterMode.loadMode();
+            }
+            
             const chapter = window.ActiveChapter.getChapter();
             const isChapterII = window.ActiveChapter.isChapterII();
             const chapterLabel = window.ActiveChapter.getChapterLabel();
@@ -265,15 +270,29 @@
             const productsGrid = document.getElementById('homepage-products-grid');
             if (!productsGrid) return;
             
+            // Check if Chapter II is created
+            let chapterIICreated = false;
+            if (window.ChapterMode && window.ChapterMode.chapters && window.ChapterMode.chapters['chapter-2']) {
+                chapterIICreated = window.ChapterMode.chapters['chapter-2'].created === true;
+            }
+            
             if (isChapterII) {
-                // Chapter II products (IDs 6-10) - Use ProductsAPI to get correct data
+                // Chapter II is active - show Chapter II products
+                // If Chapter II is created, also show Chapter I products below
                 const chapterIIProducts = window.ProductsAPI ? window.ProductsAPI.getByChapter('chapter_ii') : [];
+                const chapterIProducts = chapterIICreated && window.ProductsAPI ? window.ProductsAPI.getByChapter('chapter_i') : [];
+                
                 console.log('Chapter II Products from API:', chapterIIProducts);
+                console.log('Chapter I Products (if Chapter II created):', chapterIProducts);
+                
+                let html = '';
+                
+                // First, show Chapter II products
                 if (chapterIIProducts.length > 0) {
-                    // Use ProductsAPI data to ensure correct images and names
-                    productsGrid.innerHTML = chapterIIProducts.slice(0, 5).map(product => {
+                    html += chapterIIProducts.slice(0, 5).map(product => {
                         const imageUrl = product.images && product.images.length > 1 ? product.images[1] : product.images[0];
-                        console.log(`Product ${product.id} (${product.name}): Using image:`, imageUrl);
+                        const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
+                        const buttonText = (activeChapterMode === 'waitlist' && window.ChapterMode?.getActiveChapterId() === 'chapter-2') ? 'Join the Waitlist' : 'Add to Cart';
                         return `
                         <article class="product-card" data-product-id="${product.id}">
                             <a href="product.html?id=${product.id}&chapter=ii" class="product-link">
@@ -285,7 +304,7 @@
                                     <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                                 </div>
                             </a>
-                            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
+                            <button class="quick-add" data-product-id="${product.id}">${buttonText}</button>
                         </article>
                     `;
                     }).join('');
@@ -354,6 +373,30 @@
                          </article>
                      `;
                 }
+                
+                // If Chapter II is created, also show Chapter I products
+                if (chapterIICreated && chapterIProducts.length > 0) {
+                    html += chapterIProducts.slice(0, 5).map(product => {
+                        const imageUrl = product.images && product.images.length > 1 ? product.images[1] : product.images[0];
+                        // Chapter I products always show "Add to Cart" when Chapter II is active
+                        return `
+                        <article class="product-card" data-product-id="${product.id}">
+                            <a href="product.html?id=${product.id}" class="product-link">
+                                <div class="product-image">
+                                    <img src="${imageUrl}?v=3.1" alt="${product.name}" onerror="console.error('Failed to load:', '${imageUrl}');">
+                                </div>
+                                <div class="product-info">
+                                    <h3 class="product-name">${product.name}</h3>
+                                    <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
+                                </div>
+                            </a>
+                            <button class="quick-add" data-product-id="${product.id}">Add to Cart</button>
+                        </article>
+                    `;
+                    }).join('');
+                }
+                
+                productsGrid.innerHTML = html;
             } else {
                 // Chapter I products (IDs 1-5)
                 productsGrid.innerHTML = `
