@@ -28,6 +28,10 @@
     {
       "source": "/api/site-settings/active-chapter",
       "destination": "/api/site-settings?setting=active-chapter"
+    },
+    {
+      "source": "/api/chapter-mode",
+      "destination": "/api/chapter-mode"
     }
   ],
   "headers": [

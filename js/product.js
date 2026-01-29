@@ -17,25 +17,8 @@ if (document.readyState === 'loading') {
     waitForProductsAPI();
 }
 
-// Global commerce mode
-let currentCommerceMode = 'LIVE';
-
-// Load commerce mode from server
-async function loadCommerceMode() {
-    try {
-        const response = await fetch('/api/site-settings?setting=commerce-mode');
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                currentCommerceMode = data.commerce_mode || 'LIVE';
-                return currentCommerceMode;
-            }
-        }
-    } catch (error) {
-        console.error('Error loading commerce mode:', error);
-    }
-    return 'LIVE';
-}
+// Chapter Mode is now loaded globally via chapter-mode.js
+// No need for local commerce mode loading
 
 function initProductPage() {
     // Get product ID from URL
@@ -502,16 +485,31 @@ function initAccordions() {
     }
 }
 
-// Update product button based on commerce mode
+// Update product button based on chapter mode
 function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
     
-    // Check commerce mode - show "Join the Waitlist" in WAITLIST mode
-    if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
-        submitBtn.textContent = 'Join the Waitlist';
-        submitBtn.classList.add('waitlist-btn');
+    // Check if product belongs to active chapter
+    const activeChapterId = window.ChapterMode?.getActiveChapterId();
+    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                          product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+    
+    // Only apply mode if product is from active chapter
+    if (activeChapterId && productChapter === activeChapterId) {
+        // Check chapter mode - show "Join the Waitlist" in WAITLIST mode
+        if (window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
+            submitBtn.textContent = 'Join the Waitlist';
+            submitBtn.classList.add('waitlist-btn');
+        } else if (window.ChapterMode && window.ChapterMode.isEarlyAccessMode()) {
+            submitBtn.textContent = 'Add to Cart';
+            submitBtn.classList.remove('waitlist-btn');
+        } else {
+            submitBtn.textContent = 'Add to Cart';
+            submitBtn.classList.remove('waitlist-btn');
+        }
     } else {
+        // Products from non-active chapters always show "Add to Cart"
         submitBtn.textContent = 'Add to Cart';
         submitBtn.classList.remove('waitlist-btn');
     }
@@ -559,10 +557,17 @@ function initAddToCartForm(product) {
             return;
         }
         
+        // Check if product belongs to active chapter
+        const activeChapterId = window.ChapterMode?.getActiveChapterId();
+        const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                              product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+        const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
+        
         // Handle WAITLIST mode - show email form if not logged in, then add to cart
-        if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
+        // Only apply waitlist mode to products from active chapter
+        if (isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
             // Check if user is logged in
-            const isLoggedIn = window.CommerceMode.isUserLoggedIn();
+            const isLoggedIn = window.ChapterMode.isUserLoggedIn();
             
             if (!isLoggedIn) {
                 // Show email form FIRST, then add to cart after email is submitted
@@ -1109,7 +1114,16 @@ function loadRelatedProducts(currentProduct) {
                     <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                 </div>
             </a>
-            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
+            <button class="quick-add" data-product-id="${product.id}">${(() => {
+                const activeChapterId = window.ChapterMode?.getActiveChapterId();
+                const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                                      product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+                const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
+                if (isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
+                    return 'Join the Waitlist';
+                }
+                return 'Add to Cart';
+            })()}</button>
         </article>
     `).join('');
 }
