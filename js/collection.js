@@ -57,29 +57,73 @@ function initCollection() {
     });
 
     // Set initial chapter based on active chapter from server
-    // If Chapter II is active, show both buttons and default to Chapter II
-    // If Chapter I is active, show only Chapter I button
-    if (window.ActiveChapter) {
+    // IMPORTANT: When Chapter II is created, show BOTH chapters on Collection page
+    if (window.ChapterMode) {
+        // Wait for ChapterMode to load
+        window.ChapterMode.loadMode().then(() => {
+            const activeChapterId = window.ChapterMode.getActiveChapterId();
+            
+            // If Chapter II is active, show both Chapter I and Chapter II buttons
+            if (activeChapterId === 'chapter-2') {
+                // Show both chapter buttons
+                filterButtons.forEach(btn => {
+                    if (btn.dataset.chapter === 'chapter-1' || btn.dataset.chapter === 'chapter-2') {
+                        btn.style.display = '';
+                    }
+                });
+                // Default to showing all products (both chapters)
+                currentChapter = null;
+            } else {
+                // Only Chapter I is active - show only Chapter I
+                currentChapter = 'chapter-1';
+                filterButtons.forEach(btn => {
+                    if (btn.dataset.chapter === 'chapter-2') {
+                        btn.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Update active button
+            filterButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.chapter === currentChapter) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            renderProducts();
+        });
+    } else if (window.ActiveChapter) {
         const isChapterIIActive = window.ActiveChapter.isChapterII();
         if (isChapterIIActive) {
-            // Chapter II is active - show both buttons, default to Chapter II
-            currentChapter = 'chapter-2';
+            // Chapter II is active - show both buttons, default to showing all
+            currentChapter = null;
+            filterButtons.forEach(btn => {
+                if (btn.dataset.chapter === 'chapter-1' || btn.dataset.chapter === 'chapter-2') {
+                    btn.style.display = '';
+                }
+            });
         } else {
             // Chapter I is active - show only Chapter I, default to Chapter I
             currentChapter = 'chapter-1';
+            filterButtons.forEach(btn => {
+                if (btn.dataset.chapter === 'chapter-2') {
+                    btn.style.display = 'none';
+                }
+            });
         }
+        
+        // Update active button
+        filterButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.chapter === currentChapter) {
+                btn.classList.add('active');
+            }
+        });
     } else {
         // Fallback: default to Chapter I
         currentChapter = 'chapter-1';
     }
-    
-    // Update active button
-    filterButtons.forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.chapter === currentChapter) {
-            btn.classList.add('active');
-        }
-    });
 
     // Initial render
     renderProducts();
@@ -106,12 +150,28 @@ function initCollection() {
 
     function updateChapterFilters() {
         // Show/hide chapter filter buttons based on active chapter from server
-        // IMPORTANT: Chapter II button ONLY appears when site is in "Upload Chapter II" mode
-        // If Chapter I mode is active, ONLY show Chapter I button
+        // IMPORTANT: When Chapter II is created, show BOTH buttons (Chapter I and Chapter II)
         const chapterIIBtn = document.getElementById('chapter-ii-btn');
         
-        // Wait for ActiveChapter to load if not ready
-        if (window.ActiveChapter) {
+        // Use ChapterMode if available (new system)
+        if (window.ChapterMode) {
+            window.ChapterMode.loadMode().then(() => {
+                const activeChapterId = window.ChapterMode.getActiveChapterId();
+                
+                if (activeChapterId === 'chapter-2') {
+                    // Chapter II is active - show BOTH buttons (Chapter I and Chapter II)
+                    if (chapterIIBtn) {
+                        chapterIIBtn.style.display = '';
+                    }
+                } else {
+                    // Only Chapter I is active - show only Chapter I button
+                    if (chapterIIBtn) {
+                        chapterIIBtn.style.display = 'none';
+                    }
+                }
+            });
+        } else if (window.ActiveChapter) {
+            // Fallback to old system
             const isChapterIIMode = window.ActiveChapter.isChapterII();
             
             if (isChapterIIMode) {
@@ -126,7 +186,7 @@ function initCollection() {
                 }
             }
         } else {
-            // If ActiveChapter not loaded yet, wait a bit and try again
+            // If neither loaded yet, wait a bit and try again
             setTimeout(() => {
                 updateChapterFilters();
             }, 200);
@@ -142,9 +202,33 @@ function initCollection() {
             products = filterByCollection(products, currentCollection);
             // When filtering by collection, don't filter by chapter - show all matching products from both chapters
         } else {
-            // Only filter by chapter if no collection filter is active
+            // Filter by chapter if specified
+            // IMPORTANT: When Chapter II is active, show both chapters on Collection page
+            // So if no chapter filter is selected, show all created chapters
             if (currentChapter) {
                 products = filterByChapter(products, currentChapter);
+            } else {
+                // No chapter filter - show all products from created chapters
+                // Check which chapters are created
+                if (window.ChapterMode && window.ChapterMode.chapters) {
+                    const createdChapters = [];
+                    if (window.ChapterMode.chapters['chapter-1'] && window.ChapterMode.chapters['chapter-1'].created) {
+                        createdChapters.push('chapter-1');
+                    }
+                    if (window.ChapterMode.chapters['chapter-2'] && window.ChapterMode.chapters['chapter-2'].created) {
+                        createdChapters.push('chapter-2');
+                    }
+                    
+                    // Filter to show only products from created chapters
+                    if (createdChapters.length > 0) {
+                        const createdProductIds = [];
+                        createdChapters.forEach(chId => {
+                            if (chId === 'chapter-1') createdProductIds.push(...[1, 2, 3, 4, 5]);
+                            if (chId === 'chapter-2') createdProductIds.push(...[6, 7, 8, 9, 10]);
+                        });
+                        products = products.filter(p => createdProductIds.includes(p.id));
+                    }
+                }
             }
         }
         
