@@ -837,20 +837,20 @@ img {
     color: var(--color-text-light);
 }
 
-/* Collection page quick-add button - matches home page size */
+/* Collection page quick-add button - matches home page size exactly */
 .quick-add {
     position: absolute;
     bottom: 90px;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
     font-family: var(--font-sans);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 500;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-white);
     background: var(--color-navy);
-    padding: 0.4rem 0.9rem;
+    padding: 0.35rem 0.75rem;
     opacity: 0;
     visibility: hidden;
     transition: all 0.4s ease;
