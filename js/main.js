@@ -527,20 +527,16 @@ function createInlineSizeSelector(button, product) {
             e.preventDefault();
             e.stopPropagation();
             
-            // Determine product's chapter
+            // Get product's chapter ID and mode from table
             const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                  product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-            const activeChapterId = window.ChapterMode?.getActiveChapterId();
+                                 product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+            const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
+            const chapterMode = productChapter ? window.ChapterMode?.getChapterMode(productChapter) : null;
             
-            // Check if product is from active chapter and if active chapter is in WAITLIST mode
-            const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
-            const isWaitlistMode = window.ChapterMode && window.ChapterMode.isWaitlistMode();
-            
-            // Only apply waitlist mode to products from active chapter
-            // Older chapters (e.g., Chapter I when Chapter II is active) always use "Add to Cart"
-            if (isActiveChapterProduct && isWaitlistMode) {
+            // Check if THIS product's chapter is in WAITLIST mode (from table)
+            if (isCreated && chapterMode === 'waitlist') {
                 // Check if user is logged in
-                const isLoggedIn = window.CommerceMode.isUserLoggedIn();
+                const isLoggedIn = window.ChapterMode?.isUserLoggedIn();
                 
                 if (!isLoggedIn) {
                     // Show email form first, then add to cart after email is submitted
@@ -557,10 +553,8 @@ function createInlineSizeSelector(button, product) {
                     const profile = JSON.parse(localStorage.getItem('sandroSandriProfile') || 'null');
                     const userName = profile?.name || userEmail.split('@')[0] || 'Customer';
                     
-                    // Get active chapter info
-                    const activeChapterId = window.ChapterMode?.getActiveChapterId();
-                    const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
-                    const chapterNum = activeChapterId ? parseInt(activeChapterId.replace('chapter-', '')) : 1;
+                    // Get chapter info for THIS product
+                    const chapterNum = productChapter ? parseInt(productChapter.replace('chapter-', '')) : 1;
                     const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
                     const chapterName = `Chapter ${roman[chapterNum - 1] || chapterNum}`;
                     
@@ -576,8 +570,8 @@ function createInlineSizeSelector(button, product) {
                             color: null,
                             quantity: 1,
                             chapter: chapterName,
-                            chapter_id: activeChapterId || 'chapter-1',
-                            chapter_mode: activeChapterMode || 'waitlist',
+                            chapter_id: productChapter || 'chapter-1',
+                            chapter_mode: chapterMode || 'waitlist',
                             page_url: window.location.href,
                             user_status: 'Logged In'
                         };

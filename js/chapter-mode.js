@@ -65,6 +65,30 @@ window.ChapterMode = {
         return this.activeChapterMode;
     },
     
+    // Get mode for a specific chapter (from the table)
+    getChapterMode(chapterId) {
+        if (!this.chapters || !this.chapters[chapterId]) {
+            return 'add_to_cart'; // Default
+        }
+        return this.chapters[chapterId].mode || 'add_to_cart';
+    },
+    
+    // Check if a specific chapter is created
+    isChapterCreated(chapterId) {
+        if (!this.chapters || !this.chapters[chapterId]) {
+            return false;
+        }
+        return this.chapters[chapterId].created === true;
+    },
+    
+    // Get all created chapters (for Collection page)
+    getCreatedChapters() {
+        if (!this.chapters) return [];
+        return Object.keys(this.chapters).filter(chapterId => {
+            return this.chapters[chapterId].created === true;
+        });
+    },
+    
     // Check if user is logged in (for waitlist form)
     isUserLoggedIn() {
         return !!(window.AuthSystem?.currentUser || window.auth?.currentUser);

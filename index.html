@@ -285,7 +285,7 @@
                                     <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                                 </div>
                             </a>
-                            <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
+                            <button class="quick-add" data-product-id="${product.id}">Add to Cart</button>
                         </article>
                     `;
                     }).join('');
@@ -418,6 +418,30 @@
                         <button class="quick-add" data-product-id="5">Add to Cart</button>
                     </article>
                 `;
+            }
+            
+            // Update button text based on each product's chapter mode
+            if (window.ChapterMode && window.ChapterMode.isInitialized) {
+                productsGrid.querySelectorAll('.quick-add').forEach(btn => {
+                    const productId = parseInt(btn.dataset.productId);
+                    if (!productId || !window.ProductsAPI) return;
+                    
+                    const product = window.ProductsAPI.getById(productId);
+                    if (!product) return;
+                    
+                    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                                         product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+                    const isCreated = productChapter && window.ChapterMode.isChapterCreated(productChapter);
+                    const chapterMode = productChapter ? window.ChapterMode.getChapterMode(productChapter) : null;
+                    
+                    if (isCreated && chapterMode === 'waitlist') {
+                        btn.textContent = 'Join the Waitlist';
+                        btn.classList.add('waitlist-btn');
+                    } else {
+                        btn.textContent = 'Add to Cart';
+                        btn.classList.remove('waitlist-btn');
+                    }
+                });
             }
             
             // Re-initialize quick-add buttons after updating products

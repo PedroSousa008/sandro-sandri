@@ -83,16 +83,6 @@ function initProductPage() {
         }
     });
     
-    // Listen for chapter mode updates to re-update button text
-    window.addEventListener('chapterModeUpdated', () => {
-        updateProductButtonForMode(product);
-        // Also update the add to cart button if size is selected
-        const sizeInput = document.getElementById('selected-size-input');
-        if (sizeInput && sizeInput.value && window.updateAddToCartButton) {
-            window.updateAddToCartButton(product.id, sizeInput.value);
-        }
-    });
-    
     // Listen for inventory sync events to refresh inventory display
     window.addEventListener('inventorySynced', () => {
         console.log('📦 Inventory synced, refreshing product page...');
@@ -414,32 +404,19 @@ function initSizeSelection(product) {
             const sizeSelected = size && size.trim() !== '';
             
             if (inStock && sizeSelected) {
-                // Check if product belongs to active chapter
-                const activeChapterId = window.ChapterMode?.getActiveChapterId();
-                const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                      product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-                const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
+                // Get active chapter mode to determine button text
+                const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
+                const isWaitlist = window.ChapterMode?.isWaitlistMode();
+                const isEarlyAccess = window.ChapterMode?.isEarlyAccessMode();
                 
-                // Only apply waitlist/early access mode to products from active chapter
-                // Products from non-active chapters (e.g., Chapter I when Chapter II is active) always show "Add to Cart"
-                if (isActiveChapterProduct) {
-                    const isWaitlist = window.ChapterMode?.isWaitlistMode();
-                    const isEarlyAccess = window.ChapterMode?.isEarlyAccessMode();
-                    
-                    if (isWaitlist) {
-                        addToCartBtn.textContent = 'Join the Waitlist';
-                        addToCartBtn.classList.add('waitlist-btn');
-                    } else if (isEarlyAccess) {
-                        addToCartBtn.textContent = 'Add to Cart (Early Access)';
-                        addToCartBtn.classList.add('early-access-btn');
-                    } else {
-                        addToCartBtn.textContent = 'Add to Cart';
-                        addToCartBtn.classList.remove('waitlist-btn', 'early-access-btn');
-                    }
+                if (isWaitlist) {
+                    addToCartBtn.textContent = 'Join the Waitlist';
+                    addToCartBtn.classList.add('waitlist-btn');
+                } else if (isEarlyAccess) {
+                    addToCartBtn.textContent = 'Add to Cart (Early Access)';
+                    addToCartBtn.classList.add('early-access-btn');
                 } else {
-                    // Product from non-active chapter - always "Add to Cart"
                     addToCartBtn.textContent = 'Add to Cart';
-                    addToCartBtn.classList.remove('waitlist-btn', 'early-access-btn');
                 }
                 addToCartBtn.disabled = false;
                 addToCartBtn.style.background = '#1a1a2e';
@@ -598,38 +575,37 @@ function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
     
-    // Check if product belongs to active chapter
-    const activeChapterId = window.ChapterMode?.getActiveChapterId();
+    // Get product's chapter ID
     const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                           product.chapter === 'chapter_ii' ? 'chapter-2' : null;
     
-    // IMPORTANT: Products from non-active chapters (e.g., Chapter I when Chapter II is active)
-    // ALWAYS show "Add to Cart" regardless of active chapter mode
-    if (activeChapterId && productChapter && productChapter !== activeChapterId) {
-        // This is a product from a non-active chapter - always "Add to Cart"
+    if (!productChapter || !window.ChapterMode) {
+        // Default to Add to Cart if chapter mode not available
         submitBtn.textContent = 'Add to Cart';
-        submitBtn.classList.remove('waitlist-btn', 'early-access-btn');
+        submitBtn.classList.remove('waitlist-btn');
         return;
     }
     
-    // Only apply mode if product is from active chapter
-    if (activeChapterId && productChapter === activeChapterId) {
-        // Check chapter mode - show "Join the Waitlist" in WAITLIST mode
-        if (window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
-            submitBtn.textContent = 'Join the Waitlist';
-            submitBtn.classList.add('waitlist-btn');
-            submitBtn.classList.remove('early-access-btn');
-        } else if (window.ChapterMode && window.ChapterMode.isEarlyAccessMode()) {
-            submitBtn.textContent = 'Add to Cart';
-            submitBtn.classList.remove('waitlist-btn', 'early-access-btn');
-        } else {
-            submitBtn.textContent = 'Add to Cart';
-            submitBtn.classList.remove('waitlist-btn', 'early-access-btn');
-        }
-    } else {
-        // Fallback: Products from non-active chapters or when no active chapter - always "Add to Cart"
+    // Check if this chapter is created
+    const isCreated = window.ChapterMode.isChapterCreated(productChapter);
+    if (!isCreated) {
+        // Chapter not created - default to Add to Cart (shouldn't appear, but just in case)
         submitBtn.textContent = 'Add to Cart';
-        submitBtn.classList.remove('waitlist-btn', 'early-access-btn');
+        submitBtn.classList.remove('waitlist-btn');
+        return;
+    }
+    
+    // Get the mode for THIS product's chapter (from the table)
+    const chapterMode = window.ChapterMode.getChapterMode(productChapter);
+    
+    // Apply mode based on the chapter's mode from the table
+    if (chapterMode === 'waitlist') {
+        submitBtn.textContent = 'Join the Waitlist';
+        submitBtn.classList.add('waitlist-btn');
+    } else {
+        // 'add_to_cart' or 'early_access' - both show "Add to Cart"
+        submitBtn.textContent = 'Add to Cart';
+        submitBtn.classList.remove('waitlist-btn');
     }
 }
 
@@ -675,15 +651,17 @@ function initAddToCartForm(product) {
             return;
         }
         
-        // Check if product belongs to active chapter
-        const activeChapterId = window.ChapterMode?.getActiveChapterId();
+        // Get product's chapter ID
         const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                               product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-        const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
         
-        // Handle WAITLIST mode - show email form if not logged in, then add to cart
-        // Only apply waitlist mode to products from active chapter
-        if (isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
+        // Check if this chapter is created and get its mode from the table
+        const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
+        const chapterMode = productChapter ? window.ChapterMode?.getChapterMode(productChapter) : null;
+        
+        // Handle WAITLIST mode - show email form if not logged in
+        // Apply waitlist mode if THIS product's chapter is in waitlist mode (from table)
+        if (isCreated && chapterMode === 'waitlist') {
             // Check if user is logged in
             const isLoggedIn = window.ChapterMode.isUserLoggedIn();
             
@@ -1259,11 +1237,11 @@ function loadRelatedProducts(currentProduct) {
                 </div>
             </a>
             <button class="quick-add" data-product-id="${product.id}">${(() => {
-                const activeChapterId = window.ChapterMode?.getActiveChapterId();
                 const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                                       product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-                const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
-                if (isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
+                const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
+                const chapterMode = productChapter ? window.ChapterMode?.getChapterMode(productChapter) : null;
+                if (isCreated && chapterMode === 'waitlist') {
                     return 'Join the Waitlist';
                 }
                 return 'Add to Cart';
