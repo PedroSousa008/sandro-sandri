@@ -299,7 +299,6 @@ module.exports = async (req, res) => {
         } else {
             return res.status(405).json({ error: 'Method not allowed' });
         }
-    } else {
     } else if (endpoint === 'init-inventory') {
         // Initialize chapter inventory endpoint (owner only)
         if (req.method !== 'POST') {
