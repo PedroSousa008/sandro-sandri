@@ -10,14 +10,25 @@ const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
-    // Set secure CORS headers (restricted to allowed origins)
-    cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
+    // CRITICAL: Wrap everything in try-catch to prevent 500 errors
+    try {
+        // Set secure CORS headers (restricted to allowed origins)
+        cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+        if (req.method === 'OPTIONS') {
+            return res.status(200).end();
+        }
 
-    const { endpoint } = req.query;
+        const { endpoint } = req.query;
+        
+        // SPECIAL HANDLING: If POST to activity endpoint, return success immediately
+        // This prevents any 500 errors from breaking the site
+        if (endpoint === 'activity' && req.method === 'POST') {
+            return res.status(200).json({
+                success: true,
+                message: 'Activity endpoint deprecated - use /api/user?action=activity instead'
+            });
+        }
     
     // SETUP OWNER (POST with endpoint=setup-owner)
     if (endpoint === 'setup-owner') {
@@ -90,19 +101,8 @@ module.exports = async (req, res) => {
 
     if (endpoint === 'activity') {
         // Activity tracking endpoint
-        if (req.method === 'POST') {
-            // IMPORTANT: This endpoint should NOT be used for activity tracking
-            // All activity should go to /api/user?action=activity (public endpoint)
-            // This endpoint is kept for backward compatibility but ALWAYS returns success
-            // to prevent 500 errors from breaking the site
-            
-            // Always return success immediately - don't even try to process
-            // This prevents any 500 errors from breaking user experience
-            return res.status(200).json({
-                success: true,
-                message: 'Activity endpoint deprecated - use /api/user?action=activity instead'
-            });
-        } else if (req.method === 'GET') {
+        // POST requests are already handled at the top of the function
+        if (req.method === 'GET') {
             // Get active users
             try {
                 await db.initDb();
