@@ -57,8 +57,8 @@ function initProductPage() {
             initAddToCartForm(product);
             initFavoritesButton(product);
             
-            // Update button - always show "Join the Waitlist" for t-shirts
-            updateProductButtonForMode(product);
+            // Update button based on chapter mode (wait for ChapterMode to be ready)
+            waitForChapterModeAndUpdateButton(product);
         });
     } else {
         // Initialize interactions (no chapter inventory to sync)
@@ -69,8 +69,8 @@ function initProductPage() {
         initAddToCartForm(product);
         initFavoritesButton(product);
         
-        // Update button - always show "Join the Waitlist" for t-shirts
-        updateProductButtonForMode(product);
+        // Update button based on chapter mode (wait for ChapterMode to be ready)
+        waitForChapterModeAndUpdateButton(product);
     }
     
     // Listen for favorites sync events to update button state
@@ -571,6 +571,34 @@ function initAccordions() {
 }
 
 // Update product button based on chapter mode
+// Wait for ChapterMode to be initialized before updating button
+function waitForChapterModeAndUpdateButton(product) {
+    if (window.ChapterMode && window.ChapterMode.isInitialized) {
+        updateProductButtonForMode(product);
+    } else {
+        // Wait a bit and try again
+        setTimeout(() => {
+            if (window.ChapterMode && window.ChapterMode.isInitialized) {
+                updateProductButtonForMode(product);
+            } else {
+                // If still not loaded after 1 second, try loading it
+                if (window.ChapterMode && window.ChapterMode.loadMode) {
+                    window.ChapterMode.loadMode().then(() => {
+                        updateProductButtonForMode(product);
+                    });
+                } else {
+                    // Fallback: default to Add to Cart
+                    const submitBtn = document.querySelector('.add-to-cart-btn');
+                    if (submitBtn) {
+                        submitBtn.textContent = 'Add to Cart';
+                        submitBtn.classList.remove('waitlist-btn');
+                    }
+                }
+            }
+        }, 200);
+    }
+}
+
 function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
@@ -579,7 +607,7 @@ function updateProductButtonForMode(product) {
     const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                           product.chapter === 'chapter_ii' ? 'chapter-2' : null;
     
-    if (!productChapter || !window.ChapterMode) {
+    if (!productChapter || !window.ChapterMode || !window.ChapterMode.isInitialized) {
         // Default to Add to Cart if chapter mode not available
         submitBtn.textContent = 'Add to Cart';
         submitBtn.classList.remove('waitlist-btn');

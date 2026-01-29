@@ -151,18 +151,20 @@ function initCollection() {
                 });
             }
         } else {
-            // Collection page: Show ALL products from ALL created chapters (not just active)
-            // This allows Chapter I and Chapter II to both appear on Collection page
-            if (window.ChapterMode && window.ChapterMode.getCreatedChapters) {
-                const createdChapters = window.ChapterMode.getCreatedChapters();
-                products = products.filter(product => {
-                    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                         product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-                    return productChapter && createdChapters.includes(productChapter);
-                });
-            } else if (currentChapter) {
-                // Fallback: filter by selected chapter if chapter mode not loaded
+            // Collection page: Filter by selected chapter (Chapter I or Chapter II button)
+            if (currentChapter) {
+                // Filter to show only products from the selected chapter
                 products = filterByChapter(products, currentChapter);
+            } else {
+                // If no chapter selected, show all created chapters (fallback)
+                if (window.ChapterMode && window.ChapterMode.getCreatedChapters) {
+                    const createdChapters = window.ChapterMode.getCreatedChapters();
+                    products = products.filter(product => {
+                        const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                                             product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+                        return productChapter && createdChapters.includes(productChapter);
+                    });
+                }
             }
         }
         
