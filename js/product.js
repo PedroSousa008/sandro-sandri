@@ -1546,7 +1546,7 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 }, 2000);
             } else {
                 const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                console.error('❌ Formspree submission failed:', errorData);
+                console.error('❌ Waitlist submission failed:', errorData);
                 throw new Error(errorData.error || 'Failed to submit waitlist request');
             }
         } catch (error) {
