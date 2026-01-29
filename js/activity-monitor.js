@@ -222,17 +222,32 @@ class ActivityMonitor {
     }
 }
 
-// Initialize activity monitor
+// Initialize activity monitor on ALL pages
+// This ensures every user (logged in or not) is tracked
 if (typeof window !== 'undefined') {
+    // Create global instance immediately
     window.ActivityMonitor = new ActivityMonitor();
     
-    // Initialize when DOM is ready
+    // Initialize as soon as possible
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            window.ActivityMonitor.init();
+            if (window.ActivityMonitor && !window.ActivityMonitor.isInitialized) {
+                window.ActivityMonitor.init();
+            }
         });
     } else {
-        window.ActivityMonitor.init();
+        // DOM already loaded, initialize immediately
+        if (!window.ActivityMonitor.isInitialized) {
+            window.ActivityMonitor.init();
+        }
     }
+    
+    // Also try to initialize after a short delay to catch any edge cases
+    setTimeout(() => {
+        if (window.ActivityMonitor && !window.ActivityMonitor.isInitialized) {
+            console.log('ActivityMonitor: Delayed initialization');
+            window.ActivityMonitor.init();
+        }
+    }, 100);
 }
 
