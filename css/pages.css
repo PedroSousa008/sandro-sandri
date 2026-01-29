@@ -806,23 +806,46 @@
 .product-actions {
     display: flex;
     gap: var(--space-sm);
+    align-items: stretch;
 }
 
-.add-to-cart-btn {
+.product-actions .add-to-cart-btn,
+.product-actions .waitlist-btn {
+    flex: 1;
+    min-width: 0;
+}
+
+.add-to-cart-btn,
+.waitlist-btn {
     flex: 1;
     font-family: var(--font-sans);
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.15em;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--color-white);
     background: var(--color-navy);
-    padding: var(--space-md);
+    padding: 18px 24px;
+    min-height: 56px;
     transition: var(--transition-fast);
+    border: none;
+    cursor: pointer;
 }
 
-.add-to-cart-btn:hover {
+.add-to-cart-btn:hover,
+.waitlist-btn:hover {
     background: var(--color-navy-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(26, 26, 46, 0.2);
+}
+
+.waitlist-btn {
+    background: #ff9800;
+}
+
+.waitlist-btn:hover {
+    background: #f57c00;
+    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
 }
 
 .favorite-btn {
