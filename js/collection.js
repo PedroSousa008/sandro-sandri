@@ -57,20 +57,37 @@ function initCollection() {
     });
 
     // Set initial chapter based on active chapter from server
-    // If Chapter II is active, show both buttons and default to Chapter II
+    // If Chapter II is active and created, show both buttons and default to Chapter II
     // If Chapter I is active, show only Chapter I button
-    if (window.ActiveChapter) {
-        const isChapterIIActive = window.ActiveChapter.isChapterII();
-        if (isChapterIIActive) {
-            // Chapter II is active - show both buttons, default to Chapter II
-            currentChapter = 'chapter-2';
+    // Load chapter mode to check if Chapter II is created
+    function updateChapterForCollection() {
+        const chapterIICreated = window.ChapterMode?.chapters?.['chapter-2']?.created === true;
+        
+        if (window.ActiveChapter) {
+            const isChapterIIActive = window.ActiveChapter.isChapterII();
+            if (isChapterIIActive && chapterIICreated) {
+                // Chapter II is active and created - show both buttons, default to Chapter II
+                currentChapter = 'chapter-2';
+            } else {
+                // Chapter I is active - show only Chapter I, default to Chapter I
+                currentChapter = 'chapter-1';
+            }
         } else {
-            // Chapter I is active - show only Chapter I, default to Chapter I
+            // Fallback: default to Chapter I
             currentChapter = 'chapter-1';
         }
+        
+        // Initial render
+        renderProducts();
+    }
+    
+    // Load chapter mode first, then set initial chapter
+    if (window.ChapterMode && !window.ChapterMode.isInitialized) {
+        window.ChapterMode.loadMode().then(() => {
+            updateChapterForCollection();
+        });
     } else {
-        // Fallback: default to Chapter I
-        currentChapter = 'chapter-1';
+        updateChapterForCollection();
     }
     
     // Update active button
