@@ -564,12 +564,31 @@ function initCheckoutForm() {
             return;
         }
 
-        // Validate required fields
+        // Validate required checkout fields
         if (!customerInfo.email || !customerInfo.firstName || !customerInfo.lastName || 
             !customerInfo.address || !customerInfo.city || !customerInfo.postalCode || !customerInfo.country) {
-            alert('Please fill in all required fields');
+            alert('Please fill in all required checkout information');
             return;
         }
+        
+        // Validate required payment fields
+        const cardNumber = formData.get('cardNumber');
+        const cardExpiry = formData.get('cardExpiry');
+        const cardCVC = formData.get('cardCVC');
+        const cardholderName = formData.get('cardholderName');
+        
+        if (!cardNumber || !cardExpiry || !cardCVC || !cardholderName) {
+            alert('Please fill in all payment information');
+            return;
+        }
+        
+        // Add payment info to customerInfo (for reference, but Stripe handles actual payment)
+        customerInfo.payment = {
+            cardNumber: cardNumber.replace(/\s/g, ''),
+            cardExpiry: cardExpiry,
+            cardCVC: cardCVC,
+            cardholderName: cardholderName
+        };
 
         // Update button state
         submitBtn.textContent = 'Processing...';
