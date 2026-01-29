@@ -167,16 +167,7 @@ function initCollection() {
                         <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                     </div>
                 </a>
-                <button class="quick-add" data-product-id="${product.id}">${(() => {
-                    const activeChapterId = window.ChapterMode?.getActiveChapterId();
-                    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                          product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-                    const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
-                    if (isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
-                        return 'Join the Waitlist';
-                    }
-                    return 'Add to Cart';
-                })()}</button>
+                <button class="quick-add" data-product-id="${product.id}">${window.CommerceMode && window.CommerceMode.isWaitlistMode() ? 'Join the Waitlist' : 'Add to Cart'}</button>
             </article>
         `;
         }).join('');
@@ -295,15 +286,10 @@ function initCollection() {
                 // Get default size from product or use 'M'
                 const defaultSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M';
                 
-                // Check if product belongs to active chapter and is in WAITLIST mode
-                const activeChapterId = window.ChapterMode?.getActiveChapterId();
-                const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                      product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-                const isActiveChapterProduct = activeChapterId && productChapter === activeChapterId;
-                
-                if (isActiveChapterProduct && window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
+                // Check if in WAITLIST mode
+                if (window.CommerceMode && window.CommerceMode.isWaitlistMode()) {
                     // Check if user is logged in
-                    const isLoggedIn = window.ChapterMode.isUserLoggedIn();
+                    const isLoggedIn = window.CommerceMode.isUserLoggedIn();
                     
                     if (!isLoggedIn) {
                         // Show email form first, then add to cart after email is submitted
