@@ -93,102 +93,15 @@ module.exports = async (req, res) => {
         if (req.method === 'POST') {
             // IMPORTANT: This endpoint should NOT be used for activity tracking
             // All activity should go to /api/user?action=activity (public endpoint)
-            // This endpoint is kept for backward compatibility but redirects to user endpoint logic
-            try {
-                // Redirect to user endpoint logic (same code)
-                const { sessionId, email, page, pageName, isCheckout, userAgent, cart, chapters } = req.body;
-
-                if (!sessionId) {
-                    return res.status(400).json({ error: 'Session ID is required' });
-                }
-
-                await db.initDb();
-
-                let activityData = await db.getActivityData();
-                if (!activityData) {
-                    activityData = {};
-                }
-                
-                const existingSession = activityData[sessionId];
-                if (existingSession && existingSession.lastActivity) {
-                    const lastUpdate = new Date(existingSession.lastActivity);
-                    const now = new Date();
-                    const secondsSinceUpdate = (now - lastUpdate) / 1000;
-                    
-                    if (secondsSinceUpdate < 2) {
-                        return res.status(200).json({
-                            success: true,
-                            message: 'Activity recorded (throttled)'
-                        });
-                    }
-                }
-
-                const currentPage = page || pageName || 'unknown';
-                const onCheckoutPage = isCheckout === true || currentPage.toLowerCase().includes('checkout');
-
-                // Determine chapters from cart if provided
-                let chaptersInCart = [];
-                if (chapters && Array.isArray(chapters)) {
-                    chaptersInCart = chapters;
-                } else if (cart && Array.isArray(cart)) {
-                    const chapterSet = new Set();
-                    cart.forEach(item => {
-                        if (item.productId >= 1 && item.productId <= 5) {
-                            chapterSet.add('chapter-1');
-                        } else if (item.productId >= 6 && item.productId <= 10) {
-                            chapterSet.add('chapter-2');
-                        }
-                        if (item.chapter) {
-                            chapterSet.add(item.chapter);
-                        } else if (item.chapter_id) {
-                            chapterSet.add(item.chapter_id);
-                        }
-                    });
-                    chaptersInCart = Array.from(chapterSet);
-                }
-
-                activityData[sessionId] = {
-                    sessionId: sessionId,
-                    email: email || null,
-                    page: currentPage,
-                    isCheckout: onCheckoutPage,
-                    userAgent: userAgent || 'unknown',
-                    chapters: chaptersInCart,
-                    lastActivity: new Date().toISOString(),
-                    createdAt: activityData[sessionId]?.createdAt || new Date().toISOString()
-                };
-
-                // Cleanup old sessions
-                const shouldCleanup = Math.random() < 0.1;
-                if (shouldCleanup) {
-                    const now = new Date();
-                    Object.keys(activityData).forEach(id => {
-                        const session = activityData[id];
-                        if (session && session.lastActivity) {
-                            const lastActivityTime = new Date(session.lastActivity);
-                            const minutesSinceActivity = (now - lastActivityTime) / (1000 * 60);
-                            if (minutesSinceActivity > 10) {
-                                delete activityData[id];
-                            }
-                        }
-                    });
-                }
-
-                await db.saveActivityData(activityData);
-
-                return res.status(200).json({
-                    success: true,
-                    message: 'Activity recorded'
-                });
-            } catch (error) {
-                // Log error but return success to prevent client retries
-                console.error('Error in admin activity endpoint:', error);
-                // Return success to prevent client-side error loops
-                return res.status(200).json({
-                    success: true,
-                    message: 'Activity recorded (error handled)'
-                });
-            }
+            // This endpoint is kept for backward compatibility but ALWAYS returns success
+            // to prevent 500 errors from breaking the site
+            
+            // Always return success immediately - don't even try to process
+            // This prevents any 500 errors from breaking user experience
+            return res.status(200).json({
+                success: true,
+                message: 'Activity endpoint deprecated - use /api/user?action=activity instead'
+            });
         } else if (req.method === 'GET') {
             // Get active users
             try {
