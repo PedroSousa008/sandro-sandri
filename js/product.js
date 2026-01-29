@@ -287,12 +287,7 @@ function initSizeSelection(product) {
     
     // Then check inventory for each button asynchronously
     const sizePromises = sizeButtons.map(async ({ btn, size, index }) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'size-btn';
-        btn.dataset.size = size;
-        btn.textContent = size;
-        
+        // btn is already created above, just update its properties based on inventory
         // Check inventory asynchronously
         let inStock = false;
         if (window.InventoryAPI) {
