@@ -41,19 +41,13 @@ function initCollection() {
     // Also listen for chapter mode changes (when owner switches modes in Owner Mode)
     window.addEventListener('activeChapterUpdated', () => {
         updateChapterFilters();
-        // Re-render products with correct chapter
-        if (window.ActiveChapter) {
-            const isChapterIIMode = window.ActiveChapter.isChapterII();
-            currentChapter = isChapterIIMode ? 'chapter-2' : 'chapter-1';
-            // Update active button
-            filterButtons.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.chapter === currentChapter) {
-                    btn.classList.add('active');
-                }
-            });
-            renderProducts();
-        }
+        renderProducts(); // Re-render to update button text
+    });
+    
+    // Listen for chapter mode updates from new system
+    window.addEventListener('chapterModeUpdated', () => {
+        updateChapterFilters();
+        renderProducts(); // Re-render to update button text
     });
 
     // Set initial chapter based on active chapter from server
