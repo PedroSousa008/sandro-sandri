@@ -159,35 +159,85 @@ document.addEventListener('DOMContentLoaded', () => {
 let currentCommerceMode = 'LIVE';
 
 // Load commerce mode from server
-async function loadCommerceMode() {
+async function loadChapterMode() {
     try {
-        const response = await fetch('/api/site-settings?setting=commerce-mode');
+        // Wait for ChapterMode to be available
+        if (window.ChapterMode) {
+            if (!window.ChapterMode.isInitialized) {
+                await window.ChapterMode.loadMode();
+            }
+            return {
+                activeChapterId: window.ChapterMode.getActiveChapterId(),
+                activeChapterMode: window.ChapterMode.getActiveChapterMode()
+            };
+        }
+        
+        // Fallback: fetch directly
+        const response = await fetch('/api/chapter-mode');
         if (response.ok) {
             const data = await response.json();
             if (data.success) {
-                currentCommerceMode = data.commerce_mode || 'LIVE';
-                return currentCommerceMode;
+                return {
+                    activeChapterId: data.activeChapterId,
+                    activeChapterMode: data.activeChapterMode || 'add_to_cart'
+                };
             }
         }
     } catch (error) {
-        console.error('Error loading commerce mode:', error);
+        console.error('Error loading chapter mode:', error);
     }
-    return 'LIVE';
+    return {
+        activeChapterId: null,
+        activeChapterMode: 'add_to_cart'
+    };
 }
 
 function initCheckout() {
-    // Check commerce mode first
-    loadCommerceMode().then(() => {
-        if (currentCommerceMode === 'WAITLIST') {
-            // Block checkout in WAITLIST mode
+    // Check chapter mode first
+    loadChapterMode().then((chapterMode) => {
+        // Get cart to check which chapters are in it
+        const cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
+        const cartChapters = new Set();
+        cart.forEach(item => {
+            if (item.productId >= 1 && item.productId <= 5) {
+                cartChapters.add('chapter-1');
+            } else if (item.productId >= 6 && item.productId <= 10) {
+                cartChapters.add('chapter-2');
+            }
+        });
+        
+        // Check if any chapter in cart is in waitlist mode or not created
+        let shouldBlockCheckout = false;
+        let blockMessage = '';
+        
+        if (window.ChapterMode && window.ChapterMode.chapters) {
+            for (const chapterId of cartChapters) {
+                const chapter = window.ChapterMode.chapters[chapterId];
+                if (chapter) {
+                    if (!chapter.created) {
+                        shouldBlockCheckout = true;
+                        blockMessage = `${chapter.name || chapterId.replace('chapter-', 'Chapter ')} is not available yet.`;
+                        break;
+                    } else if (chapter.mode === 'waitlist') {
+                        shouldBlockCheckout = true;
+                        blockMessage = `${chapter.name || chapterId.replace('chapter-', 'Chapter ')} is in waitlist mode. Join the waitlist to be notified when it becomes available.`;
+                        break;
+                    }
+                    // If mode is 'add_to_cart' or 'early_access', allow checkout
+                }
+            }
+        }
+        
+        if (shouldBlockCheckout) {
+            // Block checkout
             const checkoutContainer = document.querySelector('.checkout-container') || document.body;
             checkoutContainer.innerHTML = `
                 <div style="max-width: 600px; margin: 100px auto; padding: var(--space-xl); text-align: center;">
                     <h1 style="font-family: var(--font-serif); font-size: 2rem; color: var(--color-navy); margin-bottom: var(--space-md);">
-                        Chapter I is not available yet
+                        Checkout Not Available
                     </h1>
                     <p style="font-family: var(--font-sans); font-size: 1rem; color: var(--color-text); margin-bottom: var(--space-lg);">
-                        Join the waitlist to be notified when Chapter I becomes available.
+                        ${blockMessage}
                     </p>
                     <a href="collection.html" style="display: inline-block; padding: var(--space-sm) var(--space-lg); background: var(--color-navy); color: white; text-decoration: none; font-family: var(--font-sans); font-size: 0.875rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px;">
                         Back to Collection
