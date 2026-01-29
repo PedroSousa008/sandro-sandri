@@ -16,6 +16,35 @@ document.addEventListener('DOMContentLoaded', () => {
     checkActiveChapter();
 });
 
+// Helper function to get button text based on product's chapter and mode
+function getButtonTextForProduct(product) {
+    // Determine product's chapter ID
+    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                          product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+    
+    // Get active chapter
+    const activeChapterId = window.ChapterMode?.getActiveChapterId();
+    
+    // If product is from a non-active chapter (e.g., Chapter I when Chapter II is active)
+    // Always show "Add to Cart" (or "Sold Out" if out of stock)
+    if (activeChapterId && productChapter && productChapter !== activeChapterId) {
+        // This is an older chapter - always "Add to Cart"
+        return 'Add to Cart';
+    }
+    
+    // If product is from active chapter, use the active chapter's mode
+    if (productChapter === activeChapterId) {
+        if (window.ChapterMode && window.ChapterMode.isWaitlistMode()) {
+            return 'Join the Waitlist';
+        } else {
+            return 'Add to Cart';
+        }
+    }
+    
+    // Default fallback
+    return 'Add to Cart';
+}
+
 function initCollection() {
     const productsGrid = document.getElementById('products-grid');
     const filterButtons = document.querySelectorAll('.filter-btn');
