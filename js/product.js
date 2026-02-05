@@ -1436,8 +1436,23 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
     const successEl = document.getElementById('waitlist-success');
     const submitBtn = document.getElementById('waitlist-submit-btn');
     
-    form.addEventListener('submit', async (e) => {
+    // Prevent duplicate event listeners - remove any existing listener first
+    const existingHandler = form._waitlistSubmitHandler;
+    if (existingHandler) {
+        form.removeEventListener('submit', existingHandler);
+    }
+    
+    // Create a named handler function that we can track
+    const waitlistSubmitHandler = async (e) => {
         e.preventDefault();
+        e.stopImmediatePropagation(); // Prevent any other handlers from running
+        
+        // Prevent duplicate submissions
+        if (form._isSubmitting) {
+            console.log('Waitlist form already submitting, ignoring duplicate submission');
+            return;
+        }
+        form._isSubmitting = true;
         
         const email = emailInput.value.trim();
         const name = nameInput ? nameInput.value.trim() : (userName || 'Customer');
@@ -1473,10 +1488,12 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
         successEl.style.display = 'none';
         
         try {
-            // CRITICAL: Read the ACTUAL quantity from the quantity input field (user may have changed it)
-            // Don't use the quantity parameter - always read from the input field
-            const quantityInput = document.querySelector('.quantity-input');
-            const actualQuantity = quantityInput ? (parseInt(quantityInput.value) || 1) : quantity;
+            // CRITICAL: Use the quantity that was passed when the form was created
+            // The quantity input on the product page might have changed, but we want the quantity
+            // that was selected when the user clicked "Join the Waitlist"
+            // However, if the user wants to use the current quantity input, we can read it
+            // But to be safe, use the quantity parameter that was passed (which is the quantity at click time)
+            const actualQuantity = parseInt(quantity) || 1;
             
             // Ensure quantity is valid
             if (actualQuantity < 1) {
@@ -1485,8 +1502,11 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 successEl.style.display = 'none';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Join Waitlist';
+                form._isSubmitting = false;
                 return;
             }
+            
+            console.log('🛒 Waitlist form: Adding to cart with quantity:', actualQuantity, 'for product:', product.id, 'size:', size);
             
             // Get active chapter info
             const activeChapterId = window.ChapterMode?.getActiveChapterId();
@@ -1533,14 +1553,17 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 successEl.style.display = 'block';
                 
                 // Add to cart after email is submitted (if flag is set)
-                // CRITICAL: Use actualQuantity (from input field), not the quantity parameter
+                // CRITICAL: Use actualQuantity (the quantity that was selected when user clicked the button)
                 if (addToCartAfterEmail && window.cart) {
+                    console.log('🛒 Waitlist: About to add to cart - product:', product.id, 'size:', size, 'quantity:', actualQuantity, 'color:', color);
+                    
                     // Check inventory before adding
                     if (window.InventoryAPI) {
                         const inStock = await window.InventoryAPI.isInStock(product.id, size);
                         if (inStock) {
                             // Use actualQuantity - the cart.addItem will merge with existing items correctly
-                            window.cart.addItem(product.id, size, color, actualQuantity);
+                            const added = window.cart.addItem(product.id, size, color, actualQuantity);
+                            console.log('🛒 Waitlist: addItem returned:', added);
                             
                             // Open cart drawer
                             const cartDrawer = document.querySelector('.cart-drawer');
@@ -1550,10 +1573,13 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                                 cartOverlay?.classList.add('visible');
                                 document.body.classList.add('cart-open');
                             }
+                        } else {
+                            console.log('🛒 Waitlist: Product out of stock, not adding to cart');
                         }
                     } else {
                         // Use actualQuantity
-                        window.cart.addItem(product.id, size, color, actualQuantity);
+                        const added = window.cart.addItem(product.id, size, color, actualQuantity);
+                        console.log('🛒 Waitlist: addItem returned (no inventory check):', added);
                     }
                 }
                 
@@ -1573,8 +1599,13 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
             errorEl.style.display = 'block';
             submitBtn.disabled = false;
             submitBtn.textContent = 'Join Waitlist';
+            form._isSubmitting = false;
         }
-    });
+    };
+    
+    // Store the handler so we can remove it later if needed
+    form._waitlistSubmitHandler = waitlistSubmitHandler;
+    form.addEventListener('submit', waitlistSubmitHandler);
     
     // Focus first input
     setTimeout(() => {

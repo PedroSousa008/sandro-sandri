@@ -56,13 +56,15 @@ class ShoppingCart {
 
     // Add item to cart
     addItem(productId, size = null, color = null, quantity = 1) {
+        console.log('🛒 addItem called:', { productId, size, color, quantity, timestamp: Date.now() });
+        
         // Prevent rapid duplicate calls
-        const callKey = `${productId}-${size}-${color}-${Date.now()}`;
-        if (this._lastAddCall && Date.now() - this._lastAddCall.time < 500 && this._lastAddCall.key === `${productId}-${size}-${color}`) {
-            console.log('Duplicate addItem call prevented');
+        const callKey = `${productId}-${size}-${color}`;
+        if (this._lastAddCall && Date.now() - this._lastAddCall.time < 1000 && this._lastAddCall.key === callKey) {
+            console.log('⚠️ Duplicate addItem call prevented (within 1 second)');
             return false;
         }
-        this._lastAddCall = { key: `${productId}-${size}-${color}`, time: Date.now() };
+        this._lastAddCall = { key: callKey, time: Date.now() };
         
         const product = window.ProductsAPI.getById(productId);
         if (!product) return false;
@@ -134,10 +136,17 @@ class ShoppingCart {
                    itemColor === normalizedColor;
         });
 
+        console.log('🛒 Cart state before add:', {
+            existingItem: existingItem ? { quantity: existingItem.quantity } : null,
+            quantityToAdd: quantity,
+            totalItems: this.items.length
+        });
+
         if (existingItem) {
             // Update quantity of existing item
             const oldQuantity = existingItem.quantity;
             existingItem.quantity += quantity;
+            console.log('🛒 Updated existing item:', { oldQuantity, newQuantity: existingItem.quantity });
             this.saveCart();
             this.updateCartUI();
             this.showNotification(`${product.name} quantity updated`);
@@ -148,7 +157,7 @@ class ShoppingCart {
             }
         } else {
             // Add new item with exact quantity specified
-            this.items.push({
+            const newItem = {
                 productId,
                 name: product.name,
                 price: product.price,
@@ -157,7 +166,9 @@ class ShoppingCart {
                 quantity: quantity, // Use exact quantity, not default
                 sku: product.sku,
                 image: product.images && product.images.length > 0 ? product.images[0] : null
-            });
+            };
+            this.items.push(newItem);
+            console.log('🛒 Added new item:', { productId, size: normalizedSize, color: normalizedColor, quantity });
             this.saveCart();
             this.updateCartUI();
             this.showNotification(`${product.name} added to cart`);
