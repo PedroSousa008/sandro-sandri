@@ -214,14 +214,22 @@ class UserSync {
                 if (result.success && result.data) {
                     let dataUpdated = false;
 
-                    // Sync cart - always use server data if available
+                    // Sync cart - CRITICAL: Only sync if local cart is empty or if server has MORE items
+                    // This prevents server from overwriting user-initiated removals
                     if (result.data.cart && Array.isArray(result.data.cart)) {
                         const currentCart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
                         const currentCartStr = JSON.stringify(currentCart);
                         const serverCartStr = JSON.stringify(result.data.cart);
                         
-                        if (serverCartStr !== currentCartStr) {
-                            console.log('📦 Syncing cart:', result.data.cart.length, 'items');
+                        // Only sync if:
+                        // 1. Local cart is empty AND server has items (initial load)
+                        // 2. Server cart has MORE items than local (item was added on another device)
+                        // DO NOT sync if local cart has FEWER items (user removed something)
+                        const shouldSync = currentCart.length === 0 && result.data.cart.length > 0 ||
+                                         result.data.cart.length > currentCart.length;
+                        
+                        if (serverCartStr !== currentCartStr && shouldSync) {
+                            console.log('📦 Syncing cart from server:', result.data.cart.length, 'items (local had', currentCart.length, 'items)');
                             localStorage.setItem('sandroSandriCart', serverCartStr);
                             dataUpdated = true;
                             
@@ -257,6 +265,12 @@ class UserSync {
                                 newValue: serverCartStr,
                                 oldValue: currentCartStr
                             }));
+                        } else if (serverCartStr !== currentCartStr && !shouldSync) {
+                            // Local cart has fewer items - user removed something, so push local to server
+                            console.log('📦 Local cart has fewer items - pushing local cart to server (user removed items)');
+                            if (window.userSync) {
+                                window.userSync.forceSync();
+                            }
                         }
                     }
 

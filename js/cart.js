@@ -194,7 +194,20 @@ class ShoppingCart {
                 window.InventoryAPI.increase(removedItem.productId, removedItem.size, removedItem.quantity);
             }
             
+            // Save cart and IMMEDIATELY sync to server to prevent server from restoring it
             this.saveCart();
+            
+            // Force immediate sync to server (don't wait for debounce)
+            if (window.userSync && window.userSync.userEmail) {
+                // Clear any pending sync timeout and sync immediately
+                if (window.userSync.syncTimeout) {
+                    clearTimeout(window.userSync.syncTimeout);
+                    window.userSync.syncTimeout = null;
+                }
+                // Sync immediately to prevent server from restoring removed item
+                window.userSync.forceSync().catch(() => {});
+            }
+            
             this.updateCartUI();
             this.showNotification(`${removedItem.name} removed from cart`);
         }
