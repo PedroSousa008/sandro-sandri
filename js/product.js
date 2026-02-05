@@ -713,7 +713,7 @@ function initAddToCartForm(product) {
                 submitBtn.textContent = originalText;
                 return;
             } else {
-                // User is logged in - send Formspree and add to cart
+                // User is logged in - send waitlist entry to Owner Mode page (NO cart addition)
                 // Get user information
                 const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
                 const userEmail = currentUser?.email || '';
@@ -728,6 +728,7 @@ function initAddToCartForm(product) {
                 const chapterName = `Chapter ${roman[chapterNum - 1] || chapterNum}`;
                 
                 // Submit waitlist entry to database for logged-in users
+                // IMPORTANT: Waitlist mode does NOT add items to cart - only sends waitlist entry
                 try {
                     const waitlistData = {
                         customer_name: userName,
@@ -747,105 +748,30 @@ function initAddToCartForm(product) {
                     
                     console.log('📧 Submitting waitlist entry (logged in):', waitlistData);
                     
-                    // Send to database (fire and forget - don't wait for response)
-                    fetch('/api/waitlist', {
+                    // Send to database
+                    const response = await fetch('/api/waitlist', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify(waitlistData)
-                    }).then(response => {
-                        console.log('📧 Waitlist API response (logged in):', response.status);
-                    }).catch(err => {
-                        console.error('Error saving waitlist entry for logged-in user:', err);
-                        // Don't show error to user - just log it
                     });
+                    
+                    if (response.ok) {
+                        showNotification('Successfully joined the waitlist! You will be notified when this product becomes available.', 'success');
+                    } else {
+                        showNotification('Error joining waitlist. Please try again.', 'error');
+                    }
                 } catch (error) {
-                    console.error('Error preparing waitlist entry for logged-in user:', error);
+                    console.error('Error saving waitlist entry for logged-in user:', error);
+                    showNotification('Error joining waitlist. Please try again.', 'error');
                 }
                 
-                // Check inventory before adding to cart
-                if (window.InventoryAPI) {
-                    const inStock = await window.InventoryAPI.isInStock(product.id, size);
-                    if (!inStock) {
-                        showNotification('This size is sold out');
-                        isSubmitting = false;
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                        return;
-                    }
-                    
-                    const availableStock = await window.InventoryAPI.get(product.id, size);
-                    if (quantity > availableStock) {
-                        showNotification(`Only ${availableStock} available in this size. Please reduce quantity.`);
-                        if (quantityInput) {
-                            quantityInput.value = availableStock;
-                        }
-                        isSubmitting = false;
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                        return;
-                    }
-                    
-                    if (quantity > availableStock) {
-                        quantity = availableStock;
-                        if (quantityInput) {
-                            quantityInput.value = quantity;
-                        }
-                    }
-                }
-                
-                // Ensure quantity is valid
-                if (quantity < 1) {
-                    console.error('Invalid quantity:', quantity);
-                    showNotification('Please enter a valid quantity');
-                    isSubmitting = false;
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                    return;
-                }
-                
-                console.log('Adding to cart:', { productId: product.id, size, color, quantity, quantityValue });
-                
-                // Add to cart
-                if (window.cart) {
-                    const added = window.cart.addItem(product.id, size, color, quantity);
-                    if (added) {
-                        // Update button state after adding
-                        if (window.updateAddToCartButton) {
-                            window.updateAddToCartButton(product.id, size);
-                        }
-                        // Update quantity max after adding
-                        const updateQuantityMax = window.updateQuantityMax || function(productId, size) {
-                            const quantityInput = document.querySelector('.quantity-input');
-                            if (quantityInput && window.InventoryAPI) {
-                                const availableStock = window.InventoryAPI.get(productId, size);
-                                quantityInput.max = availableStock;
-                                quantityInput.setAttribute('max', availableStock);
-                            }
-                        };
-                        updateQuantityMax(product.id, size);
-                    }
-                } else {
-                    console.error('Cart not initialized');
-                }
-                
-                // Re-enable button
+                // Reset submission state and return early - don't add to cart
+                isSubmitting = false;
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
-                isSubmitting = false;
-                
-                // Open cart drawer
-                const cartDrawer = document.querySelector('.cart-drawer');
-                const cartOverlay = document.querySelector('.cart-overlay');
-                if (cartDrawer) {
-                    cartDrawer.classList.add('open');
-                    cartOverlay?.classList.add('visible');
-                    document.body.classList.add('cart-open');
-                }
-                
-                showNotification('Item added to cart!', 'success');
                 return;
             }
             return;
