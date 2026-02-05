@@ -1473,6 +1473,21 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
         successEl.style.display = 'none';
         
         try {
+            // CRITICAL: Read the ACTUAL quantity from the quantity input field (user may have changed it)
+            // Don't use the quantity parameter - always read from the input field
+            const quantityInput = document.querySelector('.quantity-input');
+            const actualQuantity = quantityInput ? (parseInt(quantityInput.value) || 1) : quantity;
+            
+            // Ensure quantity is valid
+            if (actualQuantity < 1) {
+                errorEl.textContent = 'Quantity must be at least 1';
+                errorEl.style.display = 'block';
+                successEl.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Join Waitlist';
+                return;
+            }
+            
             // Get active chapter info
             const activeChapterId = window.ChapterMode?.getActiveChapterId();
             const activeChapterMode = window.ChapterMode?.getActiveChapterMode();
@@ -1489,7 +1504,7 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 product_sku: product.sku || 'N/A',
                 size: size,
                 color: color || 'Navy',
-                quantity: quantity,
+                quantity: actualQuantity, // Use the actual quantity from input field
                 chapter: chapterName,
                 chapter_id: activeChapterId || 'chapter-1',
                 chapter_mode: activeChapterMode || 'waitlist',
@@ -1518,12 +1533,14 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 successEl.style.display = 'block';
                 
                 // Add to cart after email is submitted (if flag is set)
+                // CRITICAL: Use actualQuantity (from input field), not the quantity parameter
                 if (addToCartAfterEmail && window.cart) {
                     // Check inventory before adding
                     if (window.InventoryAPI) {
                         const inStock = await window.InventoryAPI.isInStock(product.id, size);
                         if (inStock) {
-                            window.cart.addItem(product.id, size, color, quantity);
+                            // Use actualQuantity - the cart.addItem will merge with existing items correctly
+                            window.cart.addItem(product.id, size, color, actualQuantity);
                             
                             // Open cart drawer
                             const cartDrawer = document.querySelector('.cart-drawer');
@@ -1535,7 +1552,8 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                             }
                         }
                     } else {
-                        window.cart.addItem(product.id, size, color, quantity);
+                        // Use actualQuantity
+                        window.cart.addItem(product.id, size, color, actualQuantity);
                     }
                 }
                 
