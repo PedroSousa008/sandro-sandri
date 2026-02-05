@@ -225,8 +225,13 @@ class UserSync {
                         // 1. Local cart is empty AND server has items (initial load)
                         // 2. Server cart has MORE items than local (item was added on another device)
                         // DO NOT sync if local cart has FEWER items (user removed something)
-                        const shouldSync = currentCart.length === 0 && result.data.cart.length > 0 ||
-                                         result.data.cart.length > currentCart.length;
+                        // Also check if any items in server cart don't exist in local cart (new items from another device)
+                        const localProductIds = new Set(currentCart.map(item => `${item.productId}-${item.size || ''}-${item.color || ''}`));
+                        const serverProductIds = new Set(result.data.cart.map(item => `${item.productId}-${item.size || ''}-${item.color || ''}`));
+                        const hasNewItems = Array.from(serverProductIds).some(id => !localProductIds.has(id));
+                        
+                        const shouldSync = (currentCart.length === 0 && result.data.cart.length > 0) ||
+                                         (result.data.cart.length > currentCart.length && hasNewItems);
                         
                         if (serverCartStr !== currentCartStr && shouldSync) {
                             console.log('📦 Syncing cart from server:', result.data.cart.length, 'items (local had', currentCart.length, 'items)');
