@@ -420,33 +420,28 @@ function initSizeSelection(product) {
             
             if (inStock && sizeSelected) {
                 // CRITICAL: Check the mode for THIS product's chapter, not the active chapter
-                // Chapter I products (IDs 1-5) ALWAYS show "Add to Cart"
-                if (productId >= 1 && productId <= 5) {
-                    addToCartBtn.textContent = 'Add to Cart';
-                    addToCartBtn.classList.remove('waitlist-btn');
-                } else {
-                    // Get product's chapter ID
-                    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                          product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+                // ALL products (including Chapter I) should respect the chapter mode set in Owner Mode
+                // Get product's chapter ID
+                const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                                      product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+                
+                // Check if this chapter is created and get its mode
+                if (productChapter && window.ChapterMode && window.ChapterMode.isInitialized) {
+                    const isCreated = window.ChapterMode.isChapterCreated(productChapter);
+                    const chapterMode = window.ChapterMode.getChapterMode(productChapter);
                     
-                    // Check if this chapter is created and get its mode
-                    if (productChapter && window.ChapterMode && window.ChapterMode.isInitialized) {
-                        const isCreated = window.ChapterMode.isChapterCreated(productChapter);
-                        const chapterMode = window.ChapterMode.getChapterMode(productChapter);
-                        
-                        if (isCreated && chapterMode === 'waitlist') {
-                            addToCartBtn.textContent = 'Join the Waitlist';
-                            addToCartBtn.classList.add('waitlist-btn');
-                        } else {
-                            // 'add_to_cart' or 'early_access' - both show "Add to Cart"
-                            addToCartBtn.textContent = 'Add to Cart';
-                            addToCartBtn.classList.remove('waitlist-btn');
-                        }
+                    if (isCreated && chapterMode === 'waitlist') {
+                        addToCartBtn.textContent = 'Join the Waitlist';
+                        addToCartBtn.classList.add('waitlist-btn');
                     } else {
-                        // Default to Add to Cart if chapter mode not available
+                        // 'add_to_cart' or 'early_access' - both show "Add to Cart"
                         addToCartBtn.textContent = 'Add to Cart';
                         addToCartBtn.classList.remove('waitlist-btn');
                     }
+                } else {
+                    // Default to Add to Cart if chapter mode not available
+                    addToCartBtn.textContent = 'Add to Cart';
+                    addToCartBtn.classList.remove('waitlist-btn');
                 }
                 addToCartBtn.disabled = false;
                 addToCartBtn.style.background = '#1a1a2e';
@@ -633,15 +628,8 @@ function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
     
-    // CRITICAL: Chapter I products (IDs 1-5) ALWAYS show "Add to Cart"
-    // This is because Chapter I is locked to "Add to Cart" when it's not the active chapter
-    if (product.id >= 1 && product.id <= 5) {
-        submitBtn.textContent = 'Add to Cart';
-        submitBtn.classList.remove('waitlist-btn');
-        return;
-    }
-    
     // Get product's chapter ID
+    // ALL products (including Chapter I) should respect the chapter mode set in Owner Mode
     const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                           product.chapter === 'chapter_ii' ? 'chapter-2' : null;
     
