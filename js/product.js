@@ -703,11 +703,19 @@ function initAddToCartForm(product) {
             if (isCreated && chapterMode === 'waitlist') {
                 // Check if user is logged in
                 const isLoggedIn = window.ChapterMode.isUserLoggedIn();
-            
-            if (!isLoggedIn) {
-                // Show email form FIRST, then add to cart after email is submitted
-                showWaitlistEmailForm(product, size, color, quantity, true); // true = add to cart after email
-            } else {
+                
+                console.log('🛒 Waitlist mode detected - isLoggedIn:', isLoggedIn);
+                
+                if (!isLoggedIn) {
+                    // Show email form FIRST, then add to cart after email is submitted
+                    console.log('🛒 Showing waitlist form for non-logged-in user');
+                    showWaitlistEmailForm(product, size, color, quantity, true); // true = add to cart after email
+                    // Reset submission state and return early - don't proceed with normal add to cart
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                } else {
                 // User is logged in - send Formspree and add to cart
                 // Get user information
                 const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
@@ -1298,15 +1306,20 @@ function loadRelatedProducts(currentProduct) {
 // Show waitlist email form modal
 // addToCartAfterEmail: if true, add to cart after email is submitted (for quick-add buttons)
 function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEmail = false) {
+    console.log('📧 showWaitlistEmailForm called:', { product: product.name, size, color, quantity, addToCartAfterEmail });
+    
     // Check if modal already exists
     let modal = document.getElementById('waitlist-email-modal');
     if (modal) {
+        console.log('📧 Removing existing waitlist modal');
         modal.remove();
     }
     
     // Check if user is logged in
     const isLoggedIn = window.ChapterMode?.isUserLoggedIn() || 
                       !!(window.AuthSystem?.currentUser || window.auth?.currentUser);
+    
+    console.log('📧 User logged in status:', isLoggedIn);
     
     // Get user info if logged in
     let userName = '';
@@ -1407,6 +1420,8 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
     
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
+    
+    console.log('📧 Waitlist modal created and added to DOM');
     
     // Store product info for later use
     modal.dataset.productId = product.id;
