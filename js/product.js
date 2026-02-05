@@ -100,6 +100,17 @@ function initProductPage() {
             initSizeSelection(product);
         }
     });
+    
+    // Listen for chapter mode updates to refresh button text
+    window.addEventListener('chapterModeUpdated', () => {
+        console.log('📋 Chapter mode updated, refreshing product button...');
+        updateProductButtonForMode(product);
+        // Also update button if size is selected
+        const selectedSize = document.getElementById('selected-size-input')?.value;
+        if (selectedSize && window.updateAddToCartButton) {
+            window.updateAddToCartButton(product.id, selectedSize);
+        }
+    });
     loadRelatedProducts(product);
     
     // Initialize swipe navigation on mobile
