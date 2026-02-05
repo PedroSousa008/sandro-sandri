@@ -717,24 +717,24 @@ function initAddToCartForm(product) {
             return;
         }
         
-        // CRITICAL: Chapter I products (IDs 1-5) ALWAYS use Add to Cart (skip waitlist)
-        // This is because Chapter I is locked to "Add to Cart" when it's not the active chapter
-        if (product.id >= 1 && product.id <= 5) {
-            // Skip waitlist form and proceed with normal add to cart flow below
-        } else {
-            // For other chapters, check if this chapter is created and get its mode from the table
-            const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                  product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-            const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
-            const chapterMode = productChapter ? window.ChapterMode?.getChapterMode(productChapter) : null;
+        // Check if this chapter is created and get its mode from the table
+        // ALL products (including Chapter I) should respect the chapter mode set in Owner Mode
+        const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
+                              product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+        const isCreated = productChapter && window.ChapterMode?.isChapterCreated(productChapter);
+        const chapterMode = productChapter ? window.ChapterMode?.getChapterMode(productChapter) : null;
+        
+        // Handle WAITLIST mode - show email form if not logged in
+        // Apply waitlist mode if THIS product's chapter is in waitlist mode (from table)
+        if (isCreated && chapterMode === 'waitlist') {
+            console.log('🛒 Waitlist mode detected for product:', product.id, 'chapter:', productChapter, 'mode:', chapterMode);
             
-            // Handle WAITLIST mode - show email form if not logged in
-            // Apply waitlist mode if THIS product's chapter is in waitlist mode (from table)
-            if (isCreated && chapterMode === 'waitlist') {
-                // Check if user is logged in
-                const isLoggedIn = window.ChapterMode.isUserLoggedIn();
-            
+            // Check if user is logged in
+            const isLoggedIn = window.ChapterMode.isUserLoggedIn();
+            console.log('🛒 User logged in status:', isLoggedIn);
+        
             if (!isLoggedIn) {
+                console.log('🛒 Showing waitlist form for non-logged-in user');
                 // Show email form - waitlist mode does NOT add to cart, only sends waitlist entry
                 showWaitlistEmailForm(product, size, color, quantity, false); // false = do NOT add to cart
                 // Reset submission state and return early - don't proceed with normal add to cart
@@ -804,8 +804,6 @@ function initAddToCartForm(product) {
                 submitBtn.textContent = originalText;
                 return;
             }
-            return;
-        }
         }
         
         // Normal add to cart flow (for Chapter I or non-waitlist chapters)
