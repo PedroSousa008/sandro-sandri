@@ -541,7 +541,7 @@ function createInlineSizeSelector(button, product) {
                 if (!isLoggedIn) {
                     // Show email form first, then add to cart after email is submitted
                     if (window.showWaitlistEmailForm) {
-                        window.showWaitlistEmailForm(product, size, null, 1, true); // true = add to cart after email
+                        window.showWaitlistEmailForm(product, size, null, 1, false); // false = do NOT add to cart (waitlist only)
                     }
                     // Remove size selector
                     sizeSelector.remove();

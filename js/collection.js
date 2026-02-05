@@ -328,7 +328,7 @@ function initCollection() {
                     if (!isLoggedIn) {
                         // Show email form first, then add to cart after email is submitted
                         if (window.showWaitlistEmailForm) {
-                            window.showWaitlistEmailForm(product, defaultSize, null, 1, true); // true = add to cart after email
+                            window.showWaitlistEmailForm(product, defaultSize, null, 1, false); // false = do NOT add to cart (waitlist only)
                         } else {
                             // Fallback: show email form from product.js
                             showWaitlistEmailFormForQuickAdd(product, defaultSize);
@@ -401,7 +401,7 @@ function initCollection() {
     // Helper function to show email form for quick-add (collection page)
     function showWaitlistEmailFormForQuickAdd(product, size) {
         if (window.showWaitlistEmailForm) {
-            window.showWaitlistEmailForm(product, size, null, 1, true);
+            window.showWaitlistEmailForm(product, size, null, 1, false); // false = do NOT add to cart (waitlist only)
         }
     }
 }

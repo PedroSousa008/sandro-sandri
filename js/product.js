@@ -703,19 +703,16 @@ function initAddToCartForm(product) {
             if (isCreated && chapterMode === 'waitlist') {
                 // Check if user is logged in
                 const isLoggedIn = window.ChapterMode.isUserLoggedIn();
-                
-                console.log('🛒 Waitlist mode detected - isLoggedIn:', isLoggedIn);
-                
-                if (!isLoggedIn) {
-                    // Show email form FIRST, then add to cart after email is submitted
-                    console.log('🛒 Showing waitlist form for non-logged-in user');
-                    showWaitlistEmailForm(product, size, color, quantity, true); // true = add to cart after email
-                    // Reset submission state and return early - don't proceed with normal add to cart
-                    isSubmitting = false;
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                    return;
-                } else {
+            
+            if (!isLoggedIn) {
+                // Show email form - waitlist mode does NOT add to cart, only sends waitlist entry
+                showWaitlistEmailForm(product, size, color, quantity, false); // false = do NOT add to cart
+                // Reset submission state and return early - don't proceed with normal add to cart
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            } else {
                 // User is logged in - send Formspree and add to cart
                 // Get user information
                 const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
@@ -1306,20 +1303,15 @@ function loadRelatedProducts(currentProduct) {
 // Show waitlist email form modal
 // addToCartAfterEmail: if true, add to cart after email is submitted (for quick-add buttons)
 function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEmail = false) {
-    console.log('📧 showWaitlistEmailForm called:', { product: product.name, size, color, quantity, addToCartAfterEmail });
-    
     // Check if modal already exists
     let modal = document.getElementById('waitlist-email-modal');
     if (modal) {
-        console.log('📧 Removing existing waitlist modal');
         modal.remove();
     }
     
     // Check if user is logged in
     const isLoggedIn = window.ChapterMode?.isUserLoggedIn() || 
                       !!(window.AuthSystem?.currentUser || window.auth?.currentUser);
-    
-    console.log('📧 User logged in status:', isLoggedIn);
     
     // Get user info if logged in
     let userName = '';
@@ -1365,7 +1357,7 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
             Join the Waitlist
         </h2>
         <p style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-lg);">
-            ${addToCartAfterEmail ? 'Please provide your information to join the waitlist. Your item will be added to your cart after you submit.' : 'Please provide your information to join the waitlist and be notified when this product becomes available.'}
+            Please provide your information to join the waitlist and be notified when this product becomes available.
         </p>
         <form id="waitlist-email-form" style="margin-top: var(--space-lg);">
     `;
@@ -1420,8 +1412,6 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
     
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
-    
-    console.log('📧 Waitlist modal created and added to DOM');
     
     // Store product info for later use
     modal.dataset.productId = product.id;
@@ -1567,36 +1557,9 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
                 successEl.textContent = 'Successfully joined the waitlist! You will be notified when this product becomes available.';
                 successEl.style.display = 'block';
                 
-                // Add to cart after email is submitted (if flag is set)
-                // CRITICAL: Use actualQuantity (the quantity that was selected when user clicked the button)
-                if (addToCartAfterEmail && window.cart) {
-                    console.log('🛒 Waitlist: About to add to cart - product:', product.id, 'size:', size, 'quantity:', actualQuantity, 'color:', color);
-                    
-                    // Check inventory before adding
-                    if (window.InventoryAPI) {
-                        const inStock = await window.InventoryAPI.isInStock(product.id, size);
-                        if (inStock) {
-                            // Use actualQuantity - the cart.addItem will merge with existing items correctly
-                            const added = window.cart.addItem(product.id, size, color, actualQuantity);
-                            console.log('🛒 Waitlist: addItem returned:', added);
-                            
-                            // Open cart drawer
-                            const cartDrawer = document.querySelector('.cart-drawer');
-                            const cartOverlay = document.querySelector('.cart-overlay');
-                            if (cartDrawer) {
-                                cartDrawer.classList.add('open');
-                                cartOverlay?.classList.add('visible');
-                                document.body.classList.add('cart-open');
-                            }
-                        } else {
-                            console.log('🛒 Waitlist: Product out of stock, not adding to cart');
-                        }
-                    } else {
-                        // Use actualQuantity
-                        const added = window.cart.addItem(product.id, size, color, actualQuantity);
-                        console.log('🛒 Waitlist: addItem returned (no inventory check):', added);
-                    }
-                }
+                // IMPORTANT: Waitlist mode does NOT add items to cart
+                // It only sends the waitlist entry to the Owner Mode page
+                // The customer will be notified when the product becomes available
                 
                 // Close modal after 2 seconds
                 setTimeout(() => {
