@@ -383,20 +383,20 @@
                 <table id="orders-table" style="width: 100%; border-collapse: collapse; font-size: 0.75rem;">
                     <thead>
                         <tr style="background: var(--color-gray-light);">
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-gray-light); z-index: 10;">Confirmation</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Order ID</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Name</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Email</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Phone</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Address</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">House</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">City</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Postal Code</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Country</th>
-                            <th style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray); font-weight: 600;">Total Received</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Items Purchased</th>
-                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Order Status</th>
-                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Tracking Number</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; position: sticky; left: 0; background: var(--color-gray-light); z-index: 10; width: 100px;">Confirmation</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 90px;">Order ID</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 90px;">Name</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 120px;">Email</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 90px;">Phone</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 120px;">Address</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 60px;">House</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 90px;">City</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 80px;">Postal Code</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 70px;">Country</th>
+                            <th style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray); font-weight: 600; min-width: 85px;">Total</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 140px;">Items Purchased</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; min-width: 90px;">Status</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 120px;">Tracking</th>
                         </tr>
                     </thead>
                     <tbody id="orders-tbody">
@@ -2180,40 +2180,50 @@
                 if (orders.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; padding: var(--space-lg); color: var(--color-text-light);">No orders found</td></tr>';
                 } else {
+                    function esc(s) {
+                        if (s == null || s === '') return '—';
+                        const t = String(s);
+                        return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                    }
                     orders.forEach(order => {
                         const address = order.shippingAddress || {};
                         const confirmationStatus = order.confirmationStatus || 'Nothing';
                         const orderStatus = order.orderStatus || order.status || 'PAID';
                         const trackingNumber = order.trackingNumber || '';
-                        
+                        const phone = order.phoneNumber || '';
+                        const street = address.street || '';
+                        const apartment = address.apartment || '';
+                        const city = address.city || '';
+                        const postalCode = address.postalCode || '';
+                        const country = address.country || address.countryName || order.shippingCountry || '';
                         // Format items purchased
                         const itemsPurchased = (order.cart || []).map(item => {
                             return `${item.quantity}x ${item.size || 'N/A'} - Model ${item.productId || 'N/A'}`;
-                        }).join(', ') || 'N/A';
+                        }).join(', ') || '—';
 
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); position: sticky; left: 0; background: white; z-index: 5;">
-                                <select class="confirmation-status-select" data-order-id="${order.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px;">
+                                <select class="confirmation-status-select" data-order-id="${esc(order.id)}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px;">
                                     <option value="Nothing" ${confirmationStatus === 'Nothing' ? 'selected' : ''}>Nothing</option>
                                     <option value="Packed" ${confirmationStatus === 'Packed' ? 'selected' : ''}>Packed</option>
                                     <option value="Sent" ${confirmationStatus === 'Sent' ? 'selected' : ''}>Sent</option>
                                     <option value="Delivered" ${confirmationStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
                                 </select>
                             </td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${order.orderNumber || order.id || 'N/A'}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${order.name || 'N/A'}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${order.email || 'N/A'}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${order.phoneNumber || 'N/A'}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.street || 'N/A'}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.apartment || '-'}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.city || 'N/A'}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.postalCode || 'N/A'}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${address.country || address.countryName || 'N/A'}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${esc(order.orderNumber || order.id)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${esc(order.name)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${esc(order.email)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); min-width: 90px;">${esc(phone)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); min-width: 120px;">${esc(street)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">${esc(apartment)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); min-width: 90px;">${esc(city)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); min-width: 80px;">${esc(postalCode)}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); min-width: 70px;">${esc(country)}</td>
                             <td style="padding: var(--space-sm); text-align: right; border: 1px solid var(--color-gray);">€${(order.total || 0).toFixed(2)}</td>
-                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); max-width: 200px; word-wrap: break-word;">${itemsPurchased}</td>
+                            <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); max-width: 200px; word-wrap: break-word;">${esc(itemsPurchased)}</td>
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray);">
-                                <select class="order-status-select" data-order-id="${order.id}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px;">
+                                <select class="order-status-select" data-order-id="${esc(order.id)}" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px;">
                                     <option value="PAID" ${orderStatus === 'PAID' ? 'selected' : ''}>Paid</option>
                                     <option value="PROCESSING" ${orderStatus === 'PROCESSING' ? 'selected' : ''}>Processing</option>
                                     <option value="SHIPPED" ${orderStatus === 'SHIPPED' ? 'selected' : ''}>Shipped</option>
@@ -2221,7 +2231,7 @@
                                 </select>
                             </td>
                             <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">
-                                <input type="text" class="tracking-number-input" data-order-id="${order.id}" value="${trackingNumber}" placeholder="Enter tracking number" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px; width: 150px;">
+                                <input type="text" class="tracking-number-input" data-order-id="${esc(order.id)}" value="${esc(trackingNumber)}" placeholder="Tracking number" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px; width: 150px;">
                             </td>
                         `;
                         tbody.appendChild(row);

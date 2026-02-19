@@ -64,26 +64,34 @@ async function handleCheckoutCompleted(session) {
     const customerName = session.metadata.customerName;
     const shippingCountry = session.metadata.shippingCountry;
     
-    // Get shipping address from Stripe session
+    // Get shipping address from Stripe session (or metadata fallback so Owner always has address/city/postal/country)
+    const meta = session.metadata || {};
     let shippingAddress = null;
-    let phoneNumber = null;
     if (session.shipping_details && session.shipping_details.address) {
+        const a = session.shipping_details.address;
         shippingAddress = {
-            street: session.shipping_details.address.line1 || '',
-            apartment: session.shipping_details.address.line2 || '',
-            city: session.shipping_details.address.city || '',
-            postalCode: session.shipping_details.address.postal_code || '',
-            country: session.shipping_details.address.country || shippingCountry || '',
-            countryName: session.shipping_details.address.country || shippingCountry || ''
+            street: (a.line1 || '').trim(),
+            apartment: (a.line2 || '').trim(),
+            city: (a.city || '').trim(),
+            postalCode: (a.postal_code || '').trim(),
+            country: (a.country || shippingCountry || '').trim(),
+            countryName: (a.country || shippingCountry || '').trim()
+        };
+    }
+    if (!shippingAddress) {
+        shippingAddress = {
+            street: (meta.address || '').trim(),
+            apartment: '',
+            city: (meta.city || '').trim(),
+            postalCode: (meta.postalCode || '').trim(),
+            country: (meta.shippingCountry || shippingCountry || '').trim(),
+            countryName: (meta.shippingCountry || shippingCountry || '').trim()
         };
     }
     
     // Get phone number from customer details or metadata
-    if (session.customer_details && session.customer_details.phone) {
-        phoneNumber = session.customer_details.phone;
-    } else if (session.metadata && session.metadata.phone) {
-        phoneNumber = session.metadata.phone;
-    }
+    let phoneNumber = (session.customer_details && session.customer_details.phone) || meta.phone || null;
+    if (phoneNumber) phoneNumber = String(phoneNumber).trim();
     
     // Calculate totals
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);

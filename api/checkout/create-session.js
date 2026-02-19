@@ -463,6 +463,10 @@ module.exports = async (req, res) => {
                     ? `${customerInfo.firstName} ${customerInfo.lastName}` 
                     : '',
                 shippingCountry: customerInfo.country || '',
+                phone: (customerInfo.phone || '').toString().trim().substring(0, 50),
+                address: (customerInfo.address || '').toString().trim().substring(0, 200),
+                city: (customerInfo.city || '').toString().trim().substring(0, 100),
+                postalCode: (customerInfo.postalCode || '').toString().trim().substring(0, 20),
                 ...(isTestUser ? { testUserZeroPrice: 'true' } : {})
             },
             success_url: `${baseUrl}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
