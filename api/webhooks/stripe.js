@@ -7,6 +7,12 @@ const db = require('../../lib/storage');
 
 // Process webhook event with idempotency
 async function processWebhookEvent(event) {
+    // Ensure storage (KV) is initialized so orders and inventory persist
+    try {
+        await db.initDb();
+    } catch (e) {
+        console.warn('Webhook initDb:', e && e.message);
+    }
     // Check if we've already processed this event (idempotency)
     const eventId = event.id;
     const processed = await isEventProcessed(eventId);
@@ -310,55 +316,68 @@ async function markEventProcessed(eventId) {
 
 // Use database functions from db module
 
+// Read raw body from request stream BEFORE any access to req.body (Vercel may parse on first read).
+// Stripe signature verification requires the exact raw payload; JSON.stringify(req.body) would fail.
+function getRawBody(req) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        const timeout = setTimeout(() => {
+            req.removeAllListeners('data');
+            req.removeAllListeners('end');
+            req.removeAllListeners('error');
+            resolve(chunks.length ? Buffer.concat(chunks) : null);
+        }, 8000);
+        req.on('data', chunk => chunks.push(chunk));
+        req.on('end', () => {
+            clearTimeout(timeout);
+            resolve(Buffer.concat(chunks));
+        });
+        req.on('error', err => {
+            clearTimeout(timeout);
+            reject(err);
+        });
+    });
+}
+
 module.exports = async (req, res) => {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
-    
     const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    
     if (!webhookSecret) {
         console.error('STRIPE_WEBHOOK_SECRET not configured');
         return res.status(500).json({ error: 'Webhook secret not configured' });
     }
-    
-    let event;
+    // Read raw body from stream first (do not access req.body before this).
     let body;
-    
-    // Vercel serverless functions need raw body for webhook signature verification
-    // The body should be available as req.body, but we need to ensure it's a Buffer
-    if (Buffer.isBuffer(req.body)) {
-        body = req.body;
-    } else if (typeof req.body === 'string') {
-        body = Buffer.from(req.body, 'utf8');
-    } else if (req.body) {
-        // If body is already parsed as JSON, we need the raw body
-        // For Vercel, we should use req.body directly if it's a string
-        // Otherwise, we need to access the raw body differently
-        body = Buffer.from(JSON.stringify(req.body), 'utf8');
-    } else {
-        // Fallback: try to get raw body from request
-        body = req.body || Buffer.alloc(0);
-    }
-    
     try {
-        // Verify webhook signature with raw body
+        body = await getRawBody(req);
+    } catch (e) {
+        console.error('Webhook getRawBody error:', e.message);
+        body = null;
+    }
+    if (!body || body.length === 0) {
+        if (Buffer.isBuffer(req.body)) body = req.body;
+        else if (typeof req.body === 'string') body = Buffer.from(req.body, 'utf8');
+        else if (req.body) body = Buffer.from(JSON.stringify(req.body), 'utf8');
+        else body = Buffer.alloc(0);
+        if (req.body && typeof req.body === 'object') {
+            console.warn('Webhook using parsed req.body – signature verification may fail. Ensure webhook endpoint receives raw body.');
+        }
+    }
+    let event;
+    try {
         event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
     } catch (err) {
         console.error('Webhook signature verification failed:', err.message);
         return res.status(400).json({ error: `Webhook Error: ${err.message}` });
     }
-    
     try {
-        // Process the event
         await processWebhookEvent(event);
-        
-        // Return success to Stripe
         res.json({ received: true });
     } catch (error) {
         console.error('Error processing webhook:', error);
-        // Return 500 so Stripe will retry
         res.status(500).json({ error: error.message });
     }
 };

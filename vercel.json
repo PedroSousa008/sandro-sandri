@@ -1,5 +1,11 @@
 {
   "version": 2,
+  "functions": {
+    "api/webhooks/stripe.js": {
+      "memory": 256,
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/api/auth/login",
