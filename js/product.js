@@ -132,18 +132,6 @@ function populateProduct(product) {
     // Update form product ID
     document.getElementById('add-to-cart-form').dataset.productId = product.id;
     
-    // Show "Comprar agora" for Chapter I (product id 1-5); stripe-checkout.js handles click
-    var buyNowBtn = document.getElementById('buy-now-product-btn');
-    if (buyNowBtn) {
-        if (product.id >= 1 && product.id <= 5) {
-            buyNowBtn.dataset.productId = String(product.id);
-            buyNowBtn.style.display = '';
-        } else {
-            buyNowBtn.style.display = 'none';
-            buyNowBtn.removeAttribute('data-product-id');
-        }
-    }
-    
     // Update main product image - OPTIMIZED: Preload all images and keep in DOM for instant switching
     const mainImageContainer = document.getElementById('product-image');
     if (mainImageContainer && product.images && product.images.length > 0) {
