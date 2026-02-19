@@ -2,7 +2,9 @@
    Sandro Sandri - Stripe Checkout Session Creation
    ======================================== */
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// Only initialise Stripe when key is present (avoids crash and ensures JSON error response)
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
 const db = require('../../lib/storage');
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
@@ -271,14 +273,18 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     
+    if (!stripe) {
+        return res.status(503).json({
+            error: 'STRIPE_NOT_CONFIGURED',
+            message: 'Payment is not configured. Please add STRIPE_SECRET_KEY in Vercel.'
+        });
+    }
+    
     const baseUrl = process.env.SITE_URL || 'https://sandro-sandri.vercel.app';
     
     // ----- Simple flow: single priceId (Buy now / Chapter I) -----
     const { priceId, cart, customerInfo } = req.body || {};
     if (priceId && typeof priceId === 'string') {
-        if (!process.env.STRIPE_SECRET_KEY) {
-            return res.status(500).json({ error: 'STRIPE_NOT_CONFIGURED', message: 'Payment is not configured.' });
-        }
         const allowed = getAllowedPriceIds();
         if (allowed.size === 0) {
             return res.status(500).json({ error: 'PRICES_NOT_CONFIGURED', message: 'Price IDs are not configured.' });

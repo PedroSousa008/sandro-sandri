@@ -618,18 +618,25 @@ function initCheckoutForm() {
                 })
             });
 
-            const data = await response.json();
+            const text = await response.text();
+            let data = null;
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (parseError) {
+                console.error('Checkout response was not JSON:', parseError);
+                throw new Error('Payment is temporarily unavailable. Please try again later.');
+            }
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to create checkout session');
+                const msg = (data && data.message) ? data.message : 'Failed to create checkout session.';
+                throw new Error(msg);
             }
 
-            // Redirect to Stripe Checkout
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                throw new Error('No checkout URL received');
+            if (!data || !data.url) {
+                throw new Error('No checkout URL received. Please try again.');
             }
+
+            window.location.href = data.url;
 
         } catch (error) {
             console.error('Checkout error:', error);
