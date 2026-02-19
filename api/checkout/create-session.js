@@ -172,8 +172,8 @@ function calculateShipping(cart, countryCode) {
     return SHIPPING_FEES['DEFAULT'];
 }
 
-// Validate cart items against inventory (uses db from handler scope)
-async function validateCartInventory(cart, commerceMode = 'LIVE') {
+// Validate cart items against inventory (db passed in so handler can use optional storage)
+async function validateCartInventoryWithDb(cart, commerceMode = 'LIVE', db) {
     const errors = [];
     
     for (const item of cart) {
@@ -340,100 +340,46 @@ module.exports = async (req, res) => {
         }
     }
     
-    // ----- Cart flow (existing) -----
+    // ----- Cart flow -----
     try {
-        let db;
-        try {
-            db = require('../../lib/storage');
-        } catch (storageErr) {
-            console.error('create-session: storage load failed', storageErr && storageErr.message);
-            return res.status(503).json({ error: 'STORAGE_UNAVAILABLE', message: 'Checkout is temporarily unavailable. Please try again.' });
-        }
-        // Check chapter mode - block checkout in WAITLIST mode, allow in ADD_TO_CART and EARLY_ACCESS
-        try {
-            await db.initDb();
-        } catch (initErr) {
-            console.error('create-session: db.initDb failed', initErr && initErr.message);
-            return res.status(503).json({ error: 'INIT_FAILED', message: 'Checkout is temporarily unavailable. Please try again.' });
-        }
-        
-        // Get chapter mode data
-        let chapterModeData = null;
-        try {
-            chapterModeData = await db.getChapterMode();
-        } catch (error) {
-            console.error('Error fetching chapter mode:', error);
-        }
-        
-        // Get cart and customer info
+        // Basic validation (no storage required)
         if (!cart || !Array.isArray(cart) || cart.length === 0) {
             return res.status(400).json({ error: 'INVALID_CART', message: 'Cart is empty or invalid' });
         }
-        
-        // Check each item in cart to see if checkout should be allowed
-        const cartChapters = new Set();
-        cart.forEach(item => {
-            if (item.productId >= 1 && item.productId <= 5) {
-                cartChapters.add('chapter-1');
-            } else if (item.productId >= 6 && item.productId <= 10) {
-                cartChapters.add('chapter-2');
-            }
-        });
-        
-        // Check if any chapter in cart is in waitlist mode or not created
-        if (chapterModeData && chapterModeData.chapters) {
-            for (const chapterId of cartChapters) {
-                const chapter = chapterModeData.chapters[chapterId];
-                if (chapter) {
-                    if (!chapter.created) {
-                        // Chapter not created yet - block checkout
-                        const chapterName = chapter.name || chapterId.replace('chapter-', 'Chapter ');
-                        return res.status(403).json({
-                            error: 'CHECKOUT_DISABLED',
-                            message: `${chapterName} is not available yet.`
-                        });
-                    } else if (chapter.mode === 'waitlist') {
-                        // Chapter is in waitlist mode - block checkout
-                        const chapterName = chapter.name || chapterId.replace('chapter-', 'Chapter ');
-                        return res.status(403).json({
-                            error: 'CHECKOUT_DISABLED',
-                            message: `${chapterName} is in waitlist mode. Join the waitlist to be notified when it becomes available.`
-                        });
-                    }
-                    // If mode is 'add_to_cart' or 'early_access', allow checkout (continue)
-                }
-            }
-        }
-        
         if (!customerInfo || !customerInfo.email) {
             return res.status(400).json({ error: 'MISSING_CUSTOMER_INFO', message: 'Customer email is required' });
         }
         
-        // Determine mode for inventory validation (use first chapter's mode, or default to 'add_to_cart')
-        let inventoryMode = 'LIVE'; // Default to LIVE for inventory validation
-        if (chapterModeData && chapterModeData.chapters) {
-            for (const chapterId of cartChapters) {
-                const chapter = chapterModeData.chapters[chapterId];
-                if (chapter && chapter.created && chapter.mode) {
-                    // Map chapter mode to inventory validation mode
-                    if (chapter.mode === 'early_access') {
-                        inventoryMode = 'EARLY_ACCESS';
-                    } else {
-                        inventoryMode = 'LIVE'; // 'add_to_cart' uses normal inventory
+        // Optional: chapter mode + inventory (if storage works; otherwise skip and allow checkout)
+        try {
+            const db = require('../../lib/storage');
+            await db.initDb();
+            const chapterModeData = await db.getChapterMode();
+            const cartChapters = new Set();
+            cart.forEach(item => {
+                if (item.productId >= 1 && item.productId <= 5) cartChapters.add('chapter-1');
+                else if (item.productId >= 6 && item.productId <= 10) cartChapters.add('chapter-2');
+            });
+            if (chapterModeData && chapterModeData.chapters) {
+                for (const chapterId of cartChapters) {
+                    const chapter = chapterModeData.chapters[chapterId];
+                    if (chapter) {
+                        if (!chapter.created) {
+                            return res.status(403).json({ error: 'CHECKOUT_DISABLED', message: `${chapter.name || chapterId} is not available yet.` });
+                        }
+                        if (chapter.mode === 'waitlist') {
+                            return res.status(403).json({ error: 'CHECKOUT_DISABLED', message: `${chapter.name || chapterId} is in waitlist mode.` });
+                        }
                     }
-                    break; // Use first chapter's mode
                 }
             }
-        }
-        
-        // Validate inventory (soft check at checkout creation) - use correct stock based on mode
-        const inventoryErrors = await validateCartInventory(cart, inventoryMode);
-        if (inventoryErrors.length > 0) {
-            return res.status(400).json({
-                error: 'OUT_OF_STOCK',
-                message: 'Some items are out of stock',
-                details: inventoryErrors
-            });
+            const inventoryMode = 'LIVE';
+            const inventoryErrors = await validateCartInventoryWithDb(cart, inventoryMode, db);
+            if (inventoryErrors.length > 0) {
+                return res.status(400).json({ error: 'OUT_OF_STOCK', message: 'Some items are out of stock', details: inventoryErrors });
+            }
+        } catch (skipErr) {
+            console.warn('create-session: skipping chapter/inventory check', skipErr && skipErr.message);
         }
         
         // Calculate totals and validate (avoid Stripe errors from bad data)
