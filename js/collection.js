@@ -190,6 +190,7 @@ function initCollection() {
                 buttonText = 'Join the Waitlist';
             }
             
+            var buyNowBtn = (product.id >= 1 && product.id <= 5) ? '<button type="button" class="buy-now-btn" data-product-id="' + product.id + '">Comprar agora</button>' : '';
             return `
             <article class="product-card" data-product-id="${product.id}">
                 <a href="product.html?id=${product.id}" class="product-link">
@@ -201,7 +202,10 @@ function initCollection() {
                         <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
                     </div>
                 </a>
-                <button class="quick-add ${chapterMode === 'waitlist' ? 'waitlist-btn' : ''}" data-product-id="${product.id}">${buttonText}</button>
+                <div class="product-card-actions">
+                    <button class="quick-add ${chapterMode === 'waitlist' ? 'waitlist-btn' : ''}" data-product-id="${product.id}">${buttonText}</button>
+                    ${buyNowBtn}
+                </div>
             </article>
         `;
         }).join('');

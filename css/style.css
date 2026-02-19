@@ -911,6 +911,53 @@ img {
     background: var(--color-navy-dark);
 }
 
+/* Wrapper for Add to Cart + Comprar agora (Chapter I) */
+.product-card-actions {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s ease;
+}
+.product-card:hover .product-card-actions {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+.product-card-actions .quick-add {
+    position: static;
+    transform: none;
+}
+.product-card-actions .buy-now-btn {
+    font-family: var(--font-sans);
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-navy);
+    background: var(--color-white);
+    border: 1px solid var(--color-navy);
+    padding: 0.3rem 0.65rem;
+    white-space: nowrap;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.product-card-actions .buy-now-btn:hover {
+    background: var(--color-navy);
+    color: var(--color-white);
+}
+/* Product page Comprar agora */
+.buy-now-product-page {
+    margin-left: 0.5rem;
+}
+
 .collection-cta {
     text-align: center;
     margin-top: 60px;

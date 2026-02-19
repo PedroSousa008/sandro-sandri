@@ -425,6 +425,9 @@ function initCheckoutForm() {
         });
     }
     
+    // Track if user has opened the payment section (so we don't hide it while they type)
+    let paymentSectionRevealed = false;
+    
     // Function to update button visibility
     function updateButtonVisibility() {
         const checkoutComplete = checkCheckoutInfoComplete();
@@ -436,12 +439,13 @@ function initCheckoutForm() {
             if (placeOrderBtn) placeOrderBtn.style.display = 'block';
             if (paymentSection) paymentSection.style.display = 'block';
         } else if (checkoutComplete) {
-            // Checkout info complete - show Payment Page button
-            if (paymentPageBtn) paymentPageBtn.style.display = 'block';
-            if (placeOrderBtn) placeOrderBtn.style.display = 'none';
-            if (paymentSection) paymentSection.style.display = 'none';
+            // Checkout info complete - show Payment Page button until they open payment; then keep payment section visible
+            if (paymentPageBtn) paymentPageBtn.style.display = paymentSectionRevealed ? 'none' : 'block';
+            if (placeOrderBtn) placeOrderBtn.style.display = paymentComplete ? 'block' : 'none';
+            // Never hide payment section once it has been revealed (user clicked "Payment Page") so typing doesn't close it
+            if (paymentSection) paymentSection.style.display = paymentSectionRevealed ? 'block' : 'none';
         } else {
-            // Nothing complete - hide both buttons
+            // Nothing complete - hide both buttons and payment section
             if (paymentPageBtn) paymentPageBtn.style.display = 'none';
             if (placeOrderBtn) placeOrderBtn.style.display = 'none';
             if (paymentSection) paymentSection.style.display = 'none';
@@ -468,6 +472,8 @@ function initCheckoutForm() {
                 alert('Please fill in all required checkout information');
                 return;
             }
+            
+            paymentSectionRevealed = true;
             
             // Show payment section
             if (paymentSection) {

@@ -247,6 +247,18 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
     return errors;
 }
 
+// Whitelist of allowed Stripe Price IDs (Chapter I) - from env, never accept arbitrary priceId
+function getAllowedPriceIds() {
+    const ids = [
+        process.env.STRIPE_PRICE_ISOLE_CAYMAN,
+        process.env.STRIPE_PRICE_ISOLA_DI_NECKER,
+        process.env.STRIPE_PRICE_MONROES_KISSES,
+        process.env.STRIPE_PRICE_SARDINIA,
+        process.env.STRIPE_PRICE_PORT_COTON
+    ].filter(Boolean);
+    return new Set(ids);
+}
+
 module.exports = async (req, res) => {
     // Set secure CORS headers (restricted to allowed origins)
     cors.setCORSHeaders(res, req, ['POST', 'OPTIONS']);
@@ -259,6 +271,65 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     
+    const baseUrl = process.env.SITE_URL || 'https://sandro-sandri.vercel.app';
+    
+    // ----- Simple flow: single priceId (Buy now / Chapter I) -----
+    const { priceId, cart, customerInfo } = req.body || {};
+    if (priceId && typeof priceId === 'string') {
+        if (!process.env.STRIPE_SECRET_KEY) {
+            return res.status(500).json({ error: 'STRIPE_NOT_CONFIGURED', message: 'Payment is not configured.' });
+        }
+        const allowed = getAllowedPriceIds();
+        if (allowed.size === 0) {
+            return res.status(500).json({ error: 'PRICES_NOT_CONFIGURED', message: 'Price IDs are not configured.' });
+        }
+        if (!allowed.has(priceId)) {
+            return res.status(400).json({ error: 'INVALID_PRICE', message: 'Invalid or not allowed price.' });
+        }
+        try {
+            const session = await stripe.checkout.sessions.create({
+                mode: 'payment',
+                payment_method_types: ['card'],
+                line_items: [{ price: priceId, quantity: 1 }],
+                success_url: `${baseUrl}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${baseUrl}/product.html`,
+                shipping_address_collection: {
+                    allowed_countries: ['AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HM', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'UM', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW']
+                },
+                shipping_options: [
+                    {
+                        shipping_rate_data: {
+                            type: 'fixed_amount',
+                            fixed_amount: { amount: 500, currency: 'eur' },
+                            display_name: 'Portugal — 5€'
+                        }
+                    },
+                    {
+                        shipping_rate_data: {
+                            type: 'fixed_amount',
+                            fixed_amount: { amount: 950, currency: 'eur' },
+                            display_name: 'Europe — 9,50€'
+                        }
+                    },
+                    {
+                        shipping_rate_data: {
+                            type: 'fixed_amount',
+                            fixed_amount: { amount: 1350, currency: 'eur' },
+                            display_name: 'International — 13,50€'
+                        }
+                    }
+                ],
+                expires_at: Math.floor(Date.now() / 1000) + (30 * 60)
+            });
+            return res.status(200).json({ url: session.url });
+        } catch (err) {
+            console.error('Stripe checkout session (priceId) error:', err.message);
+            errorHandler.sendSecureError(res, err, 500, 'Failed to start checkout. Please try again.', 'PAYMENT_FAILED');
+            return;
+        }
+    }
+    
+    // ----- Cart flow (existing) -----
     try {
         // Check chapter mode - block checkout in WAITLIST mode, allow in ADD_TO_CART and EARLY_ACCESS
         const db = require('../../lib/storage');
@@ -273,8 +344,6 @@ module.exports = async (req, res) => {
         }
         
         // Get cart and customer info
-        const { cart, customerInfo } = req.body;
-        
         if (!cart || !Array.isArray(cart) || cart.length === 0) {
             return res.status(400).json({ error: 'INVALID_CART', message: 'Cart is empty or invalid' });
         }
