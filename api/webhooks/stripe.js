@@ -43,8 +43,10 @@ async function processWebhookEvent(event) {
 
 // Handle successful checkout session
 async function handleCheckoutCompleted(session) {
-    if (session.payment_status !== 'paid') {
-        console.log('Session not paid, skipping inventory decrement');
+    // For 0€ orders (e.g. test user), Stripe sets payment_status to 'no_payment_required'. Treat as fulfilled.
+    const isFulfillable = session.payment_status === 'paid' || session.payment_status === 'no_payment_required';
+    if (!isFulfillable) {
+        console.log('Session not paid/unpaid (status: ' + session.payment_status + '), skipping inventory and order');
         return;
     }
     
