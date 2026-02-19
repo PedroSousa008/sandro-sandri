@@ -190,7 +190,6 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
         }
         
         let availableStock = 0;
-        let hadInventoryData = false;
         
         // Use new chapter-based inventory if chapter is known
         if (chapterId) {
@@ -200,7 +199,6 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
                     const model = inventory.models[productId.toString()];
                     if (model.stock && model.stock[size.toUpperCase()] !== undefined) {
                         availableStock = model.stock[size.toUpperCase()] || 0;
-                        hadInventoryData = true;
                     }
                 }
             } catch (error) {
@@ -209,12 +207,11 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
         }
         
         // Fallback: old inventory system when chapter inventory empty or missing
-        if (!hadInventoryData) {
+        if (availableStock === 0) {
             try {
                 const inventory = await db.getInventory();
                 const productInventory = inventory && inventory[productId];
                 if (productInventory) {
-                    hadInventoryData = true;
                     if (commerceMode === 'EARLY_ACCESS') {
                         if (productInventory.early_access_stock) {
                             availableStock = productInventory.early_access_stock[size] || 0;
@@ -234,8 +231,8 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
             }
         }
         
-        // No inventory configured on server (e.g. fresh deploy) → allow so checkout/Stripe test works
-        if (!hadInventoryData && quantity > 0) {
+        // If still no stock data (inventory not initialized on server), allow checkout so Stripe test works
+        if (availableStock === 0 && quantity > 0) {
             availableStock = quantity;
         }
         
@@ -439,32 +436,49 @@ module.exports = async (req, res) => {
             });
         }
         
-        // Calculate totals
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        // Calculate totals and validate (avoid Stripe errors from bad data)
+        const subtotal = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (item.quantity || 0)), 0);
+        if (subtotal <= 0) {
+            return res.status(400).json({ error: 'INVALID_CART', message: 'Cart total is invalid. Please refresh and try again.' });
+        }
         const shippingCost = calculateShipping(cart, customerInfo.country);
         const total = subtotal + shippingCost;
-        
-        // Convert to cents for Stripe
         const totalCents = Math.round(total * 100);
         const shippingCents = Math.round(shippingCost * 100);
+        const baseUrl = process.env.SITE_URL || 'https://sandro-sandri.vercel.app';
         
-        // Create Stripe Checkout Session
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            mode: 'payment',
-            customer_email: customerInfo.email,
-            line_items: cart.map(item => ({
+        // Build line items safely (no undefined price or invalid image URL)
+        const lineItems = cart.map(item => {
+            const price = Number(item.price);
+            const amount = (price > 0 ? price : 0) * 100;
+            let imageUrl = null;
+            if (item.image) {
+                try {
+                    imageUrl = item.image.startsWith('http') ? item.image : new URL(item.image, baseUrl).href;
+                } catch (_) { /* ignore */ }
+            }
+            return {
                 price_data: {
                     currency: 'eur',
                     product_data: {
-                        name: item.name,
-                        description: `${item.size} / ${item.color}`,
-                        images: item.image ? [new URL(item.image, process.env.SITE_URL || 'https://sandro-sandri.vercel.app').href] : []
+                        name: String(item.name || 'Item').substring(0, 500),
+                        description: `${item.size || ''} / ${item.color || ''}`.trim().substring(0, 500),
+                        images: imageUrl ? [imageUrl] : []
                     },
-                    unit_amount: Math.round(item.price * 100) // Convert to cents
+                    unit_amount: Math.round(amount) || 100
                 },
-                quantity: item.quantity
-            })),
+                quantity: Math.max(1, parseInt(item.quantity, 10) || 1)
+            };
+        });
+        
+        // Create Stripe Checkout Session
+        let session;
+        try {
+        session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            mode: 'payment',
+            customer_email: customerInfo.email,
+            line_items: lineItems,
             shipping_address_collection: {
                 allowed_countries: ['AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HM', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'UM', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW']
             },
@@ -492,10 +506,15 @@ module.exports = async (req, res) => {
                     : '',
                 shippingCountry: customerInfo.country || ''
             },
-            success_url: `${process.env.SITE_URL || 'https://sandro-sandri.vercel.app'}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.SITE_URL || 'https://sandro-sandri.vercel.app'}/checkout.html?canceled=true`,
+            success_url: `${baseUrl}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/checkout.html?canceled=true`,
             expires_at: Math.floor(Date.now() / 1000) + (30 * 60) // 30 minutes
         });
+        } catch (stripeErr) {
+            console.error('create-session Stripe API error:', stripeErr && stripeErr.message, stripeErr && stripeErr.type);
+            errorHandler.sendSecureError(res, stripeErr, 500, 'Failed to create checkout session. Please try again.', 'PAYMENT_FAILED');
+            return;
+        }
         
         res.status(200).json({
             sessionId: session.id,
@@ -503,12 +522,14 @@ module.exports = async (req, res) => {
         });
         
     } catch (error) {
-        // SECURITY: Don't expose error details to users
+        console.error('create-session cart/Stripe error:', error && error.message);
         errorHandler.sendSecureError(res, error, 500, 'Failed to create checkout session. Please try again.', 'PAYMENT_FAILED');
+        return;
     }
     } catch (err) {
         console.error('create-session uncaught error:', err && err.message, err && err.stack);
         send500Json('Failed to create checkout session. Please try again.');
+        return;
     }
 };
 
