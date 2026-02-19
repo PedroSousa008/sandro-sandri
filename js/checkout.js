@@ -640,7 +640,13 @@ function initCheckoutForm() {
 
         } catch (error) {
             console.error('Checkout error:', error);
-            alert(error.message || 'An error occurred. Please try again.');
+            // Never show raw JSON parse / "expected pattern" errors to the user
+            const isParseError = error instanceof SyntaxError ||
+                (error && error.message && (error.message.includes('expected pattern') || error.message.includes('JSON')));
+            const message = isParseError
+                ? 'Payment is temporarily unavailable. Please try again later or contact us.'
+                : (error.message || 'An error occurred. Please try again.');
+            alert(message);
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
         }

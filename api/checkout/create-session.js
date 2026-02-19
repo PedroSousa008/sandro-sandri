@@ -262,6 +262,10 @@ function getAllowedPriceIds() {
 }
 
 module.exports = async (req, res) => {
+    const send500Json = (msg) => {
+        if (!res.headersSent) res.status(500).json({ error: 'PAYMENT_FAILED', message: msg || 'Failed to create checkout session. Please try again.' });
+    };
+    try {
     // Set secure CORS headers (restricted to allowed origins)
     cors.setCORSHeaders(res, req, ['POST', 'OPTIONS']);
     
@@ -486,6 +490,10 @@ module.exports = async (req, res) => {
     } catch (error) {
         // SECURITY: Don't expose error details to users
         errorHandler.sendSecureError(res, error, 500, 'Failed to create checkout session. Please try again.', 'PAYMENT_FAILED');
+    }
+    } catch (err) {
+        console.error('create-session uncaught error:', err && err.message, err && err.stack);
+        send500Json('Failed to create checkout session. Please try again.');
     }
 };
 
