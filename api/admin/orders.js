@@ -89,6 +89,20 @@ module.exports = async (req, res) => {
             // Save updated orders
             await db.saveAllOrders(orders);
 
+            // Keep customer's copy in userData in sync so Profile page shows updated tracking/status
+            const userData = await db.getUserData();
+            const customerEmail = (order.email || '').toLowerCase().trim();
+            if (userData[customerEmail] && Array.isArray(userData[customerEmail].orders)) {
+                const userOrders = userData[customerEmail].orders;
+                const userOrderIdx = userOrders.findIndex(o => o.id === order.id);
+                if (userOrderIdx !== -1) {
+                    userOrders[userOrderIdx] = order;
+                    userData[customerEmail].orders = userOrders;
+                    userData[customerEmail].updatedAt = new Date().toISOString();
+                    await db.saveUserData(userData);
+                }
+            }
+
             // If tracking number was added and order status is SHIPPED, send email
             const currentOrderStatus = order.orderStatus || order.status || 'PAID';
             if (trackingNumber && trackingNumber !== previousTrackingNumber && 

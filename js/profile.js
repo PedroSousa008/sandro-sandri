@@ -16,6 +16,10 @@ function initProfile() {
     loadFavorites();
     initSettings();
     initLogout();
+    // Fetch latest orders/stats from server (Overview and Orders show current data, including tracking)
+    if (window.userSync && typeof window.userSync.loadAllData === 'function') {
+        window.userSync.loadAllData();
+    }
     
     // Listen for profile sync events
     window.addEventListener('profileSynced', (e) => {
@@ -33,6 +37,11 @@ function initProfile() {
         console.log('   Synced favorites:', syncedFavorites);
         loadFavorites(); // Reload favorites when sync happens
         loadProfileData(); // Update stats
+    });
+    // When orders are synced (e.g. after owner updates tracking), refresh Overview and Orders tab
+    window.addEventListener('ordersSynced', () => {
+        loadProfileData();
+        loadOrders();
     });
     
     // Refresh stats when switching to overview tab
@@ -68,10 +77,13 @@ function initTabs() {
             tab.classList.add('active');
             document.getElementById(`${targetTab}-tab`).classList.add('active');
             
-            // Refresh data when switching tabs
+            // Refresh data when switching tabs (and fetch latest from server for orders)
             if (targetTab === 'overview') {
                 loadProfileData();
             } else if (targetTab === 'orders') {
+                if (window.userSync && typeof window.userSync.loadAllData === 'function') {
+                    window.userSync.loadAllData();
+                }
                 loadOrders();
             } else if (targetTab === 'favorites') {
                 loadFavorites();
@@ -428,6 +440,13 @@ function loadOrders() {
     return orders;
 }
 
+function getChapterForProductId(productId) {
+    const id = parseInt(productId, 10);
+    if (id >= 1 && id <= 5) return 'Chapter I';
+    if (id >= 6 && id <= 10) return 'Chapter II';
+    return '—';
+}
+
 function displayOrders(orders) {
     const ordersList = document.getElementById('orders-list');
     if (!ordersList) return;
@@ -447,44 +466,60 @@ function displayOrders(orders) {
         return;
     }
 
+    const formatPrice = window.ProductsAPI ? (n) => window.ProductsAPI.formatPrice(n) : (n) => '€' + (Number(n) || 0).toFixed(2);
+    const esc = (s) => {
+        if (s == null || s === '') return '';
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+
     ordersList.innerHTML = orders.map((order, index) => {
-        const orderDate = new Date(order.date).toLocaleDateString('en-US', {
+        const orderDate = new Date(order.createdAt || order.date || 0).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
         });
-        
-        const orderTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const items = order.cart || order.items || [];
+        const orderTotal = order.total != null && order.total !== '' ? Number(order.total) : items.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 1), 0);
+        const firstProductId = items[0] && (items[0].productId != null) ? items[0].productId : null;
+        const tracking = (order.trackingNumber || '').trim();
+        const status = order.orderStatus || order.status || 'PAID';
+
+        const itemsHtml = items.map(item => {
+            const img = item.image || (window.ProductsAPI ? (() => { const p = window.ProductsAPI.getById(item.productId); return p && p.images && p.images[0]; })() : null) || 'images/placeholder.png';
+            const name = item.name || (window.ProductsAPI ? (() => { const p = window.ProductsAPI.getById(item.productId); return p ? p.name : 'Item'; })() : 'Item');
+            const chapter = getChapterForProductId(item.productId);
+            return `
+                <div class="order-item">
+                    <img src="${esc(img)}" alt="${esc(name)}" class="order-item-image" onerror="this.src='images/placeholder.png'">
+                    <div class="order-item-details">
+                        <span class="order-item-chapter">${esc(chapter)}</span>
+                        <h5 class="order-item-name">${esc(name)}</h5>
+                        <p class="order-item-specs">Size: ${esc(item.size || '—')} × ${item.quantity || 1}</p>
+                    </div>
+                    <div class="order-item-price">${formatPrice((Number(item.price) || 0) * (item.quantity || 1))}</div>
+                </div>
+            `;
+        }).join('');
 
         return `
             <div class="order-card">
                 <div class="order-header">
                     <div class="order-info">
-                        <h4 class="order-number">Order #${order.orderNumber || String(index + 1).padStart(6, '0')}</h4>
+                        <h4 class="order-number">Order ${esc(order.orderNumber || order.id || String(index + 1))}</h4>
                         <p class="order-date">${orderDate}</p>
                     </div>
                     <div class="order-status">
-                        <span class="status-badge ${order.status || 'completed'}">${order.status || 'Completed'}</span>
+                        <span class="status-badge ${esc(status).toLowerCase()}">${esc(status)}</span>
                     </div>
                 </div>
-                <div class="order-items">
-                    ${order.items.map(item => `
-                        <div class="order-item">
-                            <img src="${item.image || 'images/placeholder.png'}" alt="${item.name}" class="order-item-image">
-                            <div class="order-item-details">
-                                <h5 class="order-item-name">${item.name}</h5>
-                                <p class="order-item-specs">Size: ${item.size || 'M'} | Quantity: ${item.quantity}</p>
-                            </div>
-                            <div class="order-item-price">${window.ProductsAPI ? window.ProductsAPI.formatPrice(item.price * item.quantity) : `€${(item.price * item.quantity).toFixed(2)}`}</div>
-                        </div>
-                    `).join('')}
-                </div>
+                <div class="order-items">${itemsHtml}</div>
+                ${tracking ? `<div class="order-tracking" style="margin: 12px 0; padding: 8px 12px; background: var(--color-gray-light, #f5f5f0); border-radius: 4px; font-size: 0.875rem;"><strong>Tracking:</strong> ${esc(tracking)}</div>` : ''}
                 <div class="order-footer">
                     <div class="order-total">
                         <span>Total:</span>
-                        <strong>${window.ProductsAPI ? window.ProductsAPI.formatPrice(orderTotal) : `€${orderTotal.toFixed(2)}`}</strong>
+                        <strong>${formatPrice(orderTotal)}</strong>
                     </div>
-                    <a href="product.html?id=${order.items[0]?.productId}" class="secondary-button">View Details</a>
+                    ${firstProductId ? `<a href="product.html?id=${firstProductId}" class="secondary-button">View Details</a>` : ''}
                 </div>
             </div>
         `;
@@ -493,8 +528,9 @@ function displayOrders(orders) {
 
 function calculateTotalSpent(orders) {
     return orders.reduce((total, order) => {
-        const orderTotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        return total + orderTotal;
+        if (order.total != null && order.total !== '') return total + Number(order.total);
+        const items = order.cart || order.items || [];
+        return total + items.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 1), 0);
     }, 0);
 }
 
