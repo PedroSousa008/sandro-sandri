@@ -482,17 +482,45 @@
             }
         }
         
-        // Bind reset inventory button
-        document.getElementById('reset-inventory-btn').addEventListener('click', () => {
-            if (confirm('Reset all inventory to full stock? This will restore all sizes to their maximum quantities (XS: 10, S: 20, M: 50, L: 50, XL: 20 per model).')) {
-                if (window.InventoryAPI && window.InventoryAPI.reset) {
-                    window.InventoryAPI.reset();
-                    alert('Inventory reset successfully! All products now have full stock.');
-                    // Reload to see changes
+        // Bind reset inventory button – calls server to reset Chapter I and Chapter II to full stock
+        document.getElementById('reset-inventory-btn').addEventListener('click', async () => {
+            if (!confirm('Reset all inventory to full stock? This will restore all sizes to their maximum quantities (XS: 10, S: 20, M: 50, L: 50, XL: 20 per model).')) return;
+            const token = localStorage.getItem('sandroSandri_session_token');
+            if (!token) {
+                alert('You must be logged in.');
+                window.location.href = 'login.html';
+                return;
+            }
+            const btn = document.getElementById('reset-inventory-btn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Resetting...';
+            try {
+                const res1 = await fetch('/api/admin?endpoint=init-inventory', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chapterId: 'chapter-1', force: true })
+                });
+                const res2 = await fetch('/api/admin?endpoint=init-inventory', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chapterId: 'chapter-2', force: true })
+                });
+                const data1 = res1.ok ? await res1.json() : null;
+                const data2 = res2.ok ? await res2.json() : null;
+                if (res1.ok && res2.ok) {
+                    alert('Inventory reset successfully! All products (Chapter I and II) now have full stock.');
                     window.location.reload();
                 } else {
-                    alert('Inventory API not available. Please refresh the page.');
+                    const msg1 = data1 && data1.error ? data1.error : (res1.statusText || 'Chapter I failed');
+                    const msg2 = data2 && data2.error ? data2.error : (res2.statusText || 'Chapter II failed');
+                    alert('Reset failed: ' + msg1 + (msg1 !== msg2 ? '; ' + msg2 : ''));
                 }
+            } catch (e) {
+                alert('Error resetting inventory: ' + (e.message || 'Network error'));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         });
         
