@@ -10,13 +10,13 @@
 
     function getPriceMap() {
         if (priceMapCache) return Promise.resolve(priceMapCache);
-        return fetch('/api/config/prices')
+        return fetch('/api/site-settings?setting=stripe-prices')
             .then(function (r) {
                 if (!r.ok) throw new Error('Could not load prices');
                 return r.json();
             })
             .then(function (data) {
-                priceMapCache = data.prices || {};
+                priceMapCache = (data && data.prices) ? data.prices : {};
                 return priceMapCache;
             });
     }

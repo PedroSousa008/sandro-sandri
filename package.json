@@ -4,6 +4,7 @@
   "description": "Sandro Sandri E-commerce Website",
   "scripts": {
     "dev": "vercel dev",
+    "build": "echo 'Static site - no build step'",
     "test": "jest"
   },
   "dependencies": {

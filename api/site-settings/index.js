@@ -40,6 +40,19 @@ module.exports = async (req, res) => {
                     success: true,
                     activeChapter: activeChapter
                 });
+            } else if (setting === 'stripe-prices') {
+                // Public: Stripe Price IDs for Chapter I (no secrets). Kept here to stay under Vercel Hobby 12-function limit.
+                res.setHeader('Cache-Control', 'public, max-age=300');
+                return res.status(200).json({
+                    success: true,
+                    prices: {
+                        '1': process.env.STRIPE_PRICE_ISOLE_CAYMAN || null,
+                        '2': process.env.STRIPE_PRICE_ISOLA_DI_NECKER || null,
+                        '3': process.env.STRIPE_PRICE_MONROES_KISSES || null,
+                        '4': process.env.STRIPE_PRICE_SARDINIA || null,
+                        '5': process.env.STRIPE_PRICE_PORT_COTON || null
+                    }
+                });
             } else {
                 // Return all settings
                 return res.status(200).json({
