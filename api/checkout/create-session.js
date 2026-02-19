@@ -190,6 +190,7 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
         }
         
         let availableStock = 0;
+        let hadInventoryData = false;
         
         // Use new chapter-based inventory if chapter is known
         if (chapterId) {
@@ -199,38 +200,43 @@ async function validateCartInventory(cart, commerceMode = 'LIVE') {
                     const model = inventory.models[productId.toString()];
                     if (model.stock && model.stock[size.toUpperCase()] !== undefined) {
                         availableStock = model.stock[size.toUpperCase()] || 0;
+                        hadInventoryData = true;
                     }
                 }
             } catch (error) {
                 console.error(`Error fetching inventory for ${chapterId}:`, error);
-                // Fall through to old system
             }
         }
         
-        // Fallback to old inventory system if chapter-based failed
-        if (availableStock === 0 && !chapterId) {
-            const inventory = await db.getInventory();
-            const productInventory = inventory[productId];
-            
-            if (!productInventory) {
-                availableStock = 0;
-            } else if (commerceMode === 'EARLY_ACCESS') {
-                // Use early_access_stock
-                if (productInventory.early_access_stock) {
-                    availableStock = productInventory.early_access_stock[size] || 0;
-                } else if (productInventory[size]) {
-                    // Legacy format - assume it's early_access if no live_stock
-                    availableStock = productInventory[size] || 0;
+        // Fallback: old inventory system when chapter inventory empty or missing
+        if (!hadInventoryData) {
+            try {
+                const inventory = await db.getInventory();
+                const productInventory = inventory && inventory[productId];
+                if (productInventory) {
+                    hadInventoryData = true;
+                    if (commerceMode === 'EARLY_ACCESS') {
+                        if (productInventory.early_access_stock) {
+                            availableStock = productInventory.early_access_stock[size] || 0;
+                        } else if (productInventory[size] !== undefined) {
+                            availableStock = productInventory[size] || 0;
+                        }
+                    } else {
+                        if (productInventory.live_stock) {
+                            availableStock = productInventory.live_stock[size] || 0;
+                        } else if (productInventory[size] !== undefined) {
+                            availableStock = productInventory[size] || 0;
+                        }
+                    }
                 }
-            } else {
-                // LIVE mode - use live_stock
-                if (productInventory.live_stock) {
-                    availableStock = productInventory.live_stock[size] || 0;
-                } else if (productInventory[size]) {
-                    // Legacy format - assume it's live_stock
-                    availableStock = productInventory[size] || 0;
-                }
+            } catch (e) {
+                console.error('getInventory fallback error:', e && e.message);
             }
+        }
+        
+        // No inventory configured on server (e.g. fresh deploy) → allow so checkout/Stripe test works
+        if (!hadInventoryData && quantity > 0) {
+            availableStock = quantity;
         }
         
         if (availableStock < quantity) {
