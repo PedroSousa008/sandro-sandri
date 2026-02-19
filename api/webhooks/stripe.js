@@ -4,6 +4,8 @@
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../../lib/storage');
+const emailService = require('../../lib/email');
+const auth = require('../../lib/auth');
 
 // Process webhook event with idempotency
 async function processWebhookEvent(event) {
@@ -183,7 +185,22 @@ async function handleCheckoutCompleted(session) {
         // Don't fail the webhook if this fails
     }
     
-    // TODO: Send order confirmation email
+    // Send order confirmation email to owner (you) with full order details
+    try {
+        const ownerEmail = auth.OWNER_EMAIL;
+        if (ownerEmail) {
+            const emailResult = await emailService.sendOrderConfirmationToOwner(ownerEmail, order);
+            if (emailResult && emailResult.success) {
+                console.log('Order confirmation email sent to owner');
+            } else {
+                console.warn('Order confirmation email not sent:', (emailResult && emailResult.error) || 'unknown');
+            }
+        }
+    } catch (emailErr) {
+        console.error('Error sending order confirmation email to owner:', emailErr && emailErr.message);
+        // Don't fail the webhook if email fails
+    }
+    
     console.log(`Order ${order.id} created successfully`);
     
     return order;
