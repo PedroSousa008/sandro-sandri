@@ -5,7 +5,7 @@
 // Only initialise Stripe when key is present (avoids crash and ensures JSON error response)
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
-const db = require('../../lib/storage');
+// Load storage inside handler so module never crashes if storage fails (always return JSON)
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
 
@@ -172,9 +172,7 @@ function calculateShipping(cart, countryCode) {
     return SHIPPING_FEES['DEFAULT'];
 }
 
-// db already required at top of file
-
-// Validate cart items against inventory
+// Validate cart items against inventory (uses db from handler scope)
 async function validateCartInventory(cart, commerceMode = 'LIVE') {
     const errors = [];
     
@@ -341,8 +339,20 @@ module.exports = async (req, res) => {
     
     // ----- Cart flow (existing) -----
     try {
+        let db;
+        try {
+            db = require('../../lib/storage');
+        } catch (storageErr) {
+            console.error('create-session: storage load failed', storageErr && storageErr.message);
+            return res.status(503).json({ error: 'STORAGE_UNAVAILABLE', message: 'Checkout is temporarily unavailable. Please try again.' });
+        }
         // Check chapter mode - block checkout in WAITLIST mode, allow in ADD_TO_CART and EARLY_ACCESS
-        await db.initDb();
+        try {
+            await db.initDb();
+        } catch (initErr) {
+            console.error('create-session: db.initDb failed', initErr && initErr.message);
+            return res.status(503).json({ error: 'INIT_FAILED', message: 'Checkout is temporarily unavailable. Please try again.' });
+        }
         
         // Get chapter mode data
         let chapterModeData = null;
