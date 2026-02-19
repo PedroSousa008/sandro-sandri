@@ -304,7 +304,7 @@ function initSizeSelection(product) {
         updateQuantityMaxAsync(productId, size);
     }
     
-    // Load inventory and render size buttons
+    // Load inventory and render size buttons (all sizes in parallel, then render at once)
     async function renderSizeButtons() {
         // Sync chapter inventory if product has a chapter
         const chapterId = window.InventoryAPI?.getProductChapterId?.(product);
@@ -312,39 +312,30 @@ function initSizeSelection(product) {
             await window.InventoryAPI.syncChapterInventory(chapterId);
         }
         
-        // Render size buttons
+        const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
+        // Fetch all stock counts in parallel so sizes appear together
+        const stockCounts = await Promise.all(
+            product.sizes.map(async (size) => {
+                if (window.InventoryAPI) {
+                    return await window.InventoryAPI.get(product.id, size);
+                }
+                const count = product.inventory?.[size];
+                if (count !== undefined && count !== null) return count;
+                return defaultStock[size] ?? 0;
+            })
+        );
+        
+        const fragment = document.createDocumentFragment();
         for (let index = 0; index < product.sizes.length; index++) {
             const size = product.sizes[index];
+            const stockCount = stockCounts[index];
+            const inStock = stockCount > 0;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'size-btn';
             btn.dataset.size = size;
             btn.textContent = size;
             
-            // Check if size is in stock (async)
-            let inStock = false;
-            let stockCount = 0;
-            if (window.InventoryAPI) {
-                stockCount = await window.InventoryAPI.get(product.id, size);
-                // Only show as sold out if stock is explicitly 0
-                // If stock is > 0 or default full stock, it's in stock
-                inStock = stockCount > 0;
-            } else {
-                // Fallback: check product inventory
-                stockCount = product.inventory?.[size];
-                // If product.inventory exists and has a value, use it
-                // Otherwise, assume full stock (default values)
-                if (stockCount !== undefined && stockCount !== null) {
-                    inStock = stockCount > 0;
-                } else {
-                    // No inventory data - assume full stock
-                    const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
-                    stockCount = defaultStock[size] || 0;
-                    inStock = stockCount > 0;
-                }
-            }
-            
-            // Only show "Sold Out" if stock is explicitly 0
             if (stockCount === 0) {
                 btn.classList.add('sold-out');
                 btn.style.opacity = '0.5';
@@ -352,40 +343,27 @@ function initSizeSelection(product) {
                 btn.textContent = `${size} - Sold Out`;
                 btn.disabled = true;
             }
+            if (index === 0 && inStock) btn.classList.add('active');
             
-            // Set default active state (only for first available size)
-            if (index === 0 && inStock) {
-                btn.classList.add('active');
-            }
-            
-            // Simple inline onclick - most reliable
             btn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (!inStock || btn.disabled) return false; // Don't allow selection of sold out sizes
-                console.log('Button clicked for size:', size);
+                if (!inStock || btn.disabled) return false;
                 selectSize(size);
                 return false;
             };
-            
-            // Also add addEventListener as backup
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (!inStock || btn.disabled) return false; // Don't allow selection of sold out sizes
-                console.log('Event listener triggered for size:', size);
+                if (!inStock || btn.disabled) return false;
                 selectSize(size);
             }, false);
-            
-            sizeOptions.appendChild(btn);
+            fragment.appendChild(btn);
         }
+        sizeOptions.appendChild(fragment);
         
         // Set default size to first available
-        const firstAvailableSize = product.sizes.find(size => {
-            const btn = sizeOptions.querySelector(`[data-size="${size}"]`);
-            return btn && !btn.disabled;
-        });
-        
+        const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
         if (firstAvailableSize && sizeInput) {
             sizeInput.value = firstAvailableSize;
             selectSize(firstAvailableSize);

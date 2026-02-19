@@ -172,7 +172,7 @@ function calculateShipping(cart, countryCode) {
     return SHIPPING_FEES['DEFAULT'];
 }
 
-const db = require('../../lib/storage');
+// db already required at top of file
 
 // Validate cart items against inventory
 async function validateCartInventory(cart, commerceMode = 'LIVE') {
@@ -342,7 +342,6 @@ module.exports = async (req, res) => {
     // ----- Cart flow (existing) -----
     try {
         // Check chapter mode - block checkout in WAITLIST mode, allow in ADD_TO_CART and EARLY_ACCESS
-        const db = require('../../lib/storage');
         await db.initDb();
         
         // Get chapter mode data
