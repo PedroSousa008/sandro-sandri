@@ -8,6 +8,10 @@ const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
 // Load storage inside handler so module never crashes if storage fails (always return JSON)
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
+const auth = require('../../lib/auth');
+
+// Test user: only this email, when authenticated (correct password), gets 0€ products + 0€ shipping
+const TEST_USER_EMAIL = 'guicampos2006@icloud.com';
 
 // Stripe-allowed shipping countries (exact list from Stripe API; do not add codes they reject)
 const STRIPE_ALLOWED_SHIPPING_COUNTRIES = ['AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CV', 'CW', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MK', 'ML', 'MM', 'MN', 'MO', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SZ', 'TA', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW', 'ZZ'];
@@ -352,6 +356,10 @@ module.exports = async (req, res) => {
         if (!customerInfo || !customerInfo.email) {
             return res.status(400).json({ error: 'MISSING_CUSTOMER_INFO', message: 'Customer email is required' });
         }
+
+        // Test user: 0€ only if JWT present and email is guicampos2006@icloud.com (password already verified at login)
+        const decoded = auth.verifyToken(req);
+        const isTestUser = decoded && decoded.email && String(decoded.email).toLowerCase() === TEST_USER_EMAIL.toLowerCase();
         
         // Optional: chapter mode + inventory (if storage works; otherwise skip and allow checkout)
         try {
@@ -386,19 +394,20 @@ module.exports = async (req, res) => {
         }
         
         // Calculate totals and validate (avoid Stripe errors from bad data)
-        const subtotal = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (item.quantity || 0)), 0);
-        if (subtotal <= 0) {
+        let subtotal = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (item.quantity || 0)), 0);
+        if (!isTestUser && subtotal <= 0) {
             return res.status(400).json({ error: 'INVALID_CART', message: 'Cart total is invalid. Please refresh and try again.' });
         }
-        const shippingCost = calculateShipping(cart, customerInfo.country);
+        let shippingCost = isTestUser ? 0 : calculateShipping(cart, customerInfo.country);
+        if (isTestUser) subtotal = 0;
         const total = subtotal + shippingCost;
         const totalCents = Math.round(total * 100);
         const shippingCents = Math.round(shippingCost * 100);
         const baseUrl = process.env.SITE_URL || 'https://sandro-sandri.vercel.app';
         
-        // Build line items safely (no undefined price or invalid image URL)
+        // Build line items safely (no undefined price or invalid image URL). Test user: 0€ per unit.
         const lineItems = cart.map(item => {
-            const price = Number(item.price);
+            const price = isTestUser ? 0 : Number(item.price);
             const amount = (price > 0 ? price : 0) * 100;
             let imageUrl = null;
             if (item.image) {
@@ -414,7 +423,7 @@ module.exports = async (req, res) => {
                         description: `${item.size || ''} / ${item.color || ''}`.trim().substring(0, 500),
                         images: imageUrl ? [imageUrl] : []
                     },
-                    unit_amount: Math.round(amount) || 100
+                    unit_amount: isTestUser ? 0 : (Math.round(amount) || 100)
                 },
                 quantity: Math.max(1, parseInt(item.quantity, 10) || 1)
             };
@@ -453,7 +462,8 @@ module.exports = async (req, res) => {
                 customerName: customerInfo.firstName && customerInfo.lastName 
                     ? `${customerInfo.firstName} ${customerInfo.lastName}` 
                     : '',
-                shippingCountry: customerInfo.country || ''
+                shippingCountry: customerInfo.country || '',
+                ...(isTestUser ? { testUserZeroPrice: 'true' } : {})
             },
             success_url: `${baseUrl}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${baseUrl}/checkout.html?canceled=true`,

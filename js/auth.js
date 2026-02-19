@@ -157,6 +157,7 @@ class AuthSystem {
         
         // Clear ALL user-specific data from localStorage
         localStorage.removeItem('sandroSandri_user');
+        localStorage.removeItem('sandroSandri_session_token');
         localStorage.removeItem('sandroSandriProfile');
         localStorage.removeItem('sandroSandriOrders');
         localStorage.removeItem('sandroSandriFavorites');
