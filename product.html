@@ -136,7 +136,11 @@
                             <div class="form-group">
                                 <label class="form-label">Size</label>
                                 <div class="size-options" id="size-options">
-                                    <!-- Sizes loaded via JS -->
+                                    <button type="button" class="size-btn" data-size="XS">XS</button>
+                                    <button type="button" class="size-btn" data-size="S">S</button>
+                                    <button type="button" class="size-btn active" data-size="M">M</button>
+                                    <button type="button" class="size-btn" data-size="L">L</button>
+                                    <button type="button" class="size-btn" data-size="XL">XL</button>
                                 </div>
                                 <a href="size-guide.html" class="size-guide-link">Size Guide</a>
                             </div>
@@ -160,7 +164,7 @@
                             </div>
 
                             <!-- Hidden inputs for form submission -->
-                            <input type="hidden" name="size" id="selected-size-input">
+                            <input type="hidden" name="size" id="selected-size-input" value="M">
                             <input type="hidden" name="color" id="selected-color-input">
 
                             <div class="product-actions">

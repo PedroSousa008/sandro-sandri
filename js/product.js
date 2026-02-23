@@ -45,33 +45,14 @@ function initProductPage() {
     // Populate page with product data
     populateProduct(product);
     
-    // Sync chapter inventory before initializing size selection
-    const chapterId = window.InventoryAPI?.getProductChapterId?.(product);
-    if (chapterId && window.InventoryAPI?.syncChapterInventory) {
-        window.InventoryAPI.syncChapterInventory(chapterId).then(() => {
-            // Initialize interactions after inventory is synced
-            initSizeSelection(product);
-            initColorSelection(product);
-            initQuantitySelector();
-            initAccordions();
-            initAddToCartForm(product);
-            initFavoritesButton(product);
-            
-            // Update button based on chapter mode (wait for ChapterMode to be ready)
-            waitForChapterModeAndUpdateButton(product);
-        });
-    } else {
-        // Initialize interactions (no chapter inventory to sync)
-        initSizeSelection(product);
-        initColorSelection(product);
-        initQuantitySelector();
-        initAccordions();
-        initAddToCartForm(product);
-        initFavoritesButton(product);
-        
-        // Update button based on chapter mode (wait for ChapterMode to be ready)
-        waitForChapterModeAndUpdateButton(product);
-    }
+    // Initialize interactions immediately (sizes render from product data, then refresh in background)
+    initSizeSelection(product);
+    initColorSelection(product);
+    initQuantitySelector();
+    initAccordions();
+    initAddToCartForm(product);
+    initFavoritesButton(product);
+    waitForChapterModeAndUpdateButton(product);
     
     // Listen for favorites sync events to update button state
     window.addEventListener('favoritesSynced', (e) => {
@@ -225,10 +206,12 @@ function initSizeSelection(product) {
         return;
     }
     
-    console.log('Initializing size selection with sizes:', product.sizes);
+    const existingButtons = sizeOptions.querySelectorAll('.size-btn');
+    const hasPreRenderedSizes = existingButtons.length > 0;
     
-    // Clear any existing content
-    sizeOptions.innerHTML = '';
+    if (!hasPreRenderedSizes) {
+        sizeOptions.innerHTML = '';
+    }
     
     // Create a simple click handler function
     function selectSize(size) {
@@ -304,38 +287,37 @@ function initSizeSelection(product) {
         updateQuantityMaxAsync(productId, size);
     }
     
-    // Load inventory and render size buttons (all sizes in parallel, then render at once)
-    async function renderSizeButtons() {
-        // Sync chapter inventory if product has a chapter
-        const chapterId = window.InventoryAPI?.getProductChapterId?.(product);
-        if (chapterId && window.InventoryAPI?.syncChapterInventory) {
-            await window.InventoryAPI.syncChapterInventory(chapterId);
-        }
-        
-        const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
-        // Fetch all stock counts in parallel so sizes appear together
-        const stockCounts = await Promise.all(
-            product.sizes.map(async (size) => {
-                if (window.InventoryAPI) {
-                    return await window.InventoryAPI.get(product.id, size);
-                }
-                const count = product.inventory?.[size];
-                if (count !== undefined && count !== null) return count;
-                return defaultStock[size] ?? 0;
-            })
-        );
-        
+    const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
+    
+    // When sizes are pre-rendered in HTML, just attach behaviour so they show instantly
+    function attachPreRenderedSizeHandlers() {
+        const currentSize = (sizeInput && sizeInput.value) || product.sizes[0] || 'M';
+        sizeOptions.querySelectorAll('.size-btn').forEach(function(btn) {
+            const size = btn.dataset.size;
+            if (!size) return;
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (btn.disabled) return false;
+                selectSize(size);
+                return false;
+            }, false);
+        });
+        selectSize(currentSize);
+    }
+    
+    // Render size buttons when not in HTML (fallback)
+    function renderSizeButtonsImmediate() {
         const fragment = document.createDocumentFragment();
         for (let index = 0; index < product.sizes.length; index++) {
             const size = product.sizes[index];
-            const stockCount = stockCounts[index];
+            const stockCount = product.inventory?.[size] ?? defaultStock[size] ?? 0;
             const inStock = stockCount > 0;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'size-btn';
             btn.dataset.size = size;
             btn.textContent = size;
-            
             if (stockCount === 0) {
                 btn.classList.add('sold-out');
                 btn.style.opacity = '0.5';
@@ -344,26 +326,17 @@ function initSizeSelection(product) {
                 btn.disabled = true;
             }
             if (index === 0 && inStock) btn.classList.add('active');
-            
-            btn.onclick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!inStock || btn.disabled) return false;
-                selectSize(size);
-                return false;
-            };
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 if (!inStock || btn.disabled) return false;
                 selectSize(size);
+                return false;
             }, false);
             fragment.appendChild(btn);
         }
         sizeOptions.appendChild(fragment);
-        
-        // Set default size to first available
-        const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
+        const firstAvailableSize = product.sizes.find((s, i) => (product.inventory?.[s] ?? defaultStock[s] ?? 0) > 0);
         if (firstAvailableSize && sizeInput) {
             sizeInput.value = firstAvailableSize;
             selectSize(firstAvailableSize);
@@ -372,10 +345,85 @@ function initSizeSelection(product) {
         }
     }
     
-    // Render buttons asynchronously
-    renderSizeButtons();
+    // Load inventory and update size buttons (sold out, etc.) in background
+    async function refreshSizeButtonsFromInventory() {
+        const chapterId = window.InventoryAPI?.getProductChapterId?.(product);
+        if (chapterId && window.InventoryAPI?.syncChapterInventory) {
+            await window.InventoryAPI.syncChapterInventory(chapterId);
+        }
+        const stockCounts = await Promise.all(
+            product.sizes.map(async (size) => {
+                if (window.InventoryAPI) return await window.InventoryAPI.get(product.id, size);
+                const count = product.inventory?.[size];
+                if (count !== undefined && count !== null) return count;
+                return defaultStock[size] ?? 0;
+            })
+        );
+        const buttons = sizeOptions.querySelectorAll('.size-btn');
+        if (buttons.length > 0) {
+            // Update existing buttons in place (no replace)
+            buttons.forEach(function(btn, index) {
+                const size = product.sizes[index];
+                if (!size) return;
+                const stockCount = stockCounts[index] || 0;
+                const inStock = stockCount > 0;
+                btn.textContent = inStock ? size : `${size} - Sold Out`;
+                btn.disabled = !inStock;
+                btn.classList.toggle('sold-out', !inStock);
+                btn.style.opacity = inStock ? '' : '0.5';
+                btn.style.cursor = inStock ? '' : 'not-allowed';
+            });
+            const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
+            if (firstAvailableSize && sizeInput) {
+                sizeInput.value = firstAvailableSize;
+                selectSize(firstAvailableSize);
+            }
+        } else {
+            sizeOptions.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+            for (let index = 0; index < product.sizes.length; index++) {
+                const size = product.sizes[index];
+                const stockCount = stockCounts[index];
+                const inStock = stockCount > 0;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'size-btn';
+                btn.dataset.size = size;
+                btn.textContent = size;
+                if (stockCount === 0) {
+                    btn.classList.add('sold-out');
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    btn.textContent = `${size} - Sold Out`;
+                    btn.disabled = true;
+                }
+                if (index === 0 && inStock) btn.classList.add('active');
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!inStock || btn.disabled) return false;
+                    selectSize(size);
+                    return false;
+                }, false);
+                fragment.appendChild(btn);
+            }
+            sizeOptions.appendChild(fragment);
+            const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
+            if (firstAvailableSize && sizeInput) {
+                sizeInput.value = firstAvailableSize;
+                selectSize(firstAvailableSize);
+            } else if (sizeInput && product.sizes.length > 0) {
+                sizeInput.value = product.sizes[0];
+            }
+        }
+    }
     
-    // Note: Default size is now set in renderSizeButtons() async function
+    if (hasPreRenderedSizes) {
+        attachPreRenderedSizeHandlers();
+    } else {
+        renderSizeButtonsImmediate();
+    }
+    refreshSizeButtonsFromInventory();
     
     // Define updateAddToCartButton function if not already defined
     if (!window.updateAddToCartButton) {
