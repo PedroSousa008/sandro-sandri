@@ -25,7 +25,8 @@ const PRODUCTS = [
             "images/tshirt-1a.png",
             "images/tshirt-1b.png",
             "images/tshirt-1c.png",
-            "images/tshirt-1d.png"
+            "images/tshirt-1d.png",
+            "images/tshirt-1e.png"
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
@@ -65,7 +66,8 @@ const PRODUCTS = [
             "images/tshirt-2a.png",
             "images/tshirt-2b.png",
             "images/tshirt-2c.png",
-            "images/tshirt-2d.png"
+            "images/tshirt-2d.png",
+            "images/tshirt-2e.png"
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
@@ -105,7 +107,8 @@ const PRODUCTS = [
             "images/tshirt-3a.png",
             "images/tshirt-3b.png",
             "images/tshirt-3c.png",
-            "images/tshirt-3d.png"
+            "images/tshirt-3d.png",
+            "images/tshirt-3e.png"
         ],
         collection: {
             title: "Connoisseur Signature",
@@ -145,7 +148,8 @@ const PRODUCTS = [
             "images/tshirt-4a.png",
             "images/tshirt-4b.png",
             "images/tshirt-4c.png",
-            "images/tshirt-4d.png"
+            "images/tshirt-4d.png",
+            "images/tshirt-4e.png"
         ],
         collection: {
             title: "L'Italia per un viaggio indimenticabile Signature",
@@ -185,7 +189,8 @@ const PRODUCTS = [
             "images/tshirt-5a.png",
             "images/tshirt-5b.png",
             "images/tshirt-5c.png",
-            "images/tshirt-5d.png"
+            "images/tshirt-5d.png",
+            "images/tshirt-5e.png"
         ],
         collection: {
             title: "Rinascimento Couture Signature",
