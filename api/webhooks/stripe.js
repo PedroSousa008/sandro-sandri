@@ -193,6 +193,19 @@ async function handleCheckoutCompleted(session) {
         // Don't fail the webhook if this fails
     }
     
+    // Send branded "Order Confirmed" email to the buyer (only when payment completed)
+    try {
+        const customerEmailResult = await emailService.sendOrderConfirmedToCustomer(customerEmail, order);
+        if (customerEmailResult && customerEmailResult.success) {
+            console.log('Order confirmed email sent to customer');
+        } else {
+            console.warn('Order confirmed email not sent to customer:', (customerEmailResult && customerEmailResult.error) || 'unknown');
+        }
+    } catch (customerEmailErr) {
+        console.error('Error sending order confirmed email to customer:', customerEmailErr && customerEmailErr.message);
+        // Don't fail the webhook; idempotency prevents duplicate orders on retry
+    }
+
     // Send order confirmation email to owner (you) with full order details
     try {
         const ownerEmail = auth.OWNER_EMAIL;
