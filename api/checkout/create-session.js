@@ -9,9 +9,10 @@ const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
 const auth = require('../../lib/auth');
+const rateLimit = require('../../lib/rate-limit');
 
-// Test user: only this email, when authenticated (correct password), gets 0€ products + 0€ shipping
-const TEST_USER_EMAIL = 'guicampos2006@icloud.com';
+// Test user: only this email (from env), when authenticated, gets 0€ products + 0€ shipping. No fallback in production.
+const TEST_USER_EMAIL = (process.env.TEST_USER_EMAIL && String(process.env.TEST_USER_EMAIL).trim()) || '';
 
 // Stripe-allowed shipping countries (exact list from Stripe API; do not add codes they reject)
 const STRIPE_ALLOWED_SHIPPING_COUNTRIES = ['AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CV', 'CW', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MK', 'ML', 'MM', 'MN', 'MO', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SZ', 'TA', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW', 'ZZ'];
@@ -257,6 +258,72 @@ async function validateCartInventoryWithDb(cart, commerceMode = 'LIVE', db) {
     return errors;
 }
 
+// =============================================================================
+// SERVER-SIDE PRODUCT CATALOG (single source of truth for pricing)
+// Client MUST NOT be able to influence unit_amount. Only productId + quantity
+// (and size/color for fulfillment) are accepted from the client.
+//
+// Security regression check: sending price: 1 (or any value) in cart payload
+// must NOT affect Stripe line_items. normalizeAndValidateCart() ignores
+// raw.price; line_items are built from SERVER_PRODUCT_CATALOG only.
+// =============================================================================
+const QUANTITY_MIN = 1;
+const QUANTITY_MAX = 10;
+
+const SERVER_PRODUCT_CATALOG = {
+    1: { unit_amount_cents: 9500, name: 'Isole Cayman', imagePath: 'images/tshirt-1a.png' },
+    2: { unit_amount_cents: 9500, name: 'Isola di Necker', imagePath: 'images/tshirt-2a.png' },
+    3: { unit_amount_cents: 9500, name: "Monroe's Kisses", imagePath: 'images/tshirt-3a.png' },
+    4: { unit_amount_cents: 9500, name: 'Sardinia', imagePath: 'images/tshirt-4a.png' },
+    5: { unit_amount_cents: 9500, name: 'Port-Coton', imagePath: 'images/tshirt-5a.png' },
+    6: { unit_amount_cents: 9500, name: 'Maldives', imagePath: 'images/maldives1.png' },
+    7: { unit_amount_cents: 9500, name: 'Palma Mallorca', imagePath: 'images/palma1.png' },
+    8: { unit_amount_cents: 9500, name: 'Lago di Como', imagePath: 'images/lago1.png' },
+    9: { unit_amount_cents: 9500, name: 'Gisele', imagePath: 'images/gisele1.png' },
+    10: { unit_amount_cents: 9500, name: 'Pourville', imagePath: 'images/pourville1.png' }
+};
+
+function getServerProduct(productId) {
+    const id = typeof productId === 'number' && Number.isInteger(productId) ? productId : parseInt(productId, 10);
+    return Number.isInteger(id) ? SERVER_PRODUCT_CATALOG[id] : null;
+}
+
+/**
+ * Normalize and validate cart from client. Accept only productId, quantity, size, color.
+ * Ignore any price/name/image from client. Return normalized items with server-side price/name
+ * or null if invalid.
+ */
+function normalizeAndValidateCart(rawCart) {
+    if (!rawCart || !Array.isArray(rawCart) || rawCart.length === 0) return null;
+    const out = [];
+    for (const raw of rawCart) {
+        const productId = typeof raw.productId === 'number' && Number.isInteger(raw.productId)
+            ? raw.productId
+            : parseInt(raw.productId, 10);
+        const product = getServerProduct(productId);
+        if (!product) {
+            return null; // unknown productId
+        }
+        let q = typeof raw.quantity === 'number' ? Math.floor(raw.quantity) : parseInt(raw.quantity, 10);
+        if (!Number.isInteger(q) || q < QUANTITY_MIN || q > QUANTITY_MAX) {
+            return null; // invalid quantity
+        }
+        const size = typeof raw.size === 'string' ? raw.size.trim().substring(0, 10) : (raw.size ? String(raw.size).substring(0, 10) : '');
+        const color = typeof raw.color === 'string' ? raw.color.trim().substring(0, 50) : (raw.color ? String(raw.color).substring(0, 50) : '');
+        out.push({
+            productId,
+            quantity: q,
+            size: size || 'M',
+            color: color || '',
+            // Server-authoritative only (never from client)
+            price: product.unit_amount_cents / 100,
+            name: product.name,
+            imagePath: product.imagePath
+        });
+    }
+    return out.length ? out : null;
+}
+
 // Whitelist of allowed Stripe Price IDs (Chapter I) - from env, never accept arbitrary priceId
 function getAllowedPriceIds() {
     const ids = [
@@ -347,27 +414,41 @@ module.exports = async (req, res) => {
         }
     }
     
-    // ----- Cart flow -----
+    // ----- Cart flow (server-side pricing only; client cannot influence unit_amount) -----
     try {
-        // Basic validation (no storage required)
-        if (!cart || !Array.isArray(cart) || cart.length === 0) {
-            return res.status(400).json({ error: 'INVALID_CART', message: 'Cart is empty or invalid' });
+        // Rate limit checkout by IP
+        const rateLimitResult = await rateLimit.checkRateLimit(req, 'checkout');
+        if (!rateLimitResult.allowed) {
+            return res.status(429).json({
+                error: 'RATE_LIMITED',
+                message: rateLimitResult.error || 'Too many checkout attempts. Please try again later.'
+            });
         }
+
+        const rawCart = (req.body && req.body.cart) || cart;
+        const cartNormalized = normalizeAndValidateCart(rawCart);
+        if (!cartNormalized) {
+            return res.status(400).json({
+                error: 'INVALID_CART',
+                message: 'Cart is empty, contains invalid product IDs, or invalid quantity (allowed: 1–' + QUANTITY_MAX + ' per item).'
+            });
+        }
+
         if (!customerInfo || !customerInfo.email) {
             return res.status(400).json({ error: 'MISSING_CUSTOMER_INFO', message: 'Customer email is required' });
         }
 
-        // Test user: 0€ only if JWT present and email is guicampos2006@icloud.com (password already verified at login)
+        // Test user: 0€ only if JWT present and email matches allowlisted env (password already verified at login)
         const decoded = auth.verifyToken(req);
         const isTestUser = decoded && decoded.email && String(decoded.email).toLowerCase() === TEST_USER_EMAIL.toLowerCase();
-        
+
         // Optional: chapter mode + inventory (if storage works; otherwise skip and allow checkout)
         try {
             const db = require('../../lib/storage');
             await db.initDb();
             const chapterModeData = await db.getChapterMode();
             const cartChapters = new Set();
-            cart.forEach(item => {
+            cartNormalized.forEach(item => {
                 if (item.productId >= 1 && item.productId <= 5) cartChapters.add('chapter-1');
                 else if (item.productId >= 6 && item.productId <= 10) cartChapters.add('chapter-2');
             });
@@ -385,34 +466,34 @@ module.exports = async (req, res) => {
                 }
             }
             const inventoryMode = 'LIVE';
-            const inventoryErrors = await validateCartInventoryWithDb(cart, inventoryMode, db);
+            const inventoryErrors = await validateCartInventoryWithDb(cartNormalized, inventoryMode, db);
             if (inventoryErrors.length > 0) {
                 return res.status(400).json({ error: 'OUT_OF_STOCK', message: 'Some items are out of stock', details: inventoryErrors });
             }
         } catch (skipErr) {
             console.warn('create-session: skipping chapter/inventory check', skipErr && skipErr.message);
         }
-        
-        // Calculate totals and validate (avoid Stripe errors from bad data)
-        let subtotal = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (item.quantity || 0)), 0);
+
+        // Totals from server-side catalog only (client never influences these)
+        let subtotal = cartNormalized.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         if (!isTestUser && subtotal <= 0) {
             return res.status(400).json({ error: 'INVALID_CART', message: 'Cart total is invalid. Please refresh and try again.' });
         }
-        let shippingCost = isTestUser ? 0 : calculateShipping(cart, customerInfo.country);
+        let shippingCost = isTestUser ? 0 : calculateShipping(cartNormalized, customerInfo.country);
         if (isTestUser) subtotal = 0;
         const total = subtotal + shippingCost;
         const totalCents = Math.round(total * 100);
         const shippingCents = Math.round(shippingCost * 100);
         const baseUrl = process.env.SITE_URL || 'https://sandro-sandri.vercel.app';
-        
-        // Build line items safely (no undefined price or invalid image URL). Test user: 0€ per unit.
-        const lineItems = cart.map(item => {
-            const price = isTestUser ? 0 : Number(item.price);
-            const amount = (price > 0 ? price : 0) * 100;
+
+        // Build line_items from server catalog only. unit_amount is NEVER from client.
+        const lineItems = cartNormalized.map(item => {
+            const unitAmountCents = isTestUser ? 0 : (getServerProduct(item.productId).unit_amount_cents || 9500);
             let imageUrl = null;
-            if (item.image) {
+            const path = getServerProduct(item.productId).imagePath;
+            if (path) {
                 try {
-                    imageUrl = item.image.startsWith('http') ? item.image : new URL(item.image, baseUrl).href;
+                    imageUrl = path.startsWith('http') ? path : new URL(path, baseUrl).href;
                 } catch (_) { /* ignore */ }
             }
             return {
@@ -423,67 +504,69 @@ module.exports = async (req, res) => {
                         description: `${item.size || ''} / ${item.color || ''}`.trim().substring(0, 500),
                         images: imageUrl ? [imageUrl] : []
                     },
-                    unit_amount: isTestUser ? 0 : (Math.round(amount) || 100)
+                    unit_amount: unitAmountCents
                 },
-                quantity: Math.max(1, parseInt(item.quantity, 10) || 1)
+                quantity: item.quantity
             };
         });
-        
-        // Create Stripe Checkout Session
+
+        // Metadata cart uses server-side price + name (for webhook order/email); client price ignored
+        const metadataCart = cartNormalized.map(item => ({
+            productId: item.productId,
+            name: item.name,
+            size: item.size,
+            color: item.color,
+            quantity: item.quantity,
+            price: item.price
+        }));
+
         let session;
         try {
-        session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            mode: 'payment',
-            customer_email: customerInfo.email,
-            line_items: lineItems,
-            shipping_address_collection: {
-                allowed_countries: STRIPE_ALLOWED_SHIPPING_COUNTRIES
-            },
-            shipping_options: shippingCost > 0 ? [{
-                shipping_rate_data: {
-                    type: 'fixed_amount',
-                    fixed_amount: {
-                        amount: shippingCents,
-                        currency: 'eur'
-                    },
-                    display_name: 'Standard Shipping'
-                }
-            }] : [],
-            metadata: {
-                cart: JSON.stringify(cart.map(item => ({
-                    productId: item.productId,
-                    size: item.size,
-                    color: item.color,
-                    quantity: item.quantity,
-                    price: item.price
-                }))),
-                customerEmail: customerInfo.email,
-                customerName: customerInfo.firstName && customerInfo.lastName 
-                    ? `${customerInfo.firstName} ${customerInfo.lastName}` 
-                    : '',
-                shippingCountry: customerInfo.country || '',
-                phone: (customerInfo.phone || '').toString().trim().substring(0, 50),
-                address: (customerInfo.address || '').toString().trim().substring(0, 200),
-                city: (customerInfo.city || '').toString().trim().substring(0, 100),
-                postalCode: (customerInfo.postalCode || '').toString().trim().substring(0, 20),
-                ...(isTestUser ? { testUserZeroPrice: 'true' } : {})
-            },
-            success_url: `${baseUrl}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${baseUrl}/checkout.html?canceled=true`,
-            expires_at: Math.floor(Date.now() / 1000) + (30 * 60) // 30 minutes
-        });
+            session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                mode: 'payment',
+                customer_email: customerInfo.email,
+                line_items: lineItems,
+                shipping_address_collection: {
+                    allowed_countries: STRIPE_ALLOWED_SHIPPING_COUNTRIES
+                },
+                shipping_options: shippingCost > 0 ? [{
+                    shipping_rate_data: {
+                        type: 'fixed_amount',
+                        fixed_amount: {
+                            amount: shippingCents,
+                            currency: 'eur'
+                        },
+                        display_name: 'Standard Shipping'
+                    }
+                }] : [],
+                metadata: {
+                    cart: JSON.stringify(metadataCart),
+                    customerEmail: customerInfo.email,
+                    customerName: customerInfo.firstName && customerInfo.lastName
+                        ? `${customerInfo.firstName} ${customerInfo.lastName}`
+                        : '',
+                    shippingCountry: customerInfo.country || '',
+                    phone: (customerInfo.phone || '').toString().trim().substring(0, 50),
+                    address: (customerInfo.address || '').toString().trim().substring(0, 200),
+                    city: (customerInfo.city || '').toString().trim().substring(0, 100),
+                    postalCode: (customerInfo.postalCode || '').toString().trim().substring(0, 20),
+                    ...(isTestUser ? { testUserZeroPrice: 'true' } : {})
+                },
+                success_url: `${baseUrl}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${baseUrl}/checkout.html?canceled=true`,
+                expires_at: Math.floor(Date.now() / 1000) + (30 * 60)
+            });
         } catch (stripeErr) {
             console.error('create-session Stripe API error:', stripeErr && stripeErr.message, stripeErr && stripeErr.type);
             errorHandler.sendSecureError(res, stripeErr, 500, 'Failed to create checkout session. Please try again.', 'PAYMENT_FAILED');
             return;
         }
-        
+
         res.status(200).json({
             sessionId: session.id,
             url: session.url
         });
-        
     } catch (error) {
         console.error('create-session cart/Stripe error:', error && error.message);
         errorHandler.sendSecureError(res, error, 500, 'Failed to create checkout session. Please try again.', 'PAYMENT_FAILED');
