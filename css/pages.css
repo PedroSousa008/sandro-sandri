@@ -972,6 +972,35 @@
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 
+/* You May Also Like: smaller, cleaner Join the Waitlist / Add to Cart button (mobile-first) */
+.related-section .quick-add,
+.related-grid .quick-add {
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    padding: 0.4rem 0.75rem;
+    min-height: unset;
+    bottom: 1rem;
+    border-radius: 2px;
+    white-space: nowrap;
+}
+.related-section .product-card:hover .quick-add,
+.related-section .product-card:focus-within .quick-add,
+.related-grid .product-card:hover .quick-add,
+.related-grid .product-card:focus-within .quick-add {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+@media (max-width: 768px) {
+    .related-section .quick-add,
+    .related-grid .quick-add {
+        font-size: 0.55rem;
+        padding: 0.35rem 0.6rem;
+        bottom: 0.75rem;
+    }
+}
+
 /* ========================================
    Cart Page
    ======================================== */
