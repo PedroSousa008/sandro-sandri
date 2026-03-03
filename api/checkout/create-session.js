@@ -180,70 +180,62 @@ function calculateShipping(cart, countryCode) {
     return SHIPPING_FEES['DEFAULT'];
 }
 
-// Validate cart items against inventory (db passed in so handler can use optional storage)
-async function validateCartInventoryWithDb(cart, commerceMode = 'LIVE', db) {
+// Validate cart items against inventory. Uses chapter mode (early_access vs add_to_cart) to pick the right stock.
+async function validateCartInventoryWithDb(cart, db) {
     const errors = [];
-    
+    let chapterModeData = null;
+    try {
+        chapterModeData = await db.getChapterMode();
+    } catch (e) {
+        console.warn('validateCartInventory: getChapterMode failed', e && e.message);
+    }
+    const chapters = (chapterModeData && chapterModeData.chapters) || {};
+
     for (const item of cart) {
         const productId = item.productId;
         const size = item.size;
         const quantity = item.quantity;
-        
-        // Determine chapter ID from product ID
+
         let chapterId = null;
         if (productId >= 6 && productId <= 10) {
             chapterId = 'chapter-2';
         } else if (productId >= 1 && productId <= 5) {
             chapterId = 'chapter-1';
         }
-        
+
+        const chapterMode = (chapterId && chapters[chapterId] && chapters[chapterId].mode) || 'add_to_cart';
         let availableStock = 0;
-        
-        // Use new chapter-based inventory if chapter is known
-        if (chapterId) {
+
+        if (chapterId && db.getChapterModelStock) {
             try {
                 const inventory = await db.getChapterInventory(chapterId);
                 if (inventory && inventory.models && inventory.models[productId.toString()]) {
                     const model = inventory.models[productId.toString()];
-                    if (model.stock && model.stock[size.toUpperCase()] !== undefined) {
-                        availableStock = model.stock[size.toUpperCase()] || 0;
-                    }
+                    availableStock = db.getChapterModelStock(model, size, chapterMode);
                 }
             } catch (error) {
                 console.error(`Error fetching inventory for ${chapterId}:`, error);
             }
         }
-        
-        // Fallback: old inventory system when chapter inventory empty or missing
+
         if (availableStock === 0) {
             try {
                 const inventory = await db.getInventory();
                 const productInventory = inventory && inventory[productId];
                 if (productInventory) {
-                    if (commerceMode === 'EARLY_ACCESS') {
-                        if (productInventory.early_access_stock) {
-                            availableStock = productInventory.early_access_stock[size] || 0;
-                        } else if (productInventory[size] !== undefined) {
-                            availableStock = productInventory[size] || 0;
-                        }
-                    } else {
-                        if (productInventory.live_stock) {
-                            availableStock = productInventory.live_stock[size] || 0;
-                        } else if (productInventory[size] !== undefined) {
-                            availableStock = productInventory[size] || 0;
-                        }
-                    }
+                    availableStock = chapterMode === 'early_access'
+                        ? (productInventory.early_access_stock && productInventory.early_access_stock[size.toUpperCase()]) || 0
+                        : (productInventory.live_stock && productInventory.live_stock[size.toUpperCase()]) || 0;
                 }
             } catch (e) {
                 console.error('getInventory fallback error:', e && e.message);
             }
         }
-        
-        // If still no stock data (inventory not initialized on server), allow checkout so Stripe test works
+
         if (availableStock === 0 && quantity > 0) {
             availableStock = quantity;
         }
-        
+
         if (availableStock < quantity) {
             errors.push({
                 productId,
@@ -254,7 +246,7 @@ async function validateCartInventoryWithDb(cart, commerceMode = 'LIVE', db) {
             });
         }
     }
-    
+
     return errors;
 }
 
@@ -465,8 +457,7 @@ module.exports = async (req, res) => {
                     }
                 }
             }
-            const inventoryMode = 'LIVE';
-            const inventoryErrors = await validateCartInventoryWithDb(cartNormalized, inventoryMode, db);
+            const inventoryErrors = await validateCartInventoryWithDb(cartNormalized, db);
             if (inventoryErrors.length > 0) {
                 return res.status(400).json({ error: 'OUT_OF_STOCK', message: 'Some items are out of stock', details: inventoryErrors });
             }

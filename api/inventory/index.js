@@ -46,7 +46,27 @@ module.exports = async (req, res) => {
                 });
             }
 
-            // If modelId specified, return only that model's inventory
+            // Chapter mode determines which stock to expose (early_access: 4 XS, 7 S, 16 M, 16 L, 7 XL per model)
+            let chapterMode = 'add_to_cart';
+            try {
+                const chapterModeData = await db.getChapterMode();
+                if (chapterModeData && chapterModeData.chapters && chapterModeData.chapters[chapterId]) {
+                    chapterMode = chapterModeData.chapters[chapterId].mode || 'add_to_cart';
+                }
+            } catch (e) {
+                // ignore
+            }
+
+            const sizes = ['XS', 'S', 'M', 'L', 'XL'];
+            const getEffectiveStock = (model) => {
+                const stock = {};
+                sizes.forEach(s => {
+                    stock[s] = db.getChapterModelStock(model, s, chapterMode);
+                });
+                return stock;
+            };
+
+            // If modelId specified, return only that model's inventory (effective stock by chapter mode)
             if (modelId) {
                 const model = inventory.models[modelId.toString()];
                 if (!model) {
@@ -61,15 +81,29 @@ module.exports = async (req, res) => {
                         id: modelId,
                         name: model.name,
                         sku: model.sku,
-                        stock: model.stock
+                        stock: getEffectiveStock(model)
                     }
                 });
             }
 
-            // Return full chapter inventory
+            // Return full chapter inventory with effective stock per model
+            const inventoryForClient = {
+                initialized: inventory.initialized,
+                initializedAt: inventory.initializedAt,
+                models: {}
+            };
+            if (inventory.models) {
+                for (const [id, model] of Object.entries(inventory.models)) {
+                    inventoryForClient.models[id] = {
+                        name: model.name,
+                        sku: model.sku,
+                        stock: getEffectiveStock(model)
+                    };
+                }
+            }
             return res.status(200).json({
                 success: true,
-                inventory: inventory,
+                inventory: inventoryForClient,
                 chapterId: chapterId
             });
         }
