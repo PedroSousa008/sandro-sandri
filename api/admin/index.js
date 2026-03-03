@@ -38,7 +38,13 @@ module.exports = async (req, res) => {
 
         try {
             const { password } = req.body;
-            const OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
+            const ownerEmail = auth.OWNER_EMAIL;
+            if (!ownerEmail) {
+                return res.status(503).json({
+                    error: 'Owner auth not configured',
+                    message: 'Set OWNER_EMAIL in environment variables first.'
+                });
+            }
 
             if (!password) {
                 return res.status(400).json({ 
@@ -57,8 +63,8 @@ module.exports = async (req, res) => {
             const bcrypt = require('bcryptjs');
             const passwordHash = await bcrypt.hash(password, 10);
 
-            const ownerUser = userData[OWNER_EMAIL] || {
-                email: OWNER_EMAIL,
+            const ownerUser = userData[ownerEmail] || {
+                email: ownerEmail,
                 cart: [],
                 profile: null,
                 favorites: [],
@@ -69,13 +75,13 @@ module.exports = async (req, res) => {
             ownerUser.passwordHash = passwordHash;
             ownerUser.updatedAt = new Date().toISOString();
 
-            userData[OWNER_EMAIL] = ownerUser;
+            userData[ownerEmail] = ownerUser;
             await db.saveUserData(userData);
 
             res.status(200).json({
                 success: true,
                 message: 'Owner password set successfully. You can now login.',
-                email: OWNER_EMAIL
+                email: ownerEmail
             });
             return;
         } catch (error) {
@@ -118,12 +124,13 @@ module.exports = async (req, res) => {
                     return timeSinceActivity <= INACTIVE_THRESHOLD;
                 });
 
+                const ownerEmail = (auth.OWNER_EMAIL || '').toLowerCase();
                 const onlineUsers = activeSessions.filter(s => {
-                    return s.email !== 'sandrosandri.bysousa@gmail.com';
+                    return s.email !== ownerEmail;
                 }).length;
 
                 const checkoutUsers = activeSessions.filter(s => {
-                    return s.isCheckout === true && s.email !== 'sandrosandri.bysousa@gmail.com';
+                    return s.isCheckout === true && s.email !== ownerEmail;
                 }).length;
 
                 // Group checkout users by chapter
@@ -135,7 +142,7 @@ module.exports = async (req, res) => {
                 };
 
                 activeSessions.forEach(session => {
-                    if (session.isCheckout === true && session.email !== 'sandrosandri.bysousa@gmail.com') {
+                    if (session.isCheckout === true && session.email !== ownerEmail) {
                         const chapters = session.chapters || [];
                         if (chapters.length === 0) {
                             checkoutUsersByChapter.unknown++;
@@ -348,7 +355,7 @@ module.exports = async (req, res) => {
                         { id: 1, name: 'Isole Cayman', sku: 'SS-001' },
                         { id: 2, name: 'Isola di Necker', sku: 'SS-002' },
                         { id: 3, name: "Monroe's Kisses", sku: 'SS-003' },
-                        { id: 4, name: 'La Dolce Vita', sku: 'SS-004' },
+                        { id: 4, name: 'Sardinia', sku: 'SS-004' },
                         { id: 5, name: 'Port-Coton', sku: 'SS-005' }
                     ]
                 };

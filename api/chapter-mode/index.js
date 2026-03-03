@@ -228,7 +228,7 @@ function getModelsForChapter(chapterId) {
             { id: 1, name: 'Isole Cayman', sku: 'SS-001' },
             { id: 2, name: 'Isola di Necker', sku: 'SS-002' },
             { id: 3, name: "Monroe's Kisses", sku: 'SS-003' },
-            { id: 4, name: 'La Dolce Vita', sku: 'SS-004' },
+            { id: 4, name: 'Sardinia', sku: 'SS-004' },
             { id: 5, name: 'Port-Coton', sku: 'SS-005' }
         ]
     };
