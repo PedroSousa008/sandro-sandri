@@ -19,7 +19,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/tshirt-1a.png",
@@ -60,7 +60,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/tshirt-2a.png",
@@ -101,7 +101,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/tshirt-3a.png",
@@ -142,7 +142,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/tshirt-4a.png",
@@ -183,7 +183,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/tshirt-5a.png",
@@ -225,7 +225,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/maldives1.png",
@@ -263,7 +263,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/palma1.png",
@@ -303,7 +303,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/lago1.png",
@@ -343,7 +343,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/gisele1.png",
@@ -383,7 +383,7 @@ const PRODUCTS = [
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
         colors: [
-            { name: "Cream", code: "#f5f4f0" }
+            { name: "White", code: "#f5f4f0" }
         ],
         images: [
             "images/pourville1.png",
