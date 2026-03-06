@@ -563,6 +563,12 @@
     margin: 0 auto;
 }
 
+@media (min-width: 769px) {
+    .size-guide-diagram {
+        max-width: 440px;
+    }
+}
+
 @media (max-width: 480px) {
     .size-guide-diagram {
         max-width: 260px;
