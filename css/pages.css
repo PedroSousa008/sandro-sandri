@@ -550,6 +550,25 @@
     margin: 0 auto;
 }
 
+.size-guide-diagram {
+    margin: 0 auto var(--space-lg);
+    text-align: center;
+    max-width: 320px;
+}
+
+.size-guide-diagram img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .size-guide-diagram {
+        max-width: 260px;
+    }
+}
+
 .size-guide-intro {
     text-align: center;
     margin-bottom: var(--space-xl);
