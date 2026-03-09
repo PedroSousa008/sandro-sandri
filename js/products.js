@@ -229,7 +229,9 @@ const PRODUCTS = [
         ],
         images: [
             "images/maldives1.png",
-            "images/maldives2.png"
+            "images/maldives2.png",
+            "images/maldives3.png",
+            "images/maldives4.png"
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
