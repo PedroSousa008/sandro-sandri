@@ -391,6 +391,50 @@
     align-items: center;
     justify-content: center;
     overflow: visible;
+    position: relative;
+}
+
+/* Zoom lens (hover to zoom like big brands) */
+.product-image-zoom-wrap {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-zoom-lens {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    pointer-events: none;
+    display: none;
+    z-index: 10;
+}
+
+.product-zoom-lens.is-visible {
+    display: block;
+}
+
+.product-zoom-lens .product-zoom-inner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 200%;
+    height: 200%;
+    background-repeat: no-repeat;
+    background-size: 200% 200%;
+}
+
+/* Hide zoom lens on touch devices (use tap/click overlay instead) */
+@media (hover: none) and (pointer: coarse) {
+    .product-zoom-lens {
+        display: none !important;
+    }
 }
 
 .product-main-image img {

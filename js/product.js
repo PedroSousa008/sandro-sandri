@@ -117,8 +117,18 @@ function populateProduct(product) {
     const mainImageContainer = document.getElementById('product-image');
     if (mainImageContainer && product.images && product.images.length > 0) {
         console.log(`Product Page - Loading images for ${product.name} (ID: ${product.id}):`, product.images);
-        // Clear any existing images first
+        // Clear any existing content (zoom wrap + images)
         mainImageContainer.innerHTML = '';
+        // Zoom wrap for hover-to-zoom (desktop)
+        const zoomWrap = document.createElement('div');
+        zoomWrap.className = 'product-image-zoom-wrap';
+        const zoomLens = document.createElement('div');
+        zoomLens.className = 'product-zoom-lens';
+        zoomLens.setAttribute('aria-hidden', 'true');
+        const zoomInner = document.createElement('div');
+        zoomInner.className = 'product-zoom-inner';
+        zoomLens.appendChild(zoomInner);
+        zoomWrap.appendChild(zoomLens);
         // Preload all images for instant switching
         product.images.forEach((imgSrc, index) => {
             const img = new Image();
@@ -137,8 +147,11 @@ function populateProduct(product) {
             img.onload = function() {
                 console.log(`Successfully loaded image ${index + 1} for ${product.name}:`, imageUrl);
             };
-            mainImageContainer.appendChild(img);
+            zoomWrap.appendChild(img);
         });
+        mainImageContainer.appendChild(zoomWrap);
+        // Hover-to-zoom (desktop): show lens and move with mouse
+        initProductImageZoom(zoomWrap, zoomLens, zoomInner, product);
     } else {
         console.error(`Product Page - No images found for ${product.name} (ID: ${product.id})`);
     }
@@ -1063,6 +1076,53 @@ function switchToImage(imageIndex, product) {
         window.currentProductImageIndex = {};
     }
     window.currentProductImageIndex[product.id] = imageIndex;
+
+    // Keep zoom lens in sync with current image
+    const zoomWrap = mainImageContainer && mainImageContainer.querySelector('.product-image-zoom-wrap');
+    const zoomInner = zoomWrap && zoomWrap.querySelector('.product-zoom-inner');
+    const imgs = zoomWrap && zoomWrap.querySelectorAll('img');
+    const currentImg = imgs && imgs[imageIndex];
+    if (zoomInner && currentImg && currentImg.src) {
+        zoomInner.style.backgroundImage = `url(${currentImg.src})`;
+    }
+}
+
+// Hover-to-zoom on product main image (desktop)
+function initProductImageZoom(zoomWrap, zoomLens, zoomInner, product) {
+    if (!zoomWrap || !zoomLens || !zoomInner) return;
+    const LENS_SIZE = 180;
+    const visibleImg = () => zoomWrap.querySelector('img[style*="display: block"]') || zoomWrap.querySelector('img');
+    const updateZoomImage = () => {
+        const img = visibleImg();
+        if (img && img.src) zoomInner.style.backgroundImage = `url(${img.src})`;
+    };
+    updateZoomImage();
+    zoomWrap.addEventListener('mouseenter', (e) => {
+        if (window.matchMedia('(hover: none)').matches) return;
+        zoomLens.classList.add('is-visible');
+    });
+    zoomWrap.addEventListener('mouseleave', () => {
+        zoomLens.classList.remove('is-visible');
+    });
+    zoomWrap.addEventListener('mousemove', (e) => {
+        if (window.matchMedia('(hover: none)').matches) return;
+        const rect = zoomWrap.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+            zoomLens.classList.remove('is-visible');
+            return;
+        }
+        zoomLens.classList.add('is-visible');
+        const px = -2 * x + LENS_SIZE / 2;
+        const py = -2 * y + LENS_SIZE / 2;
+        zoomInner.style.backgroundPosition = `${px}px ${py}px`;
+        const lensX = Math.max(0, Math.min(rect.width - LENS_SIZE, x - LENS_SIZE / 2));
+        const lensY = Math.max(0, Math.min(rect.height - LENS_SIZE, y - LENS_SIZE / 2));
+        zoomLens.style.left = `${lensX}px`;
+        zoomLens.style.top = `${lensY}px`;
+    });
+    // When thumbnails switch image, zoom uses the new visible img (handled in switchToImage)
 }
 
 // Initialize swipe navigation - OPTIMIZED for instant response (mobile + desktop)
