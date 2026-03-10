@@ -369,15 +369,71 @@
         width: 100% !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
+        padding: 0 !important;
     }
-    
+
+    /* Mobile: one image at a time, full width, no thumbnails */
+    .product-gallery .product-thumbnails {
+        display: none !important;
+    }
+
+    .product-gallery .product-main-image {
+        margin-bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+        padding: 0 var(--space-sm);
+        box-sizing: border-box;
+    }
+
+    .product-gallery .product-image-zoom-wrap {
+        width: 100%;
+        overflow: hidden;
+        touch-action: pan-y pinch-zoom;
+    }
+
+    .product-gallery .product-main-image img {
+        max-height: none;
+        width: 100%;
+        display: block;
+    }
+
+    /* Mobile pagination dots (hidden on desktop, shown here) */
+    .product-gallery-dots {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: var(--space-md);
+        padding: 0 var(--space-sm);
+    }
+
+    .product-gallery-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: none;
+        padding: 0;
+        background: var(--color-gray);
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .product-gallery-dot.active {
+        background: var(--color-navy);
+    }
+
+    .product-gallery-dot:hover {
+        background: var(--color-text-light);
+    }
+
     /* Product details follow naturally after gallery */
     .product-details {
         margin-top: 0 !important;
         padding-top: 0 !important;
         width: 100% !important;
     }
-    
+
     /* Container should allow natural flow */
     .product-section .container {
         overflow: visible !important;
@@ -449,6 +505,11 @@
     height: auto;
     max-height: 600px;
     object-fit: contain;
+}
+
+/* Pagination dots: visible only on mobile (see @media below) */
+.product-gallery-dots {
+    display: none;
 }
 
 .product-thumbnails {

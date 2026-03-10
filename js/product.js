@@ -150,6 +150,20 @@ function populateProduct(product) {
             zoomWrap.appendChild(img);
         });
         mainImageContainer.appendChild(zoomWrap);
+        // Mobile: pagination dots (one image at a time, dots under image)
+        const galleryDots = document.createElement('div');
+        galleryDots.className = 'product-gallery-dots';
+        galleryDots.setAttribute('aria-label', 'Image gallery pagination');
+        product.images.forEach((_, index) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = `product-gallery-dot${index === 0 ? ' active' : ''}`;
+            dot.setAttribute('aria-label', `View image ${index + 1} of ${product.images.length}`);
+            dot.dataset.index = String(index);
+            dot.addEventListener('click', () => switchToImage(index, product));
+            galleryDots.appendChild(dot);
+        });
+        mainImageContainer.appendChild(galleryDots);
         // Hover-to-zoom (desktop): show lens and move with mouse
         initProductImageZoom(zoomWrap, zoomLens, zoomInner, product);
     } else {
@@ -1069,6 +1083,13 @@ function switchToImage(imageIndex, product) {
                 }
             });
         }
+        // Update mobile pagination dots
+        const galleryDots = mainImageContainer && mainImageContainer.querySelector('.product-gallery-dots');
+        if (galleryDots) {
+            galleryDots.querySelectorAll('.product-gallery-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === imageIndex);
+            });
+        }
     });
     
     // Update current image index
@@ -1199,17 +1220,18 @@ function initSwipeNavigation(product) {
     
     // Touch start - OPTIMIZED for instant response
     gallery.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
+        if (!e.touches.length) return;
+        touchStartX = e.touches[0].screenX;
+        touchStartY = e.touches[0].screenY;
         isSwiping = true;
     }, { passive: true });
     
     // Touch move - prevent default scrolling while swiping horizontally
     gallery.addEventListener('touchmove', (e) => {
-        if (!isSwiping) return;
+        if (!isSwiping || !e.touches.length) return;
         
-        const currentX = e.changedTouches[0].screenX;
-        const currentY = e.changedTouches[0].screenY;
+        const currentX = e.touches[0].screenX;
+        const currentY = e.touches[0].screenY;
         const deltaX = Math.abs(currentX - touchStartX);
         const deltaY = Math.abs(currentY - touchStartY);
         
