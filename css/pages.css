@@ -384,12 +384,16 @@
         overflow: hidden;
         padding: 0 var(--space-sm);
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .product-gallery .product-image-zoom-wrap {
         width: 100%;
         overflow: hidden;
         touch-action: pan-y pinch-zoom;
+        order: 1;
     }
 
     .product-gallery .product-main-image img {
@@ -398,19 +402,21 @@
         display: block;
     }
 
-    /* Mobile pagination dots (hidden on desktop, shown here) */
+    /* Mobile pagination dots: under the image, much smaller */
     .product-gallery-dots {
         display: flex !important;
         justify-content: center;
         align-items: center;
-        gap: 8px;
-        margin-top: var(--space-md);
+        gap: 4px;
+        margin-top: var(--space-sm);
         padding: 0 var(--space-sm);
+        width: 100%;
+        order: 2;
     }
 
     .product-gallery-dot {
-        width: 8px;
-        height: 8px;
+        width: 4px;
+        height: 4px;
         border-radius: 50%;
         border: none;
         padding: 0;
@@ -427,12 +433,20 @@
         background: var(--color-text-light);
     }
 
-    /* Product details follow naturally after gallery */
+    /* Product details: on mobile put description below the button (form) */
     .product-details {
         margin-top: 0 !important;
         padding-top: 0 !important;
         width: 100% !important;
+        display: flex;
+        flex-direction: column;
     }
+
+    .product-details .product-title { order: 0; }
+    .product-details .product-price-large { order: 0; }
+    .product-details .add-to-cart-form { order: 1; }
+    .product-details .product-description { order: 2; }
+    .product-details .product-accordions { order: 3; }
 
     /* Container should allow natural flow */
     .product-section .container {
