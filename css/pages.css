@@ -326,6 +326,11 @@
 
 /* Mobile-specific: Remove sticky/fixed positioning - let images scroll naturally */
 @media (max-width: 768px) {
+    /* Breadcrumb only on desktop */
+    .breadcrumb {
+        display: none !important;
+    }
+
     .product-gallery {
         position: relative !important;
         top: auto !important;
