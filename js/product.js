@@ -372,15 +372,12 @@ function initSizeSelection(product) {
     
     const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
     
-    // When sizes are pre-rendered in HTML, attach behaviour; no size selected until customer chooses
+    // When sizes are pre-rendered in HTML, just attach behaviour so they show instantly
     function attachPreRenderedSizeHandlers() {
+        const currentSize = (sizeInput && sizeInput.value) || product.sizes[0] || 'M';
         sizeOptions.querySelectorAll('.size-btn').forEach(function(btn) {
             const size = btn.dataset.size;
             if (!size) return;
-            btn.classList.remove('active');
-            btn.style.background = '#ffffff';
-            btn.style.color = '#1a1a2e';
-            btn.style.borderColor = '#e5e5e5';
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -389,8 +386,7 @@ function initSizeSelection(product) {
                 return false;
             }, false);
         });
-        if (sizeInput) sizeInput.value = '';
-        if (window.updateAddToCartButton) window.updateAddToCartButton(product.id, '');
+        selectSize(currentSize);
     }
     
     // Render size buttons when not in HTML (fallback)
@@ -412,6 +408,7 @@ function initSizeSelection(product) {
                 btn.textContent = `${size} - Sold Out`;
                 btn.disabled = true;
             }
+            if (index === 0 && inStock) btn.classList.add('active');
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -422,8 +419,13 @@ function initSizeSelection(product) {
             fragment.appendChild(btn);
         }
         sizeOptions.appendChild(fragment);
-        if (sizeInput) sizeInput.value = '';
-        if (window.updateAddToCartButton) window.updateAddToCartButton(product.id, '');
+        const firstAvailableSize = product.sizes.find((s, i) => (product.inventory?.[s] ?? defaultStock[s] ?? 0) > 0);
+        if (firstAvailableSize && sizeInput) {
+            sizeInput.value = firstAvailableSize;
+            selectSize(firstAvailableSize);
+        } else if (sizeInput && product.sizes.length > 0) {
+            sizeInput.value = product.sizes[0];
+        }
     }
     
     // Load inventory and update size buttons (sold out, etc.) in background
@@ -454,7 +456,11 @@ function initSizeSelection(product) {
                 btn.style.opacity = inStock ? '' : '0.5';
                 btn.style.cursor = inStock ? '' : 'not-allowed';
             });
-            // Do not auto-select a size; leave selection to the customer
+            const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
+            if (firstAvailableSize && sizeInput) {
+                sizeInput.value = firstAvailableSize;
+                selectSize(firstAvailableSize);
+            }
         } else {
             sizeOptions.innerHTML = '';
             const fragment = document.createDocumentFragment();
@@ -474,6 +480,7 @@ function initSizeSelection(product) {
                     btn.textContent = `${size} - Sold Out`;
                     btn.disabled = true;
                 }
+                if (index === 0 && inStock) btn.classList.add('active');
                 btn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -484,8 +491,13 @@ function initSizeSelection(product) {
                 fragment.appendChild(btn);
             }
             sizeOptions.appendChild(fragment);
-            if (sizeInput) sizeInput.value = '';
-            if (window.updateAddToCartButton) window.updateAddToCartButton(product.id, '');
+            const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
+            if (firstAvailableSize && sizeInput) {
+                sizeInput.value = firstAvailableSize;
+                selectSize(firstAvailableSize);
+            } else if (sizeInput && product.sizes.length > 0) {
+                sizeInput.value = product.sizes[0];
+            }
         }
     }
     
@@ -515,29 +527,24 @@ function initSizeSelection(product) {
             // Also check if size is selected
             const sizeSelected = size && size.trim() !== '';
             
-            if (inStock && sizeSelected) {
-                // CRITICAL: Check the mode for THIS product's chapter, not the active chapter
-                // ALL products (including Chapter I) should respect the chapter mode set in Owner Mode
-                // Get product's chapter ID
+            // Get label from chapter mode (never show "Select a Size" - only Join the Waitlist / Add to Cart / Early Access)
+            const getButtonLabelForMode = () => {
                 const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
                                       product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-                
-                // Check if this chapter is created and get its mode
                 if (productChapter && window.ChapterMode && window.ChapterMode.isInitialized) {
                     const isCreated = window.ChapterMode.isChapterCreated(productChapter);
                     const chapterMode = window.ChapterMode.getChapterMode(productChapter);
-                    
-                    if (isCreated && chapterMode === 'waitlist') {
-                        addToCartBtn.textContent = 'Join the Waitlist';
-                        addToCartBtn.classList.add('waitlist-btn');
-                    } else {
-                        // 'add_to_cart' or 'early_access' - both show "Add to Cart"
-                        addToCartBtn.textContent = 'Add to Cart';
-                        addToCartBtn.classList.remove('waitlist-btn');
-                    }
+                    if (isCreated && chapterMode === 'waitlist') return 'Join the Waitlist';
+                    if (isCreated && chapterMode === 'early_access') return 'Early Access';
+                }
+                return 'Add to Cart';
+            };
+
+            if (inStock && sizeSelected) {
+                addToCartBtn.textContent = getButtonLabelForMode();
+                if (addToCartBtn.textContent === 'Join the Waitlist') {
+                    addToCartBtn.classList.add('waitlist-btn');
                 } else {
-                    // Default to Add to Cart if chapter mode not available
-                    addToCartBtn.textContent = 'Add to Cart';
                     addToCartBtn.classList.remove('waitlist-btn');
                 }
                 addToCartBtn.disabled = false;
@@ -546,7 +553,12 @@ function initSizeSelection(product) {
                 addToCartBtn.style.cursor = 'pointer';
                 addToCartBtn.style.opacity = '1';
             } else if (!sizeSelected) {
-                addToCartBtn.textContent = 'Select a Size';
+                addToCartBtn.textContent = getButtonLabelForMode();
+                if (addToCartBtn.textContent === 'Join the Waitlist') {
+                    addToCartBtn.classList.add('waitlist-btn');
+                } else {
+                    addToCartBtn.classList.remove('waitlist-btn');
+                }
                 addToCartBtn.disabled = true;
                 addToCartBtn.style.background = '#8a8a8a';
                 addToCartBtn.style.color = '#ffffff';
@@ -561,11 +573,6 @@ function initSizeSelection(product) {
                 addToCartBtn.style.opacity = '1';
             }
         };
-    }
-    
-    // Set initial Add to Cart state (no size selected → "Select a Size")
-    if (window.updateAddToCartButton) {
-        window.updateAddToCartButton(product.id, sizeInput ? sizeInput.value : '');
     }
     
     console.log('Size selection initialized. Total buttons:', sizeOptions.querySelectorAll('.size-btn').length);
@@ -754,12 +761,14 @@ function updateProductButtonForMode(product) {
     // Get the mode for THIS product's chapter (from the table)
     const chapterMode = window.ChapterMode.getChapterMode(productChapter);
     
-    // Apply mode based on the chapter's mode from the table
+    // Only 3 button labels: Join the Waitlist, Early Access, Add to Cart
     if (chapterMode === 'waitlist') {
         submitBtn.textContent = 'Join the Waitlist';
         submitBtn.classList.add('waitlist-btn');
+    } else if (chapterMode === 'early_access') {
+        submitBtn.textContent = 'Early Access';
+        submitBtn.classList.remove('waitlist-btn');
     } else {
-        // 'add_to_cart' or 'early_access' - both show "Add to Cart"
         submitBtn.textContent = 'Add to Cart';
         submitBtn.classList.remove('waitlist-btn');
     }
