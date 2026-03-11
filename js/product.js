@@ -2,6 +2,31 @@
    Sandro Sandri - Product Page
    ======================================== */
 
+/**
+ * Mobile detail zoom: source image filename -> detail image filename (in images/).
+ * Only 1st and 2nd product images (index 0, 1) show magnify icon when mapped.
+ * Add Chapter II, III etc. by adding more entries here.
+ */
+const DETAIL_IMAGE_MAP = {
+    'tshirt-1a.png': 'cayman-front.png',
+    'tshirt-1b.png': 'cayman-back.png',
+    'tshirt-2a.png': 'necker-front.png',
+    'tshirt-2b.png': 'necker-back.png',
+    'tshirt-3a.png': 'kisses-front.png',
+    'tshirt-3b.png': 'kisses-back.png',
+    'tshirt-4a.png': 'sardinia-front.png',
+    'tshirt-4b.png': 'sardinia-back.png',
+    'tshirt-5a.png': 'port-front.png',
+    'tshirt-5b.png': 'port-back.png'
+};
+
+function getDetailImageUrl(productImagePath) {
+    if (!productImagePath) return null;
+    const filename = productImagePath.split('/').pop().split('?')[0];
+    const detailFile = DETAIL_IMAGE_MAP[filename];
+    return detailFile ? `images/${detailFile}` : null;
+}
+
 // Wait for both DOM and ProductsAPI to be ready
 function waitForProductsAPI() {
     if (window.ProductsAPI) {
@@ -164,8 +189,39 @@ function populateProduct(product) {
             galleryDots.appendChild(dot);
         });
         mainImageContainer.appendChild(galleryDots);
+        // Mobile only: magnify overlay on 1st/2nd image when detail image exists
+        const detailOverlay = document.createElement('button');
+        detailOverlay.type = 'button';
+        detailOverlay.className = 'product-detail-zoom-overlay';
+        detailOverlay.setAttribute('aria-label', 'View detail');
+        detailOverlay.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>`;
+        detailOverlay.style.display = 'none';
+        zoomWrap.appendChild(detailOverlay);
+        window._productDetailOverlay = detailOverlay;
+        window._productDetailOverlayProduct = product;
+        // Detail lightbox modal (one per page, reused)
+        if (!document.getElementById('product-detail-lightbox')) {
+            const lb = document.createElement('div');
+            lb.id = 'product-detail-lightbox';
+            lb.className = 'product-detail-lightbox';
+            lb.innerHTML = `
+                <button type="button" class="product-detail-lightbox-close" aria-label="Close">&times;</button>
+                <div class="product-detail-lightbox-content"><img src="" alt="Detail" /></div>
+            `;
+            document.body.appendChild(lb);
+            lb.querySelector('.product-detail-lightbox-close').addEventListener('click', closeDetailLightbox);
+            lb.addEventListener('click', (e) => { if (e.target === lb) closeDetailLightbox(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDetailLightbox(); });
+        }
+        detailOverlay.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = detailOverlay.dataset.detailUrl;
+            if (url) openDetailLightbox(url);
+        });
         // Hover-to-zoom (desktop): show lens and move with mouse
         initProductImageZoom(zoomWrap, zoomLens, zoomInner, product);
+        updateMobileDetailOverlay(product);
     } else {
         console.error(`Product Page - No images found for ${product.name} (ID: ${product.id})`);
     }
@@ -1106,6 +1162,41 @@ function switchToImage(imageIndex, product) {
     if (zoomInner && currentImg && currentImg.src) {
         zoomInner.style.backgroundImage = `url(${currentImg.src})`;
     }
+    updateMobileDetailOverlay(product);
+}
+
+function updateMobileDetailOverlay(product) {
+    const overlay = window._productDetailOverlay;
+    if (!overlay || !product || !product.images) return;
+    const index = window.currentProductImageIndex && window.currentProductImageIndex[product.id];
+    if (index !== 0 && index !== 1) {
+        overlay.style.display = 'none';
+        return;
+    }
+    const imagePath = product.images[index];
+    const detailUrl = getDetailImageUrl(imagePath);
+    if (!detailUrl) {
+        overlay.style.display = 'none';
+        return;
+    }
+    overlay.dataset.detailUrl = detailUrl;
+    overlay.style.display = 'flex';
+}
+
+function openDetailLightbox(url) {
+    const lb = document.getElementById('product-detail-lightbox');
+    if (!lb) return;
+    const img = lb.querySelector('img');
+    if (img) img.src = url;
+    lb.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDetailLightbox() {
+    const lb = document.getElementById('product-detail-lightbox');
+    if (!lb) return;
+    lb.classList.remove('is-open');
+    document.body.style.overflow = '';
 }
 
 // Hover-to-zoom on product main image (desktop)

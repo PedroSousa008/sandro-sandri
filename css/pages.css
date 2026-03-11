@@ -438,6 +438,36 @@
         background: var(--color-text-light);
     }
 
+    /* Mobile: magnify icon overlay (1st/2nd image only when detail exists) */
+    .product-detail-zoom-overlay {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--color-navy);
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        transition: opacity 0.2s ease, background 0.2s ease;
+        z-index: 5;
+    }
+
+    .product-detail-zoom-overlay:hover {
+        opacity: 0.9;
+        background: rgba(255, 255, 255, 1);
+    }
+
+    .product-detail-zoom-overlay svg {
+        width: 18px;
+        height: 18px;
+    }
+
     /* Product details: on mobile put description below the button (form) */
     .product-details {
         margin-top: 0 !important;
@@ -529,6 +559,71 @@
 /* Pagination dots: visible only on mobile (see @media below) */
 .product-gallery-dots {
     display: none;
+}
+
+/* Magnify overlay: hidden by default; JS shows on mobile when detail exists. Desktop: always hidden */
+@media (min-width: 769px) {
+    .product-detail-zoom-overlay {
+        display: none !important;
+    }
+}
+
+/* Detail lightbox (mobile tap-to-zoom) */
+.product-detail-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.9);
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px 16px;
+    box-sizing: border-box;
+}
+
+.product-detail-lightbox.is-open {
+    display: flex;
+}
+
+.product-detail-lightbox-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    z-index: 10001;
+    transition: background 0.2s ease;
+}
+
+.product-detail-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.product-detail-lightbox-content {
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-detail-lightbox-content img {
+    max-width: 100%;
+    max-height: calc(100vh - 80px);
+    width: auto;
+    height: auto;
+    object-fit: contain;
 }
 
 .product-thumbnails {
