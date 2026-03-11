@@ -1168,7 +1168,10 @@ function switchToImage(imageIndex, product) {
 function updateMobileDetailOverlay(product) {
     const overlay = window._productDetailOverlay;
     if (!overlay || !product || !product.images) return;
-    const index = window.currentProductImageIndex && window.currentProductImageIndex[product.id];
+    let index = window.currentProductImageIndex && window.currentProductImageIndex[product.id];
+    if (typeof index !== 'number' || isNaN(index)) {
+        index = 0; // default to first image on initial load
+    }
     if (index !== 0 && index !== 1) {
         overlay.style.display = 'none';
         return;
