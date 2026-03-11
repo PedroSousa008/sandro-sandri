@@ -456,10 +456,18 @@ function initSizeSelection(product) {
                 btn.style.opacity = inStock ? '' : '0.5';
                 btn.style.cursor = inStock ? '' : 'not-allowed';
             });
+            // Preserve current size if still in stock; only reset to first available if current is out of stock or unset
+            const currentSize = sizeInput && sizeInput.value ? sizeInput.value.trim() : '';
+            const currentIndex = currentSize ? product.sizes.indexOf(currentSize) : -1;
+            const currentInStock = currentIndex >= 0 && (stockCounts[currentIndex] || 0) > 0;
             const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
-            if (firstAvailableSize && sizeInput) {
-                sizeInput.value = firstAvailableSize;
-                selectSize(firstAvailableSize);
+            if (sizeInput) {
+                if (currentInStock) {
+                    selectSize(currentSize);
+                } else if (firstAvailableSize) {
+                    sizeInput.value = firstAvailableSize;
+                    selectSize(firstAvailableSize);
+                }
             }
         } else {
             sizeOptions.innerHTML = '';
