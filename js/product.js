@@ -372,12 +372,15 @@ function initSizeSelection(product) {
     
     const defaultStock = { XS: 10, S: 20, M: 50, L: 50, XL: 20 };
     
-    // When sizes are pre-rendered in HTML, just attach behaviour so they show instantly
+    // When sizes are pre-rendered in HTML, attach behaviour; no size selected until customer chooses
     function attachPreRenderedSizeHandlers() {
-        const currentSize = (sizeInput && sizeInput.value) || product.sizes[0] || 'M';
         sizeOptions.querySelectorAll('.size-btn').forEach(function(btn) {
             const size = btn.dataset.size;
             if (!size) return;
+            btn.classList.remove('active');
+            btn.style.background = '#ffffff';
+            btn.style.color = '#1a1a2e';
+            btn.style.borderColor = '#e5e5e5';
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -386,7 +389,8 @@ function initSizeSelection(product) {
                 return false;
             }, false);
         });
-        selectSize(currentSize);
+        if (sizeInput) sizeInput.value = '';
+        if (window.updateAddToCartButton) window.updateAddToCartButton(product.id, '');
     }
     
     // Render size buttons when not in HTML (fallback)
@@ -408,7 +412,6 @@ function initSizeSelection(product) {
                 btn.textContent = `${size} - Sold Out`;
                 btn.disabled = true;
             }
-            if (index === 0 && inStock) btn.classList.add('active');
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -419,13 +422,8 @@ function initSizeSelection(product) {
             fragment.appendChild(btn);
         }
         sizeOptions.appendChild(fragment);
-        const firstAvailableSize = product.sizes.find((s, i) => (product.inventory?.[s] ?? defaultStock[s] ?? 0) > 0);
-        if (firstAvailableSize && sizeInput) {
-            sizeInput.value = firstAvailableSize;
-            selectSize(firstAvailableSize);
-        } else if (sizeInput && product.sizes.length > 0) {
-            sizeInput.value = product.sizes[0];
-        }
+        if (sizeInput) sizeInput.value = '';
+        if (window.updateAddToCartButton) window.updateAddToCartButton(product.id, '');
     }
     
     // Load inventory and update size buttons (sold out, etc.) in background
@@ -456,11 +454,7 @@ function initSizeSelection(product) {
                 btn.style.opacity = inStock ? '' : '0.5';
                 btn.style.cursor = inStock ? '' : 'not-allowed';
             });
-            const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
-            if (firstAvailableSize && sizeInput) {
-                sizeInput.value = firstAvailableSize;
-                selectSize(firstAvailableSize);
-            }
+            // Do not auto-select a size; leave selection to the customer
         } else {
             sizeOptions.innerHTML = '';
             const fragment = document.createDocumentFragment();
@@ -480,7 +474,6 @@ function initSizeSelection(product) {
                     btn.textContent = `${size} - Sold Out`;
                     btn.disabled = true;
                 }
-                if (index === 0 && inStock) btn.classList.add('active');
                 btn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -491,13 +484,8 @@ function initSizeSelection(product) {
                 fragment.appendChild(btn);
             }
             sizeOptions.appendChild(fragment);
-            const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
-            if (firstAvailableSize && sizeInput) {
-                sizeInput.value = firstAvailableSize;
-                selectSize(firstAvailableSize);
-            } else if (sizeInput && product.sizes.length > 0) {
-                sizeInput.value = product.sizes[0];
-            }
+            if (sizeInput) sizeInput.value = '';
+            if (window.updateAddToCartButton) window.updateAddToCartButton(product.id, '');
         }
     }
     
@@ -573,6 +561,11 @@ function initSizeSelection(product) {
                 addToCartBtn.style.opacity = '1';
             }
         };
+    }
+    
+    // Set initial Add to Cart state (no size selected → "Select a Size")
+    if (window.updateAddToCartButton) {
+        window.updateAddToCartButton(product.id, sizeInput ? sizeInput.value : '');
     }
     
     console.log('Size selection initialized. Total buttons:', sizeOptions.querySelectorAll('.size-btn').length);
