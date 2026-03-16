@@ -158,7 +158,7 @@ function populateProduct(product) {
         product.images.forEach((imgSrc, index) => {
             const img = new Image();
             // Add cache busting to ensure latest images are loaded
-            const imageUrl = imgSrc.includes('?') ? `${imgSrc}&v=3.2` : `${imgSrc}?v=3.2`;
+            const imageUrl = imgSrc.includes('?') ? `${imgSrc}&v=3.3` : `${imgSrc}?v=3.3`;
             img.src = imageUrl;
             img.alt = `${product.name} view ${index + 1}`;
             img.style.display = index === 0 ? 'block' : 'none';
@@ -231,7 +231,7 @@ function populateProduct(product) {
     if (thumbnailsContainer && product.images && product.images.length > 0) {
         thumbnailsContainer.innerHTML = product.images.map((img, index) => {
             // Add cache busting to thumbnails
-            const imageUrl = img.includes('?') ? `${img}&v=3.2` : `${img}?v=3.2`;
+            const imageUrl = img.includes('?') ? `${img}&v=3.3` : `${img}?v=3.3`;
             return `
             <button class="thumbnail ${index === 0 ? 'active' : ''}" data-image="${imageUrl}" data-index="${index}">
                 <img src="${imageUrl}" alt="${product.name} view ${index + 1}" onerror="console.error('Failed to load thumbnail ${index + 1}:', '${imageUrl}');">
