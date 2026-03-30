@@ -61,51 +61,56 @@
     <script src="js/activity-tracker.js"></script>
     <script src="js/activity-monitor.js"></script>
     <script>
-        // Get session ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('session_id');
-        
-        if (sessionId) {
-            console.log('Order session ID:', sessionId);
-            // Ensure order + inventory are written even if Stripe webhook was delayed or failed
-            fetch('/api/checkout/fulfill-session?session_id=' + encodeURIComponent(sessionId), {
-                method: 'GET',
-                credentials: 'same-origin'
-            })
-                .then(function (r) { return r.json().catch(function () { return null; }); })
-                .then(function (data) {
-                    if (data && data.fulfilled) {
-                        console.log('Order confirmed on server:', data.orderNumber || data.orderId);
-                    }
-                })
-                .catch(function (err) {
-                    console.warn('Server order confirmation:', err && err.message);
-                });
+        (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            if (!sessionId) return;
 
-            // Track order completion
-            if (window.ActivityTracker) {
-                // Try to get order details from localStorage or fetch from server
-                const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
-                const latestOrder = orders.length > 0 ? orders[orders.length - 1] : null;
-                
-                if (latestOrder) {
-                    window.ActivityTracker.trackOrderComplete(
-                        latestOrder.id || sessionId,
-                        latestOrder.orderNumber || latestOrder.id || sessionId,
-                        latestOrder.total || 0
-                    );
+            const origin = window.location.origin;
+
+            async function confirmOrderOnServer() {
+                let lastErr = null;
+                for (let attempt = 1; attempt <= 4; attempt++) {
+                    try {
+                        const r = await fetch(
+                            origin + '/api/checkout/fulfill-session?session_id=' + encodeURIComponent(sessionId),
+                            { method: 'GET', credentials: 'same-origin', cache: 'no-store' }
+                        );
+                        const data = await r.json().catch(function () { return null; });
+                        if (data && data.fulfilled) {
+                            console.log('Order confirmed on server:', data.orderNumber || data.orderId);
+                            return data;
+                        }
+                        if (data && data.paymentStatus && data.paymentStatus !== 'paid' && data.paymentStatus !== 'no_payment_required') {
+                            console.warn('Payment not completed:', data.paymentStatus);
+                            return data;
+                        }
+                    } catch (e) {
+                        lastErr = e;
+                    }
+                    await new Promise(function (res) { setTimeout(res, 400 * attempt); });
                 }
+                if (lastErr) console.warn('Order confirmation retries exhausted:', lastErr.message);
             }
-        }
-        
-        // Sync inventory from server after successful order
-        // This ensures inventory quantities are updated after purchase
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (window.InventoryAPI && window.InventoryAPI.syncFromServer) {
-                console.log('🔄 Syncing inventory after order completion...');
-                await window.InventoryAPI.syncFromServer();
-            }
-        });
+
+            document.addEventListener('DOMContentLoaded', async function () {
+                await confirmOrderOnServer();
+                if (window.InventoryAPI && window.InventoryAPI.syncFromServer) {
+                    await window.InventoryAPI.syncFromServer();
+                }
+                if (window.ActivityTracker) {
+                    const orders = JSON.parse(localStorage.getItem('sandroSandriOrders') || '[]');
+                    const latestOrder = orders.length > 0 ? orders[orders.length - 1] : null;
+                    if (latestOrder) {
+                        window.ActivityTracker.trackOrderComplete(
+                            latestOrder.id || sessionId,
+                            latestOrder.orderNumber || latestOrder.id || sessionId,
+                            latestOrder.total || 0
+                        );
+                    }
+                }
+            });
+        })();
     </script>
 </body>
 </html>
