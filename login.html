@@ -164,7 +164,8 @@
             const securityInput = document.getElementById('security-answer');
             const showSecurity = email.indexOf('@') !== -1;
             securityGroup.style.display = showSecurity ? 'flex' : 'none';
-            securityInput.required = showSecurity;
+            // Do not require here: only the server knows the owner account; regular users leave this blank
+            securityInput.required = false;
             if (!showSecurity) securityInput.value = '';
         });
         
@@ -181,14 +182,8 @@
             errorEl.classList.remove('show');
             errorEl.textContent = '';
             
-            // Check security answer for owner account
-            if (email.toLowerCase().trim() === OWNER_EMAIL.toLowerCase()) {
-                if (!securityAnswer || securityAnswer.trim() !== SECURITY_ANSWER) {
-                    errorEl.textContent = 'Invalid security answer. Access denied.';
-                    errorEl.classList.add('show');
-                    return;
-                }
-            }
+            // Owner email + password + security answer are validated only on the server (env-based).
+            // Never compare secrets in the browser — OWNER_EMAIL / SECURITY_ANSWER are not available here.
             
             button.disabled = true;
             button.textContent = 'Logging in...';
