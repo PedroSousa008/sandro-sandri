@@ -11,8 +11,26 @@ const errorHandler = require('../../lib/error-handler');
 const auth = require('../../lib/auth');
 const rateLimit = require('../../lib/rate-limit');
 
-// Test user: only this email (from env), when authenticated, gets 0€ products + 0€ shipping. No fallback in production.
+// Test user: only this email (from env), when authenticated, gets 0€ products + 0€ shipping.
+// Remove TEST_USER_EMAIL from Vercel in production so all customers pay real prices.
 const TEST_USER_EMAIL = (process.env.TEST_USER_EMAIL && String(process.env.TEST_USER_EMAIL).trim()) || '';
+
+/** True if Stripe secret key is a test key (sk_test_). Live payments require sk_live_. */
+function isStripeTestSecretKey(key) {
+    return typeof key === 'string' && key.startsWith('sk_test_');
+}
+
+/**
+ * Production and STRIPE_LIVE_ONLY=1 must use live Stripe keys. Test keys show "Test mode" on Stripe Checkout
+ * and do not charge real cards — fix: Vercel env STRIPE_SECRET_KEY = sk_live_... (Dashboard → API keys).
+ */
+function stripeTestKeyBlockedInThisDeployment() {
+    if (!stripeSecretKey) return false;
+    if (!isStripeTestSecretKey(stripeSecretKey)) return false;
+    const forceLive = process.env.STRIPE_LIVE_ONLY === 'true' || process.env.STRIPE_LIVE_ONLY === '1';
+    const isVercelProduction = process.env.VERCEL_ENV === 'production';
+    return forceLive || isVercelProduction;
+}
 
 // Stripe-allowed shipping countries (exact list from Stripe API; do not add codes they reject)
 const STRIPE_ALLOWED_SHIPPING_COUNTRIES = ['AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR', 'CV', 'CW', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HN', 'HR', 'HT', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MK', 'ML', 'MM', 'MN', 'MO', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SZ', 'TA', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW', 'ZZ'];
@@ -348,6 +366,14 @@ module.exports = async (req, res) => {
         return res.status(503).json({
             error: 'STRIPE_NOT_CONFIGURED',
             message: 'Payment is not configured. Please add STRIPE_SECRET_KEY in Vercel.'
+        });
+    }
+
+    if (stripeTestKeyBlockedInThisDeployment()) {
+        console.error('Checkout blocked: STRIPE_SECRET_KEY is a test key (sk_test_) but live mode is required.');
+        return res.status(503).json({
+            error: 'STRIPE_LIVE_REQUIRED',
+            message: 'Live payments only. In Stripe Dashboard use API keys → reveal live secret key (sk_live_…). In Vercel → Environment Variables set STRIPE_SECRET_KEY to that value, redeploy, and use live Price IDs (STRIPE_PRICE_*). Set the webhook signing secret from a live-mode webhook endpoint.'
         });
     }
     
