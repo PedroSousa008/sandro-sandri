@@ -92,6 +92,16 @@ module.exports = async (req, res) => {
                 if (chapters[chapterId].created && chapterId === activeChapter) {
                     const previousMode = chapters[chapterId].mode;
                     chapters[chapterId].mode = mode;
+
+                    // Early Access → Add to Cart: live stock becomes (full catalog per size) minus EA sales
+                    // e.g. M cap 50, 16 M sold in EA → 34 M left for Add to Cart
+                    if (previousMode === 'early_access' && mode === 'add_to_cart') {
+                        try {
+                            await db.applyLiveStockAfterEarlyAccess(chapterId);
+                        } catch (carryErr) {
+                            console.error('applyLiveStockAfterEarlyAccess:', carryErr);
+                        }
+                    }
                     
                     // Log admin action
                     req.user = adminCheck.user;
