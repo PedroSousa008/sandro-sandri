@@ -182,7 +182,7 @@
             errorEl.textContent = '';
             
             // Owner security + password are validated server-side (lib/auth verifyOwnerCredentials).
-            // Do not compare secrets in the browser — OWNER_EMAIL / SECURITY_ANSWER were never defined here.
+            // Do not compare secrets in the browser — OWNER_EMAIL / SECURITY_ANSWER are not exposed here.
             
             button.disabled = true;
             button.textContent = 'Logging in...';

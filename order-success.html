@@ -66,9 +66,22 @@
         const sessionId = urlParams.get('session_id');
         
         if (sessionId) {
-            // Optionally fetch order details from backend
             console.log('Order session ID:', sessionId);
-            
+            // Ensure order + inventory are written even if Stripe webhook was delayed or failed
+            fetch('/api/checkout/fulfill-session?session_id=' + encodeURIComponent(sessionId), {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json().catch(function () { return null; }); })
+                .then(function (data) {
+                    if (data && data.fulfilled) {
+                        console.log('Order confirmed on server:', data.orderNumber || data.orderId);
+                    }
+                })
+                .catch(function (err) {
+                    console.warn('Server order confirmation:', err && err.message);
+                });
+
             // Track order completion
             if (window.ActivityTracker) {
                 // Try to get order details from localStorage or fetch from server
