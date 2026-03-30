@@ -194,7 +194,8 @@
             button.textContent = 'Login';
             
             if (result.success) {
-                if (result.role === 'OWNER') {
+                const ownerRole = String(result.role || '').toUpperCase() === 'OWNER';
+                if (ownerRole) {
                     // Redirect to admin dashboard or home
                     window.location.href = 'admin.html';
                 } else {

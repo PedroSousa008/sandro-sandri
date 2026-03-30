@@ -440,11 +440,34 @@
     <script src="js/activity-tracker.js"></script>
     <script src="js/admin.js"></script>
     <script>
-        // Check authentication
-        if (!window.auth || !window.auth.isOwner()) {
-            window.location.href = 'login.html';
-        }
-        
+        window.__adminReady = (async function () {
+            window.__adminAccessOk = false;
+            if (!window.auth) {
+                window.location.replace('login.html');
+                return;
+            }
+            const token = localStorage.getItem('sandroSandri_session_token');
+            if (!token) {
+                window.location.replace('login.html');
+                return;
+            }
+            window.auth.hydrateRoleFromJwt();
+            if (typeof window.auth.syncSessionFromServer === 'function') {
+                await window.auth.syncSessionFromServer();
+            }
+            window.auth.hydrateRoleFromJwt();
+            if (!window.auth.isOwner()) {
+                window.location.replace('login.html');
+                return;
+            }
+            window.__adminAccessOk = true;
+        })();
+    </script>
+    <script>
+        (async function adminDashboardMain() {
+            await window.__adminReady;
+            if (!window.__adminAccessOk) return;
+
         // Initialize dashboard
         async function updateDashboard() {
             try {
@@ -2425,6 +2448,7 @@
 
         loadOrders({ silent: false });
         setInterval(() => loadOrders({ silent: true }), 30000);
+        })();
     </script>
 </body>
 </html>

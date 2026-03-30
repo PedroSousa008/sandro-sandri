@@ -2,6 +2,26 @@
    Sandro Sandri - Authentication System
    ======================================== */
 
+function normalizeRole(role) {
+    if (role === undefined || role === null) return 'USER';
+    const s = String(role).trim().toUpperCase();
+    return s === 'OWNER' ? 'OWNER' : 'USER';
+}
+
+function parseJwtPayload(token) {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    try {
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const pad = base64.length % 4;
+        const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
+        return JSON.parse(atob(padded));
+    } catch (e) {
+        return null;
+    }
+}
+
 class AuthSystem {
     constructor() {
         this.ROLES = {
@@ -14,6 +34,7 @@ class AuthSystem {
     }
     
     init() {
+        this.hydrateRoleFromJwt();
         // Check if user is logged in
         if (this.isOwner()) {
             this.setupOwnerMode();
@@ -39,6 +60,7 @@ class AuthSystem {
                 const user = JSON.parse(userData);
                 // Verify session is still valid (24 hours)
                 if (user.expiresAt && new Date(user.expiresAt) > new Date()) {
+                    if (user.role !== undefined) user.role = normalizeRole(user.role);
                     return user;
                 } else {
                     this.logout();
@@ -57,9 +79,80 @@ class AuthSystem {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
         
+        user.role = normalizeRole(user.role);
         user.expiresAt = expiresAt.toISOString();
         localStorage.setItem('sandroSandri_user', JSON.stringify(user));
         this.currentUser = user;
+    }
+
+    /**
+     * Align stored user with JWT (fixes missing/wrong role in localStorage after login).
+     */
+    hydrateRoleFromJwt() {
+        const token = localStorage.getItem('sandroSandri_session_token');
+        if (!token) return;
+        const payload = parseJwtPayload(token);
+        if (!payload || !payload.role) return;
+        const role = normalizeRole(payload.role);
+        const email = (payload.email && String(payload.email)) || '';
+        if (!this.currentUser) {
+            if (email || role === 'OWNER') {
+                this.saveUser({ email: email, role: role, loggedInAt: new Date().toISOString() });
+            }
+            return;
+        }
+        const cur = normalizeRole(this.currentUser.role);
+        if (cur !== role || (email && this.currentUser.email !== email)) {
+            this.currentUser = Object.assign({}, this.currentUser, {
+                email: email || this.currentUser.email,
+                role: role
+            });
+            this.saveUser(this.currentUser);
+        }
+    }
+
+    /**
+     * Refresh user role/email from server (JWT in session). Call before admin-only pages.
+     */
+    async syncSessionFromServer() {
+        const token = localStorage.getItem('sandroSandri_session_token');
+        if (!token) return false;
+        try {
+            const response = await fetch('/api/auth/session', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'X-Session-Token': token
+                },
+                credentials: 'same-origin'
+            });
+            const raw = await response.text();
+            let data = {};
+            if (raw) {
+                try {
+                    data = JSON.parse(raw);
+                } catch (e) {
+                    return false;
+                }
+            }
+            if (!response.ok || !data.authenticated || !data.user) return false;
+            const role = normalizeRole(data.user.role);
+            const email = data.user.email || '';
+            this.saveUser({
+                email: email,
+                role: role,
+                loggedInAt: new Date().toISOString()
+            });
+            if (role === this.ROLES.OWNER) {
+                this.setupOwnerMode();
+            } else {
+                this.ensureUserMode();
+            }
+            return true;
+        } catch (e) {
+            console.warn('syncSessionFromServer:', e);
+            return false;
+        }
     }
     
     // Login function - SECURITY: All authentication now server-side
@@ -113,7 +206,11 @@ class AuthSystem {
 
             // Login successful - save token and user info
             const token = data.token;
-            const userRole = data.role || this.ROLES.USER;
+            let userRole = normalizeRole(data.role);
+            if (!data.role && token) {
+                const p = parseJwtPayload(token);
+                if (p && p.role) userRole = normalizeRole(p.role);
+            }
             
             // Store token in localStorage (for API calls)
             // Note: Cookie is also set by server (HttpOnly, Secure)
@@ -218,7 +315,7 @@ class AuthSystem {
     
     // Check if current user is owner
     isOwner() {
-        return this.currentUser && this.currentUser.role === this.ROLES.OWNER;
+        return !!(this.currentUser && normalizeRole(this.currentUser.role) === this.ROLES.OWNER);
     }
     
     // Check if current user is logged in
