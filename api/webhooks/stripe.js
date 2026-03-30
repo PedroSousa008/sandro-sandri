@@ -15,21 +15,6 @@ async function processWebhookEvent(event) {
     } catch (e) {
         console.warn('Webhook initDb:', e && e.message);
     }
-
-    const stripeKey = process.env.STRIPE_SECRET_KEY || '';
-    const usingLiveKey = stripeKey.startsWith('sk_live_');
-    if (stripeKey && event.livemode !== usingLiveKey) {
-        console.error(
-            'Stripe webhook mode mismatch: event.livemode=%s but STRIPE_SECRET_KEY is %s. Add a webhook in Stripe for this mode and set STRIPE_WEBHOOK_SECRET to that endpoint signing secret.',
-            event.livemode,
-            usingLiveKey ? 'live' : 'test'
-        );
-    }
-    if (!db.isKvPersistenceEnabled()) {
-        console.error(
-            'PERSISTENCE: Redis/KV is not configured (KV_REST_API_URL + KV_REST_API_TOKEN or Upstash equivalents). Orders and stock will not appear in Owner admin. Configure KV in Vercel for Production.'
-        );
-    }
     // Check if we've already processed this event (idempotency)
     const eventId = event.id;
     const processed = await isEventProcessed(eventId);
@@ -238,11 +223,6 @@ async function handleCheckoutCompleted(session) {
     }
     
     console.log(`Order ${order.id} created successfully`);
-    if (!db.isKvPersistenceEnabled()) {
-        console.error(
-            'Order was saved to in-memory storage only; it will not persist. Connect Vercel KV or Upstash Redis so orders and inventory are visible in Admin.'
-        );
-    }
     
     return order;
 }
