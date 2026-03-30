@@ -129,7 +129,7 @@ const PRODUCTS = [
     {
         id: 4,
         name: "Sardinia",
-        price: 0, // temporary promo — revert to 95 with lib/promo-sardinia.js + index.html + SardiniaPromo.enabled
+        price: 95,
         category: "tshirts",
         description: "Cradled in the embrace of the Mediterranean, Sardinia enchants with its rugged landscapes and tranquil shores, where timeless beauty and ancient traditions intertwine. Its serene coastline invites reflection, while its villages whisper stories of a slower, more deliberate life. Yet, as with the sea, not every desire is met. And in its mysteries, we find the soul of a land untouched by time.",
         details: [
@@ -471,9 +471,9 @@ function formatPrice(price) {
     }).format(price);
 }
 
-/** Sardinia 0€ + free shipping when cart is Sardinia-only (sync with lib/promo-sardinia.js). Set enabled false to end promo. */
+/** Sardinia promo (0€ + free ship for Sardinia-only cart): enable in lib/promo-sardinia.js + enabled true */
 window.SardiniaPromo = {
-    enabled: true,
+    enabled: false,
     productId: 4,
     isOnlySardiniaCart(cart) {
         if (!cart || !cart.length) return false;
