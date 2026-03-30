@@ -8,12 +8,13 @@ const auth = require('../../lib/auth');
 const securityLog = require('../../lib/security-log');
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
+const emailService = require('../../lib/email');
 
 module.exports = async (req, res) => {
     // CRITICAL: Wrap everything in try-catch to prevent 500 errors
     try {
         // Set secure CORS headers (restricted to allowed origins)
-        cors.setCORSHeaders(res, req, ['GET', 'POST', 'DELETE', 'OPTIONS']);
+        cors.setCORSHeaders(res, req, ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']);
 
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
@@ -91,7 +92,7 @@ module.exports = async (req, res) => {
     }
     
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
-    if (endpoint === 'customers' || (endpoint === 'activity' && req.method === 'GET')) {
+    if (endpoint === 'customers' || endpoint === 'orders' || (endpoint === 'activity' && req.method === 'GET')) {
         const adminCheck = auth.requireAdmin(req);
         if (!adminCheck.authorized) {
             // SECURITY: Log unauthorized access attempt
@@ -306,6 +307,128 @@ module.exports = async (req, res) => {
         } else {
             return res.status(405).json({ error: 'Method not allowed' });
         }
+    } else if (endpoint === 'orders') {
+        // Orders list + updates (merged from api/admin/orders.js — keeps Hobby plan function count ≤12)
+        if (req.method === 'GET') {
+            try {
+                await db.initDb();
+                const orders = await db.getOrders();
+                const sortedOrders = orders.sort((a, b) => {
+                    const dateA = new Date(a.createdAt || 0);
+                    const dateB = new Date(b.createdAt || 0);
+                    return dateB - dateA;
+                });
+                return res.status(200).json({
+                    success: true,
+                    orders: sortedOrders,
+                    total: sortedOrders.length
+                });
+            } catch (error) {
+                errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'ORDERS_ERROR');
+                return;
+            }
+        }
+        if (req.method === 'PUT') {
+            try {
+                await db.initDb();
+                const { orderId, confirmationStatus, trackingNumber, orderStatus } = req.body || {};
+
+                if (!orderId) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Order ID is required'
+                    });
+                }
+
+                const orders = await db.getOrders();
+                const orderIndex = orders.findIndex((o) => o.id === orderId);
+
+                if (orderIndex === -1) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Order not found'
+                    });
+                }
+
+                const order = orders[orderIndex];
+                const previousTrackingNumber = order.trackingNumber;
+                const previousOrderStatus = order.orderStatus || order.status || 'PAID';
+
+                if (confirmationStatus !== undefined) {
+                    order.confirmationStatus = confirmationStatus;
+                }
+                if (trackingNumber !== undefined) {
+                    order.trackingNumber = trackingNumber;
+                }
+                if (orderStatus !== undefined) {
+                    order.orderStatus = orderStatus;
+                    order.status = orderStatus;
+                }
+
+                order.updatedAt = new Date().toISOString();
+                orders[orderIndex] = order;
+
+                await db.saveAllOrders(orders);
+
+                const userData = await db.getUserData();
+                const customerEmail = (order.email || '').toLowerCase().trim();
+                if (userData[customerEmail] && Array.isArray(userData[customerEmail].orders)) {
+                    const userOrders = userData[customerEmail].orders;
+                    const userOrderIdx = userOrders.findIndex((o) => o.id === order.id);
+                    if (userOrderIdx !== -1) {
+                        userOrders[userOrderIdx] = order;
+                        userData[customerEmail].orders = userOrders;
+                        userData[customerEmail].updatedAt = new Date().toISOString();
+                        await db.saveUserData(userData);
+                    }
+                }
+
+                const currentOrderStatus = order.orderStatus || order.status || 'PAID';
+                if (
+                    trackingNumber &&
+                    trackingNumber !== previousTrackingNumber &&
+                    trackingNumber.length > 0 &&
+                    (currentOrderStatus === 'SHIPPED' || orderStatus === 'SHIPPED')
+                ) {
+                    try {
+                        await emailService.sendShippingNotification(order.email, {
+                            orderNumber: order.orderNumber || order.id,
+                            trackingNumber: trackingNumber,
+                            customerName: order.name || 'Valued Customer'
+                        });
+                    } catch (emailError) {
+                        console.error('Error sending shipping notification email:', emailError);
+                    }
+                }
+
+                if (
+                    orderStatus === 'SHIPPED' &&
+                    previousOrderStatus !== 'SHIPPED' &&
+                    order.trackingNumber &&
+                    order.trackingNumber.length > 0
+                ) {
+                    try {
+                        await emailService.sendShippingNotification(order.email, {
+                            orderNumber: order.orderNumber || order.id,
+                            trackingNumber: order.trackingNumber,
+                            customerName: order.name || 'Valued Customer'
+                        });
+                    } catch (emailError) {
+                        console.error('Error sending shipping notification email:', emailError);
+                    }
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    order: order,
+                    message: 'Order updated successfully'
+                });
+            } catch (error) {
+                errorHandler.sendSecureError(res, error, 500, 'Failed to process request. Please try again.', 'ORDERS_ERROR');
+                return;
+            }
+        }
+        return res.status(405).json({ error: 'Method not allowed' });
     } else if (endpoint === 'init-inventory') {
         // Initialize chapter inventory endpoint (owner only)
         if (req.method !== 'POST') {
@@ -443,7 +566,7 @@ module.exports = async (req, res) => {
             return;
         }
     } else {
-        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, ?endpoint=customers, or ?endpoint=init-inventory' });
+        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, customers, orders, or init-inventory' });
     }
     } catch (error) {
         // CRITICAL: Catch ALL errors and return success to prevent 500 errors

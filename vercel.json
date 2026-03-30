@@ -54,6 +54,10 @@
     {
       "source": "/api/inventory",
       "destination": "/api/inventory"
+    },
+    {
+      "source": "/api/admin/orders",
+      "destination": "/api/admin?endpoint=orders"
     }
   ],
   "headers": [
