@@ -71,6 +71,7 @@ class AuthSystem {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ 
                     email, 
                     password,
@@ -78,7 +79,21 @@ class AuthSystem {
                 })
             });
 
-            const data = await response.json();
+            const raw = await response.text();
+            let data = {};
+            if (raw) {
+                try {
+                    data = JSON.parse(raw);
+                } catch (parseErr) {
+                    console.error('Login: non-JSON response', response.status, raw.substring(0, 200));
+                    return {
+                        success: false,
+                        error: response.status >= 500
+                            ? 'Server is temporarily unavailable. Please try again shortly.'
+                            : 'Unexpected response from server. Please refresh the page and try again.'
+                    };
+                }
+            }
 
             if (!response.ok) {
                 // Check if email is not verified
@@ -92,7 +107,7 @@ class AuthSystem {
                 }
                 return { 
                     success: false, 
-                    error: data.error || 'Login failed' 
+                    error: data.error || data.message || 'Login failed' 
                 };
             }
 
@@ -119,18 +134,29 @@ class AuthSystem {
                 this.ensureUserMode();
             }
             
-            // Track login activity (without password)
-            if (window.ActivityTracker) {
-                window.ActivityTracker.trackLogin(email, null); // Don't track password
+            // Side effects must not fail login (they used to throw into catch → false "Network error")
+            try {
+                if (window.ActivityTracker) {
+                    window.ActivityTracker.trackLogin(email, null);
+                }
+            } catch (e) {
+                console.warn('ActivityTracker.trackLogin:', e);
             }
             
-            // Trigger user sync after login
-            window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email: data.email || email } }));
-            if (window.userSync) {
-                setTimeout(() => {
-                    window.userSync.updateUserEmail();
-                    window.userSync.loadAllData();
-                }, 500);
+            try {
+                window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { email: data.email || email } }));
+                if (window.userSync) {
+                    setTimeout(() => {
+                        try {
+                            window.userSync.updateUserEmail();
+                            window.userSync.loadAllData();
+                        } catch (e) {
+                            console.warn('userSync after login:', e);
+                        }
+                    }, 500);
+                }
+            } catch (e) {
+                console.warn('post-login sync:', e);
             }
             
             return { success: true, role: userRole };
@@ -138,7 +164,9 @@ class AuthSystem {
             console.error('Login error:', error);
             return { 
                 success: false, 
-                error: 'Network error. Please try again.' 
+                error: error && error.name === 'TypeError'
+                    ? 'Connection problem. Check your network and try again.'
+                    : 'Network error. Please try again.' 
             };
         }
     }
