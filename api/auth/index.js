@@ -22,15 +22,13 @@ module.exports = async (req, res) => {
         return res.status(200).end();
     }
 
-    // Get the action from query parameter or path (Vercel sometimes omits path in req.url)
-    const pathOnly = (req.url || '').split('?')[0];
-    const action = req.query.action ||
-                   (req.url.includes('/verify-email') ? 'verify-email' :
+    // Get the action from query parameter or path
+    const action = req.query.action || 
+                   (req.url.includes('/verify-email') ? 'verify-email' : 
                     req.url.includes('/resend-verification') ? 'resend-verification' :
-                    (req.url.includes('/login') || pathOnly.endsWith('/login')) ? 'login' :
-                    (req.url.includes('/signup') || pathOnly.endsWith('/signup')) ? 'signup' :
-                    (req.url.includes('/session') || pathOnly.endsWith('/session')) ? 'session' :
-                    null);
+                    req.url.includes('/login') ? 'login' : 
+                    req.url.includes('/signup') ? 'signup' : 
+                    req.url.includes('/session') ? 'session' : null);
 
     try {
         // SESSION VERIFICATION (GET)

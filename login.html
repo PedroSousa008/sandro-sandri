@@ -164,8 +164,7 @@
             const securityInput = document.getElementById('security-answer');
             const showSecurity = email.indexOf('@') !== -1;
             securityGroup.style.display = showSecurity ? 'flex' : 'none';
-            // Do not require here: only the server knows the owner account; regular users leave this blank
-            securityInput.required = false;
+            securityInput.required = showSecurity;
             if (!showSecurity) securityInput.value = '';
         });
         
@@ -182,8 +181,14 @@
             errorEl.classList.remove('show');
             errorEl.textContent = '';
             
-            // Owner email + password + security answer are validated only on the server (env-based).
-            // Never compare secrets in the browser — OWNER_EMAIL / SECURITY_ANSWER are not available here.
+            // Check security answer for owner account
+            if (email.toLowerCase().trim() === OWNER_EMAIL.toLowerCase()) {
+                if (!securityAnswer || securityAnswer.trim() !== SECURITY_ANSWER) {
+                    errorEl.textContent = 'Invalid security answer. Access denied.';
+                    errorEl.classList.add('show');
+                    return;
+                }
+            }
             
             button.disabled = true;
             button.textContent = 'Logging in...';
@@ -194,8 +199,7 @@
             button.textContent = 'Login';
             
             if (result.success) {
-                const ownerRole = String(result.role || '').toUpperCase() === 'OWNER';
-                if (ownerRole) {
+                if (result.role === 'OWNER') {
                     // Redirect to admin dashboard or home
                     window.location.href = 'admin.html';
                 } else {
