@@ -181,14 +181,8 @@
             errorEl.classList.remove('show');
             errorEl.textContent = '';
             
-            // Check security answer for owner account
-            if (email.toLowerCase().trim() === OWNER_EMAIL.toLowerCase()) {
-                if (!securityAnswer || securityAnswer.trim() !== SECURITY_ANSWER) {
-                    errorEl.textContent = 'Invalid security answer. Access denied.';
-                    errorEl.classList.add('show');
-                    return;
-                }
-            }
+            // Owner security + password are validated server-side (lib/auth verifyOwnerCredentials).
+            // Do not compare secrets in the browser — OWNER_EMAIL / SECURITY_ANSWER were never defined here.
             
             button.disabled = true;
             button.textContent = 'Logging in...';
