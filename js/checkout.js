@@ -328,6 +328,10 @@ function calculateShipping(subtotal, country, cart) {
     if (!cart) {
         cart = JSON.parse(localStorage.getItem('sandroSandriCart') || '[]');
     }
+
+    if (window.SardiniaPromo && window.SardiniaPromo.shouldFreeShipping(cart)) {
+        return 0;
+    }
     
     // Calculate total quantity
     const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);

@@ -10,6 +10,7 @@ const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
 const auth = require('../../lib/auth');
 const rateLimit = require('../../lib/rate-limit');
+const promoSardinia = require('../../lib/promo-sardinia');
 
 // Test user: only this email (from env), when authenticated, gets 0€ products + 0€ shipping.
 // Remove TEST_USER_EMAIL from Vercel in production so all customers pay real prices.
@@ -198,6 +199,14 @@ function calculateShipping(cart, countryCode) {
     return SHIPPING_FEES['DEFAULT'];
 }
 
+/** Free shipping when Sardinia-only promo cart (matches server pricing). */
+function calculateShippingWithPromo(cart, countryCode) {
+    if (promoSardinia.isSardiniaPromoEnabled() && promoSardinia.cartIsOnlySardinia(cart)) {
+        return 0;
+    }
+    return calculateShipping(cart, countryCode);
+}
+
 // Validate cart items against inventory. Uses chapter mode (early_access vs add_to_cart) to pick the right stock.
 async function validateCartInventoryWithDb(cart, db) {
     const errors = [];
@@ -320,13 +329,14 @@ function normalizeAndValidateCart(rawCart) {
         }
         const size = typeof raw.size === 'string' ? raw.size.trim().substring(0, 10) : (raw.size ? String(raw.size).substring(0, 10) : '');
         const color = typeof raw.color === 'string' ? raw.color.trim().substring(0, 50) : (raw.color ? String(raw.color).substring(0, 50) : '');
+        const unitCents = promoSardinia.getUnitAmountCentsForProduct(productId, product);
         out.push({
             productId,
             quantity: q,
             size: size || 'M',
             color: color || '',
             // Server-authoritative only (never from client)
-            price: product.unit_amount_cents / 100,
+            price: unitCents / 100,
             name: product.name,
             imagePath: product.imagePath
         });
@@ -493,10 +503,14 @@ module.exports = async (req, res) => {
 
         // Totals from server-side catalog only (client never influences these)
         let subtotal = cartNormalized.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        if (!isTestUser && subtotal <= 0) {
+        const sardiniaPromoFreeOrder =
+            promoSardinia.isSardiniaPromoEnabled() &&
+            promoSardinia.cartIsOnlySardinia(cartNormalized) &&
+            subtotal === 0;
+        if (!isTestUser && subtotal <= 0 && !sardiniaPromoFreeOrder) {
             return res.status(400).json({ error: 'INVALID_CART', message: 'Cart total is invalid. Please refresh and try again.' });
         }
-        let shippingCost = isTestUser ? 0 : calculateShipping(cartNormalized, customerInfo.country);
+        let shippingCost = isTestUser ? 0 : calculateShippingWithPromo(cartNormalized, customerInfo.country);
         if (isTestUser) subtotal = 0;
         const total = subtotal + shippingCost;
         const totalCents = Math.round(total * 100);
@@ -505,7 +519,9 @@ module.exports = async (req, res) => {
 
         // Build line_items from server catalog only. unit_amount is NEVER from client.
         const lineItems = cartNormalized.map(item => {
-            const unitAmountCents = isTestUser ? 0 : (getServerProduct(item.productId).unit_amount_cents || 9500);
+            const unitAmountCents = isTestUser
+                ? 0
+                : promoSardinia.getUnitAmountCentsForProduct(item.productId, getServerProduct(item.productId));
             let imageUrl = null;
             const path = getServerProduct(item.productId).imagePath;
             if (path) {
