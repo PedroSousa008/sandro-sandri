@@ -10,10 +10,10 @@ The owner password is now protected with multiple security layers:
 - **Never** sent to client
 - **Never** in API responses
 
-### 2. Environment Variable Support
-- Can be set via `OWNER_PASSWORD` environment variable in Vercel
-- If not set, uses hardcoded value (still backend-only)
-- **Recommended**: Set `OWNER_PASSWORD` in Vercel for extra security
+### 2. Environment Variables (Required in Production)
+- **No hardcoded fallbacks.** Set in Vercel: `OWNER_EMAIL`, `OWNER_PASSWORD`, `OWNER_SECURITY_ANSWER`, `JWT_SECRET`
+- If not set in production, owner login is disabled (503) and app fails fast at startup
+- See `SECURITY.md` and `.env.example` for the full list
 
 ### 3. No Logging
 - Password is **never** logged
@@ -33,19 +33,12 @@ The owner password is now protected with multiple security layers:
 ## How to Set Password via Environment Variable (Optional but Recommended)
 
 1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
-2. Add:
-   - **Key**: `OWNER_PASSWORD`
-   - **Value**: `Sousa10Pedro`
-   - **Environment**: Production, Preview, Development (all)
-3. Save
-
-This way, the password won't be in the code at all - only in Vercel's secure environment variables.
-
-## Current Password
-
-- **Email**: `sandrosandri.bysousa@gmail.com`
-- **Password**: `Sousa10Pedro`
-- **Security Answer**: `10.09.2025`
+2. Add (use your own values; never commit them):
+   - `OWNER_EMAIL` — owner login email
+   - `OWNER_PASSWORD` — owner password
+   - `OWNER_SECURITY_ANSWER` — security question answer
+   - `JWT_SECRET` — secret for session tokens
+3. Save. Owner login will not work until these are set.
 
 ## Security Checklist
 

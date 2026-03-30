@@ -85,16 +85,15 @@ The application uses JSON Web Tokens (JWT) for secure, stateless authentication.
 
 #### 3. Admin Authorization (`requireAdmin()`)
 - Requires valid JWT token
-- Requires email: `sandrosandri.bysousa@gmail.com`
+- Requires email matching `OWNER_EMAIL` (env)
 - Examples: Admin dashboard, customer data, site settings
 
 ### Owner Account Security
 
 **Special Security Measure:**
-- Owner account (`sandrosandri.bysousa@gmail.com`) has additional security
-- After email/password, requires security question: "relationship date?"
-- Answer: `10.09.2025`
-- Password stored in environment variable: `OWNER_PASSWORD`
+- Owner account (email from `OWNER_EMAIL` env) has additional security
+- After email/password, requires security question; answer from `OWNER_SECURITY_ANSWER` env
+- No hardcoded passwords or answers; all from environment variables
 - Password automatically hashed on first login if not already hashed
 
 **Files:**
@@ -390,7 +389,7 @@ Configured to allow:
 
 #### Authentication
 - `JWT_SECRET` - Secret key for JWT token signing (required)
-- `OWNER_PASSWORD` - Owner account password (optional, defaults to 'Sousa10Pedro')
+- `OWNER_PASSWORD` - Owner account password (required in production; no default)
 
 #### Payment Processing
 - `STRIPE_SECRET_KEY` - Stripe API secret key (required for payments)

@@ -11,7 +11,7 @@ const errorHandler = require('../../lib/error-handler');
 
 module.exports = async (req, res) => {
     // Set secure CORS headers (restricted to allowed origins)
-    cors.setCORSHeaders(res, req, ['GET', 'PUT', 'OPTIONS']);
+    cors.setCORSHeaders(res, req, ['GET', 'PUT', 'POST', 'OPTIONS']);
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -141,6 +141,45 @@ module.exports = async (req, res) => {
                 success: true,
                 order: order,
                 message: 'Order updated successfully'
+            });
+        } else if (req.method === 'POST') {
+            const { action, orderId } = req.body || {};
+            if (action !== 'resendEmails' || !orderId) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid request: need action "resendEmails" and orderId'
+                });
+            }
+            const orders = await db.getOrders();
+            const order = orders.find((o) => o.id === orderId);
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Order not found'
+                });
+            }
+            const customerEmail = (order.email || '').trim();
+            if (!customerEmail) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Order has no customer email on file'
+                });
+            }
+            const customerResult = await emailService.sendOrderConfirmedToCustomer(customerEmail, order);
+            const ownerEmail = auth.OWNER_EMAIL;
+            let ownerResult;
+            if (ownerEmail) {
+                ownerResult = await emailService.sendOrderConfirmationToOwner(ownerEmail, order);
+            } else {
+                ownerResult = { success: false, error: 'OWNER_EMAIL not configured' };
+            }
+            res.status(200).json({
+                success: true,
+                results: {
+                    customer: customerResult,
+                    owner: ownerResult
+                },
+                message: 'Emails sent where configured; check results for any failures'
             });
         } else {
             return res.status(405).json({ error: 'Method not allowed' });

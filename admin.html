@@ -369,8 +369,9 @@
 
         <div class="admin-section">
             <h2 class="admin-section-title">Orders Management</h2>
-            <div style="margin-bottom: var(--space-md);">
-                <button class="admin-action-btn admin-action-btn-primary" id="load-orders-btn">Load All Orders</button>
+            <div style="margin-bottom: var(--space-md); display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: center;">
+                <button class="admin-action-btn admin-action-btn-primary" id="load-orders-btn">Refresh orders</button>
+                <span style="font-family: var(--font-sans); font-size: 0.8125rem; color: var(--color-text-light);">Orders load when you open this page and refresh every 30 seconds.</span>
             </div>
             <div id="orders-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
                 Loading orders data...
@@ -397,6 +398,7 @@
                             <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 140px;">Items Purchased</th>
                             <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; min-width: 90px;">Status</th>
                             <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600; min-width: 120px;">Tracking</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600; min-width: 100px;">Resend</th>
                         </tr>
                     </thead>
                     <tbody id="orders-tbody">
@@ -2134,17 +2136,20 @@
         loadActiveChapter();
 
         // Orders Management
-        async function loadOrders() {
+        async function loadOrders(options) {
+            const silent = options && options.silent === true;
             const loadingEl = document.getElementById('orders-loading');
             const errorEl = document.getElementById('orders-error');
             const tableContainer = document.getElementById('orders-table-container');
             const summaryEl = document.getElementById('orders-summary');
             const tbody = document.getElementById('orders-tbody');
 
-            loadingEl.style.display = 'block';
-            errorEl.style.display = 'none';
-            tableContainer.style.display = 'none';
-            summaryEl.style.display = 'none';
+            if (!silent) {
+                loadingEl.style.display = 'block';
+                errorEl.style.display = 'none';
+                tableContainer.style.display = 'none';
+                summaryEl.style.display = 'none';
+            }
 
             try {
                 // Get JWT token
@@ -2169,6 +2174,8 @@
                     throw new Error(data.error || 'Failed to load orders');
                 }
 
+                errorEl.style.display = 'none';
+
                 const orders = data.orders || [];
                 
                 // Update summary
@@ -2178,7 +2185,7 @@
                 // Build table
                 tbody.innerHTML = '';
                 if (orders.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; padding: var(--space-lg); color: var(--color-text-light);">No orders found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="15" style="text-align: center; padding: var(--space-lg); color: var(--color-text-light);">No orders found</td></tr>';
                 } else {
                     function esc(s) {
                         if (s == null || s === '') return '—';
@@ -2232,6 +2239,9 @@
                             </td>
                             <td style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray);">
                                 <input type="text" class="tracking-number-input" data-order-id="${esc(order.id)}" value="${esc(trackingNumber)}" placeholder="Tracking number" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--color-gray); border-radius: 4px; width: 150px;">
+                            </td>
+                            <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); white-space: nowrap;">
+                                <button type="button" class="resend-order-emails-btn admin-action-btn admin-action-btn-secondary" data-order-id="${esc(order.id)}" style="font-size: 0.7rem; padding: 4px 8px;">Resend emails</button>
                             </td>
                         `;
                         tbody.appendChild(row);
@@ -2354,17 +2364,67 @@
                     });
                 });
 
-                loadingEl.style.display = 'none';
+                if (!silent) {
+                    loadingEl.style.display = 'none';
+                }
                 tableContainer.style.display = 'block';
             } catch (error) {
                 console.error('Error loading orders:', error);
-                loadingEl.style.display = 'none';
-                errorEl.textContent = 'Error loading orders: ' + error.message;
-                errorEl.style.display = 'block';
+                if (!silent) {
+                    loadingEl.style.display = 'none';
+                    errorEl.textContent = 'Error loading orders: ' + error.message;
+                    errorEl.style.display = 'block';
+                }
             }
         }
 
-        document.getElementById('load-orders-btn').addEventListener('click', loadOrders);
+        document.getElementById('load-orders-btn').addEventListener('click', () => loadOrders({ silent: false }));
+
+        document.getElementById('orders-table-container').addEventListener('click', async (e) => {
+            const btn = e.target.closest('.resend-order-emails-btn');
+            if (!btn) return;
+            const orderId = btn.dataset.orderId;
+            if (!orderId) return;
+            const token = localStorage.getItem('sandroSandri_session_token');
+            if (!token) {
+                alert('Not authenticated');
+                return;
+            }
+            btn.disabled = true;
+            const prev = btn.textContent;
+            btn.textContent = 'Sending…';
+            try {
+                const response = await fetch('/api/admin/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'X-Session-Token': token
+                    },
+                    body: JSON.stringify({ action: 'resendEmails', orderId: orderId })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || response.statusText || 'Request failed');
+                }
+                const cr = data.results && data.results.customer;
+                const or = data.results && data.results.owner;
+                const parts = [];
+                if (cr && cr.success) parts.push('Customer OK');
+                else parts.push('Customer: ' + ((cr && cr.error) || 'failed'));
+                if (or && or.success) parts.push('Owner OK');
+                else parts.push('Owner: ' + ((or && or.error) || 'failed'));
+                alert(parts.join(' · '));
+            } catch (err) {
+                alert('Resend failed: ' + (err.message || 'Unknown error'));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = prev;
+            }
+        });
+
+        loadOrders({ silent: false });
+        setInterval(() => loadOrders({ silent: true }), 30000);
     </script>
 </body>
 </html>

@@ -73,14 +73,16 @@ module.exports = async (req, res) => {
             let isOwner = false;
             let user = null;
             
-            if (email === auth.OWNER_EMAIL.toLowerCase()) {
+            const ownerEmail = auth.OWNER_EMAIL;
+            if (ownerEmail && email === ownerEmail.toLowerCase()) {
                 isOwner = true;
-                console.log('🔐 Owner login attempt detected');
-                console.log('   Email:', email);
-                console.log('   Security Answer provided:', securityAnswer ? 'Yes' : 'No');
-                // Verify owner credentials (including security answer)
+                if (!auth.isOwnerAuthConfigured()) {
+                    return res.status(503).json({
+                        error: 'Owner auth not configured',
+                        message: 'Owner login is not available. Check server configuration.'
+                    });
+                }
                 const ownerCheck = await auth.verifyOwnerCredentials(email, password, securityAnswer);
-                console.log('   Owner check result:', ownerCheck.valid ? 'Valid' : 'Invalid', ownerCheck.error || '');
                 if (!ownerCheck.valid) {
                     // SECURITY: Record failed login attempt and log
                     await rateLimit.recordFailedAttempt(req, 'login', email);
@@ -92,7 +94,7 @@ module.exports = async (req, res) => {
                 
                 // Get owner user data
                 const userData = await db.getUserData();
-                user = userData[email] || userData[auth.OWNER_EMAIL];
+                user = userData[email] || userData[ownerEmail];
             } else {
                 // Regular user - get user data and verify password
                 const userData = await db.getUserData();

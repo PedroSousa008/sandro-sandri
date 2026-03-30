@@ -923,12 +923,11 @@ function initPasswordChangeForm() {
         const storedPassword = null; // Always null - password management is server-side only
         
         // SECURITY: Owner password verification is now handled server-side only
-        // No password checks in frontend for security
         let passwordValid = false;
-        if (userEmail === 'sandrosandri.bysousa@gmail.com') {
-            // Owner password verification happens server-side
-            // Skip frontend validation - server will verify on password change
-            passwordValid = true; // Let server handle verification
+        const userData = JSON.parse(localStorage.getItem('sandroSandri_user') || '{}');
+        const isOwner = userData.role === 'OWNER';
+        if (isOwner) {
+            passwordValid = true; // Server verifies on password change
         } else {
             // For regular users, check stored password
             if (storedPassword && storedPassword === currentPassword) {

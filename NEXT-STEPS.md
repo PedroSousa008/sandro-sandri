@@ -71,9 +71,9 @@ git push origin main
 
 #### Teste 1: Login do Owner
 1. Acesse `/login.html`
-2. Email: `sandrosandri.bysousa@gmail.com`
-3. Senha: (sua senha atual)
-4. Security Answer: `10.09.2025`
+2. Email: valor de `OWNER_EMAIL` (env)
+3. Senha: valor de `OWNER_PASSWORD` (env)
+4. Security Answer: valor de `OWNER_SECURITY_ANSWER` (env)
 5. ✅ Deve fazer login com sucesso
 
 #### Teste 2: Login de Usuário Regular

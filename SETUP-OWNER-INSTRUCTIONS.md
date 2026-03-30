@@ -16,7 +16,7 @@
        'Content-Type': 'application/json',
      },
      body: JSON.stringify({
-       password: 'Sousa10Pedro'
+       password: 'YOUR_CHOSEN_PASSWORD'
      })
    })
    .then(r => r.json())
@@ -38,10 +38,7 @@
    - Se aparecer "✅ Senha definida com sucesso!", está pronto!
    - Se aparecer erro, me diga qual é a mensagem
 
-5. **Tente fazer login:**
-   - Email: `sandrosandri.bysousa@gmail.com`
-   - Password: `Sousa10Pedro`
-   - Security Answer: `10.09.2025`
+5. **Tente fazer login** com o email definido em `OWNER_EMAIL` e a senha que configurou. A resposta da pergunta de segurança deve ser a definida em `OWNER_SECURITY_ANSWER` (variáveis de ambiente na Vercel).
 
 ---
 

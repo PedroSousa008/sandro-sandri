@@ -157,23 +157,15 @@
     <script src="js/activity-tracker.js"></script>
     <script src="js/activity-monitor.js"></script>
     <script>
-        const OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
-        const SECURITY_ANSWER = '10.09.2025';
-        
-        // Show/hide security question based on email
+        // Show security question when user has entered an email (avoids exposing owner identity in frontend)
         document.getElementById('email').addEventListener('input', (e) => {
-            const email = e.target.value.toLowerCase().trim();
+            const email = (e.target.value || '').trim();
             const securityGroup = document.getElementById('security-question-group');
             const securityInput = document.getElementById('security-answer');
-            
-            if (email.toLowerCase().trim() === OWNER_EMAIL.toLowerCase()) {
-                securityGroup.style.display = 'flex';
-                securityInput.required = true;
-            } else {
-                securityGroup.style.display = 'none';
-                securityInput.required = false;
-                securityInput.value = '';
-            }
+            const showSecurity = email.indexOf('@') !== -1;
+            securityGroup.style.display = showSecurity ? 'flex' : 'none';
+            securityInput.required = showSecurity;
+            if (!showSecurity) securityInput.value = '';
         });
         
         document.getElementById('login-form').addEventListener('submit', async (e) => {

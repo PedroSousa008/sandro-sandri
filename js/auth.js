@@ -4,8 +4,6 @@
 
 class AuthSystem {
     constructor() {
-        this.OWNER_EMAIL = 'sandrosandri.bysousa@gmail.com';
-        // SECURITY: Password removed from frontend - authentication now server-side only
         this.ROLES = {
             OWNER: 'OWNER',
             USER: 'USER'
@@ -76,7 +74,7 @@ class AuthSystem {
                 body: JSON.stringify({ 
                     email, 
                     password,
-                    securityAnswer: email.toLowerCase() === this.OWNER_EMAIL.toLowerCase() ? securityAnswer : null
+                    securityAnswer: securityAnswer || null
                 })
             });
 

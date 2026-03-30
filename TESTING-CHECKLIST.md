@@ -13,9 +13,9 @@ Now that the deployment is working, let's test all the security features to make
 **Steps:**
 1. Go to: `https://seu-site.vercel.app/login.html`
 2. Enter:
-   - Email: `sandrosandri.bysousa@gmail.com`
-   - Password: (your password)
-   - Security Answer: `10.09.2025`
+   - Email: value of `OWNER_EMAIL` (from Vercel env)
+   - Password: value of `OWNER_PASSWORD` (from Vercel env)
+   - Security Answer: value of `OWNER_SECURITY_ANSWER` (from Vercel env)
 3. Click "Login"
 
 **Expected Result:**

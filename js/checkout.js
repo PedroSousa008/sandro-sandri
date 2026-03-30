@@ -606,15 +606,12 @@ function initCheckoutForm() {
         }
 
         try {
-            // Send session token so backend can apply test user 0€ (e.g. guicampos2006@icloud.com) when logged in
-            const sessionToken = localStorage.getItem('sandroSandri_session_token');
-            const headers = { 'Content-Type': 'application/json' };
-            if (sessionToken) headers['Authorization'] = 'Bearer ' + sessionToken;
-
             // Create Stripe checkout session
             const response = await fetch('/api/checkout/create-session', {
                 method: 'POST',
-                headers: headers,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     cart: cart,
                     customerInfo: customerInfo

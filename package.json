@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'Static site - no build step'",
-    "test": "jest"
+    "test": "jest",
+    "deploy": "./push-to-vercel.sh"
   },
   "dependencies": {
     "stripe": "^14.0.0",
