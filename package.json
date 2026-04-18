@@ -6,7 +6,8 @@
     "dev": "vercel dev",
     "build": "echo 'Static site - no build step'",
     "test": "jest",
-    "deploy": "./push-to-vercel.sh"
+    "deploy": "./push-to-vercel.sh",
+    "setup-hooks": "chmod +x .githooks/post-commit push-to-vercel.sh && git config core.hooksPath .githooks"
   },
   "dependencies": {
     "stripe": "^14.0.0",

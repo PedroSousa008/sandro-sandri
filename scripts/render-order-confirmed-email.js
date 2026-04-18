@@ -15,8 +15,8 @@ const mockOrder = {
     total: 109.5,
     currency: 'eur',
     cart: [
-        { name: 'Sardinia', size: 'M', quantity: 1, price: 95 },
-        { name: 'Isole Cayman', size: 'L', quantity: 2, price: 95 }
+        { name: 'Sardinia', size: 'M', quantity: 1, price: 70 },
+        { name: 'Isole Cayman', size: 'L', quantity: 2, price: 70 }
     ],
     shippingAddress: {
         street: 'Rua das Flores 42',

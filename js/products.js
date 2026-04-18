@@ -6,7 +6,7 @@ const PRODUCTS = [
     {
         id: 1,
         name: "Isole Cayman",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "In the Isole Cayman, Paradise is more than a place - it's a feeling. White sands, blue waters, and warm smiles welcome you with a cheerful \"Wha Happening?\". B O D D E N breezes carry the spirit of the sea, where diverse cultures and nautical charm meet. Explore the historic Turtle Crawls, unwind on dazzling shores. Unna will find both adventure and serenity.",
         details: [
@@ -47,7 +47,7 @@ const PRODUCTS = [
     {
         id: 2,
         name: "Isola di Necker",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "It is the pinnacle of private island luxury - a sanctuary where pristine nature and effortless elegance converge. Encircled by the crystal-clear waters of the Caribbean, this exclusive retreat offers an unparalleled blend of seclusion, adventure, and refined indulgence. Whether you're sailing through turquoise lagoons, unwinding in opulent beachfront villas, or savoring world-class cuisine under the stars, every moment on the Island is designed to elevate senses.",
         details: [
@@ -88,7 +88,7 @@ const PRODUCTS = [
     {
         id: 3,
         name: "Monroe's Kisses",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "Marilyn, they still speak of your kisses. Soft as cashmere and fleeting as champagne bubbles. They say your kisses carried the elegance of roses in full bloom, the decadence of midnight escapades, the allure of something just out of reach. But Marilyn, your kisses were never mere gestures. They were couture - tailored to the moment, unforgettable, and utterly, exquisitely divine. Ohhh, I could spend an eternity lost in the poetry of those kisses.",
         details: [
@@ -129,7 +129,7 @@ const PRODUCTS = [
     {
         id: 4,
         name: "Sardinia",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "Cradled in the embrace of the Mediterranean, Sardinia enchants with its rugged landscapes and tranquil shores, where timeless beauty and ancient traditions intertwine. Its serene coastline invites reflection, while its villages whisper stories of a slower, more deliberate life. Yet, as with the sea, not every desire is met. And in its mysteries, we find the soul of a land untouched by time.",
         details: [
@@ -170,7 +170,7 @@ const PRODUCTS = [
     {
         id: 5,
         name: "Port-Coton",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "Les Pyramides de Port-Coton, mer sauvage by Claude Monet captures the untamed drama of sea and stone with breathtaking intensity. Towering rock formations rise defiantly from crashing waves, rendered in thick, expressive brushstrokes that mirror the raw energy of the Atlantic. Monet's bold use of colour - deep blues, stormy grays, and frothy whites - creates a vivid, almost physical sensation of wind and spray. This work departs from tranquil Impressionism. 1886",
         details: [
@@ -212,7 +212,7 @@ const PRODUCTS = [
     {
         id: 6,
         name: "Maldives",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "A sanctuary of barefoot luxury where time slows, and nature's beauty reigns supreme. \"No shoes, No news\" - just the gentle whisper of the ocean, and endless horizons of sapphire blue. \"Maruhaba\" to a paradise on earth, where overwater villas float above crystal-clear lagoons, and secluded beaches invite effortless serenity. The Mal (dive) s - where every dive is a journey into a world of endless wonder.",
         details: [
@@ -252,7 +252,7 @@ const PRODUCTS = [
     {
         id: 7,
         name: "Palma Mallorca",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "Sun drenched escape where palms sway to the rhythm of the sea, and golden light kisses ancient stone and turquoise coves. The Mediterranean's best-kept secret, whispered between olive groves and quiet villages painted in sun.faded hues. Here, every breeze hums the melody of \"La Isla Bonita\", where Madonna once dreamt of San Pedro - but the true dream lives here, in the soul of Spain's own jewel. \"Con Amor desde la isla bonita de España\", from winding coastal roads to secret calas.",
         details: [
@@ -292,7 +292,7 @@ const PRODUCTS = [
     {
         id: 8,
         name: "Lago di Como",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "Lago Di Como glimmers like liquid silk, where mountains rise with quiet grandeur and villas stand as echoes of a storied past. The water reflects more than the sky-it holds whispers of romance, of idle afternoons, of wine kissed by the fading sun. Here, beauty is effortless, time is unhurried, and every glance is a love letter to elegance itself.",
         details: [
@@ -332,7 +332,7 @@ const PRODUCTS = [
     {
         id: 9,
         name: "Gisele",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "Gisele, poised atop the Martini's delicate rim radiates an aura of effortless sophistication. The rich Expresso gleams beneath her, as her Birkin Bag rests below in a whisper of understated opulence, capturing the essence of Timeless Elegance.",
         details: [
@@ -372,7 +372,7 @@ const PRODUCTS = [
     {
         id: 10,
         name: "Pourville",
-        price: 95,
+        price: 70,
         category: "tshirts",
         description: "The Cliff Walk at Pourville by Claude Monet beautifully captures the quiet majesty of the Normandy coast. The painting immerses the viewer in a windswept landscape, where rolling cliffs meet the vast expanse of sea and sky. Monet's masterful use of light and color transforms the scene into a symphony of blues and greens, evoking both serenity and movement. His delicate yet expressive brushstrokes blur the line between earth air, creating a dreamlike harmony that embodies the fleeting beauty of nature, a hallmark of Impressionism. 1882",
         details: [

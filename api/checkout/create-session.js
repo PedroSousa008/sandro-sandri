@@ -290,16 +290,16 @@ const QUANTITY_MIN = 1;
 const QUANTITY_MAX = 10;
 
 const SERVER_PRODUCT_CATALOG = {
-    1: { unit_amount_cents: 9500, name: 'Isole Cayman', imagePath: 'images/tshirt-1a.png' },
-    2: { unit_amount_cents: 9500, name: 'Isola di Necker', imagePath: 'images/tshirt-2a.png' },
-    3: { unit_amount_cents: 9500, name: "Monroe's Kisses", imagePath: 'images/tshirt-3a.png' },
-    4: { unit_amount_cents: 9500, name: 'Sardinia', imagePath: 'images/tshirt-4a.png' },
-    5: { unit_amount_cents: 9500, name: 'Port-Coton', imagePath: 'images/tshirt-5a.png' },
-    6: { unit_amount_cents: 9500, name: 'Maldives', imagePath: 'images/maldives1.png' },
-    7: { unit_amount_cents: 9500, name: 'Palma Mallorca', imagePath: 'images/palma1.png' },
-    8: { unit_amount_cents: 9500, name: 'Lago di Como', imagePath: 'images/lago1.png' },
-    9: { unit_amount_cents: 9500, name: 'Gisele', imagePath: 'images/gisele1.png' },
-    10: { unit_amount_cents: 9500, name: 'Pourville', imagePath: 'images/pourville1.png' }
+    1: { unit_amount_cents: 7000, name: 'Isole Cayman', imagePath: 'images/tshirt-1a.png' },
+    2: { unit_amount_cents: 7000, name: 'Isola di Necker', imagePath: 'images/tshirt-2a.png' },
+    3: { unit_amount_cents: 7000, name: "Monroe's Kisses", imagePath: 'images/tshirt-3a.png' },
+    4: { unit_amount_cents: 7000, name: 'Sardinia', imagePath: 'images/tshirt-4a.png' },
+    5: { unit_amount_cents: 7000, name: 'Port-Coton', imagePath: 'images/tshirt-5a.png' },
+    6: { unit_amount_cents: 7000, name: 'Maldives', imagePath: 'images/maldives1.png' },
+    7: { unit_amount_cents: 7000, name: 'Palma Mallorca', imagePath: 'images/palma1.png' },
+    8: { unit_amount_cents: 7000, name: 'Lago di Como', imagePath: 'images/lago1.png' },
+    9: { unit_amount_cents: 7000, name: 'Gisele', imagePath: 'images/gisele1.png' },
+    10: { unit_amount_cents: 7000, name: 'Pourville', imagePath: 'images/pourville1.png' }
 };
 
 function getServerProduct(productId) {

@@ -24,5 +24,22 @@ else
   exit 1
 fi
 
-git push "https://PedroSousa008:${TOKEN}@github.com/PedroSousa008/sandro-sandri.git" main
-echo "Push feito. A Vercel vai fazer deploy em breve."
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+ORIGIN=$(git remote get-url origin 2>/dev/null || true)
+# URL com token (PAT): https://github.com/owner/repo.git
+PUSH_URL=""
+case "$ORIGIN" in
+  https://github.com/*)
+    PATH_AFTER_HOST=$(echo "$ORIGIN" | sed 's|^https://github.com/||;s|\.git$||')
+    PUSH_URL="https://x-access-token:${TOKEN}@github.com/${PATH_AFTER_HOST}.git"
+    ;;
+  git@github.com:*)
+    PATH_AFTER_COLON=$(echo "$ORIGIN" | sed 's|^git@github.com:||;s|\.git$||')
+    PUSH_URL="https://x-access-token:${TOKEN}@github.com/${PATH_AFTER_COLON}.git"
+    ;;
+esac
+if [ -z "$PUSH_URL" ]; then
+  PUSH_URL="https://x-access-token:${TOKEN}@github.com/PedroSousa008/sandro-sandri.git"
+fi
+git push "$PUSH_URL" "$BRANCH"
+echo "Push feito ($BRANCH). A Vercel faz deploy quando o projeto está ligado ao GitHub."

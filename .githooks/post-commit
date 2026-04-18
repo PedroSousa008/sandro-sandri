@@ -1,0 +1,7 @@
+#!/bin/sh
+# Após cada commit: push para GitHub em background → Vercel faz deploy (repo ligado ao Git).
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+if [ -x "$REPO_ROOT/push-to-vercel.sh" ]; then
+  nohup "$REPO_ROOT/push-to-vercel.sh" >> /tmp/sandro-sandri-deploy.log 2>&1 &
+fi
+exit 0
