@@ -524,7 +524,6 @@ module.exports = async (req, res) => {
                 await db.saveChapterInventory(chapterId, inventory);
             }
 
-            req.user = adminCheck.user;
             await securityLog.logAdminAction(req, 'ADJUST_INVENTORY', {
                 adjustmentsCount: adjustments.length,
                 appliedCount: applied.length
