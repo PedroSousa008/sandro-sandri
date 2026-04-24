@@ -491,12 +491,23 @@ module.exports = async (req, res) => {
                     }
 
                     if (!model.stock) model.stock = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
+                    if (!model.early_access_stock) model.early_access_stock = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
+
+                    // Keep both pools aligned for manual/offline corrections so Owner table is consistent
+                    // regardless of chapter mode (early_access or add_to_cart).
                     const before = Number(model.stock[entry.size] || 0);
                     const after = Math.max(0, before + entry.delta);
                     if (after !== before + entry.delta) {
                         warnings.push(`Clamped ${model.name} ${entry.size} in ${chapterId} to 0`);
                     }
                     model.stock[entry.size] = after;
+
+                    const eaBefore = Number(model.early_access_stock[entry.size] || 0);
+                    const eaAfter = Math.max(0, eaBefore + entry.delta);
+                    if (eaAfter !== eaBefore + entry.delta) {
+                        warnings.push(`Clamped EA ${model.name} ${entry.size} in ${chapterId} to 0`);
+                    }
+                    model.early_access_stock[entry.size] = eaAfter;
                     applied.push({
                         chapterId,
                         modelId: entry.modelId,
@@ -504,7 +515,9 @@ module.exports = async (req, res) => {
                         size: entry.size,
                         delta: entry.delta,
                         before,
-                        after
+                        after,
+                        earlyAccessBefore: eaBefore,
+                        earlyAccessAfter: eaAfter
                     });
                 });
 

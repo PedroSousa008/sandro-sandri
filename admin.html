@@ -1735,7 +1735,12 @@
         }
 
         // Stock Table Management
+        let stockAutoRefreshIntervalId = null;
+        let stockLoadingInProgress = false;
+
         async function loadStock() {
+            if (stockLoadingInProgress) return;
+            stockLoadingInProgress = true;
             const loadingEl = document.getElementById('stock-loading');
             const errorEl = document.getElementById('stock-error');
             const tableContainer = document.getElementById('stock-table-container');
@@ -1783,14 +1788,14 @@
                 }).catch(() => null);
 
                 // Fetch chapter-based inventory for Chapter I and Chapter II
-                const chapter1Inventory = await fetch('/api/inventory?chapterId=chapter-1', {
+                const chapter1Inventory = await fetch(`/api/inventory?chapterId=chapter-1&t=${Date.now()}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 }).then(r => r.ok ? r.json() : null).catch(() => null);
 
-                const chapter2Inventory = await fetch('/api/inventory?chapterId=chapter-2', {
+                const chapter2Inventory = await fetch(`/api/inventory?chapterId=chapter-2&t=${Date.now()}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -1930,7 +1935,15 @@
                 errorEl.style.display = 'block';
             } finally {
                 loadingEl.style.display = 'none';
+                stockLoadingInProgress = false;
             }
+        }
+
+        function startStockAutoRefresh() {
+            if (stockAutoRefreshIntervalId) return;
+            stockAutoRefreshIntervalId = setInterval(() => {
+                loadStock();
+            }, 15000);
         }
 
         async function applyPresentialAdjustments() {
@@ -1984,6 +1997,8 @@
 
         document.getElementById('load-stock-btn').addEventListener('click', loadStock);
         document.getElementById('apply-presential-adjustments-btn').addEventListener('click', applyPresentialAdjustments);
+        loadStock();
+        startStockAutoRefresh();
 
         // Waitlist Information Management
         async function loadWaitlist() {
