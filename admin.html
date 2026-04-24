@@ -1814,10 +1814,13 @@
 
                     // Determine which chapter this product belongs to
                     let chapterInventory = null;
+                    let chapterId = null;
                     if (product.id >= 1 && product.id <= 5) {
                         chapterInventory = chapter1Inventory;
+                        chapterId = 'chapter-1';
                     } else if (product.id >= 6 && product.id <= 10) {
                         chapterInventory = chapter2Inventory;
+                        chapterId = 'chapter-2';
                     }
 
                     // Get stock from chapter inventory
@@ -1845,6 +1848,7 @@
 
                     return {
                         productId: product.id,
+                        chapterId,
                         name: product.name,
                         stock: stock,
                         totalStock: totalStock
@@ -1878,19 +1882,19 @@
                                 ${item.name}
                             </td>
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${xsStyle}">
-                                ${item.stock.XS}
+                                <input type="number" min="0" step="1" value="${item.stock.XS}" class="stock-input" data-chapter-id="${item.chapterId}" data-model-id="${item.productId}" data-size="XS" style="width: 64px; text-align: center;" />
                             </td>
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${sStyle}">
-                                ${item.stock.S}
+                                <input type="number" min="0" step="1" value="${item.stock.S}" class="stock-input" data-chapter-id="${item.chapterId}" data-model-id="${item.productId}" data-size="S" style="width: 64px; text-align: center;" />
                             </td>
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${mStyle}">
-                                ${item.stock.M}
+                                <input type="number" min="0" step="1" value="${item.stock.M}" class="stock-input" data-chapter-id="${item.chapterId}" data-model-id="${item.productId}" data-size="M" style="width: 64px; text-align: center;" />
                             </td>
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${lStyle}">
-                                ${item.stock.L}
+                                <input type="number" min="0" step="1" value="${item.stock.L}" class="stock-input" data-chapter-id="${item.chapterId}" data-model-id="${item.productId}" data-size="L" style="width: 64px; text-align: center;" />
                             </td>
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); ${xlStyle}">
-                                ${item.stock.XL}
+                                <input type="number" min="0" step="1" value="${item.stock.XL}" class="stock-input" data-chapter-id="${item.chapterId}" data-model-id="${item.productId}" data-size="XL" style="width: 64px; text-align: center;" />
                             </td>
                             <td style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">
                                 ${item.totalStock}
@@ -1952,7 +1956,7 @@
                 alert('Not authenticated. Please log in.');
                 return;
             }
-            if (!confirm('Apply presential stock adjustments now?')) return;
+            if (!confirm('Save these exact stock values now?')) return;
 
             const btn = document.getElementById('apply-presential-adjustments-btn');
             const previousText = btn.textContent;
@@ -1960,13 +1964,16 @@
             btn.textContent = 'Applying...';
 
             try {
-                const adjustments = [
-                    { chapterId: 'chapter-1', modelId: '2', size: 'XS', delta: -1 }, // Isola di Necker
-                    { chapterId: 'chapter-1', modelId: '4', size: 'XS', delta: -1 }, // Sardinia
-                    { chapterId: 'chapter-1', modelId: '1', size: 'M', delta: -1 },  // Isole Cayman
-                    { chapterId: 'chapter-1', modelId: '4', size: 'M', delta: +1 },  // Sardinia
-                    { chapterId: 'chapter-1', modelId: '4', size: 'S', delta: -1 }   // Sardinia
-                ];
+                const inputs = Array.from(document.querySelectorAll('#stock-tbody .stock-input'));
+                if (!inputs.length) {
+                    throw new Error('Load stock table first.');
+                }
+                const setValues = inputs.map((input) => ({
+                    chapterId: input.dataset.chapterId,
+                    modelId: input.dataset.modelId,
+                    size: input.dataset.size,
+                    value: Math.max(0, parseInt(input.value || '0', 10) || 0)
+                }));
 
                 const response = await fetch('/api/admin?endpoint=adjust-inventory', {
                     method: 'POST',
@@ -1974,21 +1981,21 @@
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ adjustments })
+                    body: JSON.stringify({ setValues })
                 });
 
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'Failed to apply adjustments');
+                    throw new Error(data.error || 'Failed to save stock values');
                 }
 
                 await loadStock();
                 const warningText = Array.isArray(data.warnings) && data.warnings.length
                     ? `\nWarnings: ${data.warnings.join(' | ')}`
                     : '';
-                alert(`Adjustments applied successfully.${warningText}`);
+                alert(`Stock values saved successfully.${warningText}`);
             } catch (error) {
-                alert(`Error applying adjustments: ${error.message || 'Network error'}`);
+                alert(`Error saving stock values: ${error.message || 'Network error'}`);
             } finally {
                 btn.disabled = false;
                 btn.textContent = previousText;

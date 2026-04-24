@@ -437,22 +437,25 @@ module.exports = async (req, res) => {
 
         try {
             await db.initDb();
-            const { adjustments } = req.body || {};
+            const { adjustments, setValues } = req.body || {};
             const allowedSizes = new Set(['XS', 'S', 'M', 'L', 'XL']);
+            const isExactSetMode = Array.isArray(setValues) && setValues.length > 0;
+            const rowsToProcess = isExactSetMode ? setValues : adjustments;
 
-            if (!Array.isArray(adjustments) || adjustments.length === 0) {
+            if (!Array.isArray(rowsToProcess) || rowsToProcess.length === 0) {
                 return res.status(400).json({
                     success: false,
-                    error: 'adjustments array is required'
+                    error: 'adjustments or setValues array is required'
                 });
             }
 
             const groupedByChapter = {};
-            for (const row of adjustments) {
+            for (const row of rowsToProcess) {
                 const chapterId = String(row.chapterId || '').trim().toLowerCase();
                 const modelId = String(row.modelId || '').trim();
                 const size = String(row.size || '').trim().toUpperCase();
                 const delta = Number(row.delta);
+                const value = Number(row.value);
 
                 if (!/^chapter-(10|[1-9])$/.test(chapterId)) {
                     return res.status(400).json({ success: false, error: `Invalid chapterId: ${row.chapterId}` });
@@ -463,12 +466,15 @@ module.exports = async (req, res) => {
                 if (!allowedSizes.has(size)) {
                     return res.status(400).json({ success: false, error: `Invalid size: ${row.size}` });
                 }
-                if (!Number.isFinite(delta) || !Number.isInteger(delta) || delta === 0) {
+                if (!isExactSetMode && (!Number.isFinite(delta) || !Number.isInteger(delta) || delta === 0)) {
                     return res.status(400).json({ success: false, error: `Invalid delta for model ${modelId}/${size}` });
+                }
+                if (isExactSetMode && (!Number.isFinite(value) || !Number.isInteger(value) || value < 0)) {
+                    return res.status(400).json({ success: false, error: `Invalid value for model ${modelId}/${size}` });
                 }
 
                 if (!groupedByChapter[chapterId]) groupedByChapter[chapterId] = [];
-                groupedByChapter[chapterId].push({ modelId, size, delta });
+                groupedByChapter[chapterId].push({ modelId, size, delta, value });
             }
 
             const applied = [];
@@ -496,24 +502,26 @@ module.exports = async (req, res) => {
                     // Keep both pools aligned for manual/offline corrections so Owner table is consistent
                     // regardless of chapter mode (early_access or add_to_cart).
                     const before = Number(model.stock[entry.size] || 0);
-                    const after = Math.max(0, before + entry.delta);
-                    if (after !== before + entry.delta) {
-                        warnings.push(`Clamped ${model.name} ${entry.size} in ${chapterId} to 0`);
-                    }
+                    const after = isExactSetMode
+                        ? entry.value
+                        : Math.max(0, before + entry.delta);
+                    if (!isExactSetMode && after !== before + entry.delta) warnings.push(`Clamped ${model.name} ${entry.size} in ${chapterId} to 0`);
                     model.stock[entry.size] = after;
 
                     const eaBefore = Number(model.early_access_stock[entry.size] || 0);
-                    const eaAfter = Math.max(0, eaBefore + entry.delta);
-                    if (eaAfter !== eaBefore + entry.delta) {
-                        warnings.push(`Clamped EA ${model.name} ${entry.size} in ${chapterId} to 0`);
-                    }
+                    const eaAfter = isExactSetMode
+                        ? entry.value
+                        : Math.max(0, eaBefore + entry.delta);
+                    if (!isExactSetMode && eaAfter !== eaBefore + entry.delta) warnings.push(`Clamped EA ${model.name} ${entry.size} in ${chapterId} to 0`);
                     model.early_access_stock[entry.size] = eaAfter;
                     applied.push({
                         chapterId,
                         modelId: entry.modelId,
                         modelName: model.name,
                         size: entry.size,
-                        delta: entry.delta,
+                        mode: isExactSetMode ? 'set' : 'delta',
+                        delta: isExactSetMode ? null : entry.delta,
+                        value: isExactSetMode ? entry.value : null,
                         before,
                         after,
                         earlyAccessBefore: eaBefore,
@@ -525,13 +533,16 @@ module.exports = async (req, res) => {
             }
 
             await securityLog.logAdminAction(req, 'ADJUST_INVENTORY', {
-                adjustmentsCount: adjustments.length,
+                mode: isExactSetMode ? 'set' : 'delta',
+                adjustmentsCount: rowsToProcess.length,
                 appliedCount: applied.length
             });
 
             return res.status(200).json({
                 success: true,
-                message: `Applied ${applied.length} inventory adjustments`,
+                message: isExactSetMode
+                    ? `Applied ${applied.length} exact stock values`
+                    : `Applied ${applied.length} inventory adjustments`,
                 applied,
                 warnings
             });
