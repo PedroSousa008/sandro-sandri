@@ -271,7 +271,8 @@
 
         <div class="admin-section">
             <h2 class="admin-section-title">Stock</h2>
-            <div style="margin-bottom: var(--space-md);">
+            <div style="margin-bottom: var(--space-md); display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+                <button class="admin-action-btn admin-action-btn-secondary" id="apply-presential-adjustments-btn">Apply Presential Adjustments</button>
                 <button class="admin-action-btn admin-action-btn-primary" id="load-stock-btn">Load Stock Data</button>
             </div>
             <div id="stock-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
@@ -1932,7 +1933,57 @@
             }
         }
 
+        async function applyPresentialAdjustments() {
+            const token = localStorage.getItem('sandroSandri_session_token');
+            if (!token) {
+                alert('Not authenticated. Please log in.');
+                return;
+            }
+            if (!confirm('Apply presential stock adjustments now?')) return;
+
+            const btn = document.getElementById('apply-presential-adjustments-btn');
+            const previousText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Applying...';
+
+            try {
+                const adjustments = [
+                    { chapterId: 'chapter-1', modelId: '2', size: 'XS', delta: -1 }, // Isola di Necker
+                    { chapterId: 'chapter-1', modelId: '4', size: 'XS', delta: -1 }, // Sardinia
+                    { chapterId: 'chapter-1', modelId: '1', size: 'M', delta: -1 },  // Isole Cayman
+                    { chapterId: 'chapter-1', modelId: '4', size: 'M', delta: +1 },  // Sardinia
+                    { chapterId: 'chapter-1', modelId: '4', size: 'S', delta: -1 }   // Sardinia
+                ];
+
+                const response = await fetch('/api/admin?endpoint=adjust-inventory', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ adjustments })
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to apply adjustments');
+                }
+
+                await loadStock();
+                const warningText = Array.isArray(data.warnings) && data.warnings.length
+                    ? `\nWarnings: ${data.warnings.join(' | ')}`
+                    : '';
+                alert(`Adjustments applied successfully.${warningText}`);
+            } catch (error) {
+                alert(`Error applying adjustments: ${error.message || 'Network error'}`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = previousText;
+            }
+        }
+
         document.getElementById('load-stock-btn').addEventListener('click', loadStock);
+        document.getElementById('apply-presential-adjustments-btn').addEventListener('click', applyPresentialAdjustments);
 
         // Waitlist Information Management
         async function loadWaitlist() {

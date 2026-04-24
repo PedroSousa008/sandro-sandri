@@ -92,7 +92,7 @@ module.exports = async (req, res) => {
     }
     
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
-    if (endpoint === 'customers' || endpoint === 'orders' || (endpoint === 'activity' && req.method === 'GET')) {
+    if (endpoint === 'customers' || endpoint === 'orders' || endpoint === 'adjust-inventory' || (endpoint === 'activity' && req.method === 'GET')) {
         const adminCheck = auth.requireAdmin(req);
         if (!adminCheck.authorized) {
             // SECURITY: Log unauthorized access attempt
@@ -429,6 +429,104 @@ module.exports = async (req, res) => {
             }
         }
         return res.status(405).json({ error: 'Method not allowed' });
+    } else if (endpoint === 'adjust-inventory') {
+        // Manual chapter inventory adjustment (owner only)
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
+
+        try {
+            await db.initDb();
+            const { adjustments } = req.body || {};
+            const allowedSizes = new Set(['XS', 'S', 'M', 'L', 'XL']);
+
+            if (!Array.isArray(adjustments) || adjustments.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'adjustments array is required'
+                });
+            }
+
+            const groupedByChapter = {};
+            for (const row of adjustments) {
+                const chapterId = String(row.chapterId || '').trim().toLowerCase();
+                const modelId = String(row.modelId || '').trim();
+                const size = String(row.size || '').trim().toUpperCase();
+                const delta = Number(row.delta);
+
+                if (!/^chapter-(10|[1-9])$/.test(chapterId)) {
+                    return res.status(400).json({ success: false, error: `Invalid chapterId: ${row.chapterId}` });
+                }
+                if (!modelId) {
+                    return res.status(400).json({ success: false, error: 'modelId is required in all adjustments' });
+                }
+                if (!allowedSizes.has(size)) {
+                    return res.status(400).json({ success: false, error: `Invalid size: ${row.size}` });
+                }
+                if (!Number.isFinite(delta) || !Number.isInteger(delta) || delta === 0) {
+                    return res.status(400).json({ success: false, error: `Invalid delta for model ${modelId}/${size}` });
+                }
+
+                if (!groupedByChapter[chapterId]) groupedByChapter[chapterId] = [];
+                groupedByChapter[chapterId].push({ modelId, size, delta });
+            }
+
+            const applied = [];
+            const warnings = [];
+
+            for (const [chapterId, rows] of Object.entries(groupedByChapter)) {
+                const inventory = await db.getChapterInventory(chapterId);
+                if (!inventory || !inventory.models) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Inventory for ${chapterId} is not initialized`
+                    });
+                }
+
+                rows.forEach((entry) => {
+                    const model = inventory.models[entry.modelId];
+                    if (!model) {
+                        warnings.push(`Model ${entry.modelId} not found in ${chapterId}`);
+                        return;
+                    }
+
+                    if (!model.stock) model.stock = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
+                    const before = Number(model.stock[entry.size] || 0);
+                    const after = Math.max(0, before + entry.delta);
+                    if (after !== before + entry.delta) {
+                        warnings.push(`Clamped ${model.name} ${entry.size} in ${chapterId} to 0`);
+                    }
+                    model.stock[entry.size] = after;
+                    applied.push({
+                        chapterId,
+                        modelId: entry.modelId,
+                        modelName: model.name,
+                        size: entry.size,
+                        delta: entry.delta,
+                        before,
+                        after
+                    });
+                });
+
+                await db.saveChapterInventory(chapterId, inventory);
+            }
+
+            req.user = adminCheck.user;
+            await securityLog.logAdminAction(req, 'ADJUST_INVENTORY', {
+                adjustmentsCount: adjustments.length,
+                appliedCount: applied.length
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: `Applied ${applied.length} inventory adjustments`,
+                applied,
+                warnings
+            });
+        } catch (error) {
+            errorHandler.sendSecureError(res, error, 500, 'Failed to adjust inventory. Please try again.', 'ADJUST_INVENTORY_ERROR');
+            return;
+        }
     } else if (endpoint === 'init-inventory') {
         // Initialize chapter inventory endpoint (owner only)
         if (req.method !== 'POST') {
@@ -566,7 +664,7 @@ module.exports = async (req, res) => {
             return;
         }
     } else {
-        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, customers, orders, or init-inventory' });
+        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, customers, orders, adjust-inventory, or init-inventory' });
     }
     } catch (error) {
         // CRITICAL: Catch ALL errors and return success to prevent 500 errors
