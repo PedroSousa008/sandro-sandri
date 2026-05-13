@@ -5,6 +5,7 @@
 
 const db = require('../../lib/storage');
 const auth = require('../../lib/auth');
+const presence = require('../../lib/presence');
 const securityLog = require('../../lib/security-log');
 const cors = require('../../lib/cors');
 const errorHandler = require('../../lib/error-handler');
@@ -115,49 +116,7 @@ module.exports = async (req, res) => {
                 await db.initDb();
 
                 const activityData = await db.getActivityData() || {};
-                const now = new Date();
-                const INACTIVE_THRESHOLD = 3 * 60 * 1000; // 3 minutes of inactivity
-
-                const activeSessions = Object.values(activityData).filter(session => {
-                    if (!session || !session.lastActivity) return false;
-                    const lastActivityTime = new Date(session.lastActivity);
-                    const timeSinceActivity = now - lastActivityTime;
-                    return timeSinceActivity <= INACTIVE_THRESHOLD;
-                });
-
-                const ownerEmail = (auth.OWNER_EMAIL || '').toLowerCase();
-                const onlineUsers = activeSessions.filter(s => {
-                    return s.email !== ownerEmail;
-                }).length;
-
-                const checkoutUsers = activeSessions.filter(s => {
-                    return s.isCheckout === true && s.email !== ownerEmail;
-                }).length;
-
-                // Group checkout users by chapter
-                const checkoutUsersByChapter = {
-                    'chapter-1': 0,
-                    'chapter-2': 0,
-                    'both': 0,
-                    'unknown': 0
-                };
-
-                activeSessions.forEach(session => {
-                    if (session.isCheckout === true && session.email !== ownerEmail) {
-                        const chapters = session.chapters || [];
-                        if (chapters.length === 0) {
-                            checkoutUsersByChapter.unknown++;
-                        } else if (chapters.includes('chapter-1') && chapters.includes('chapter-2')) {
-                            checkoutUsersByChapter.both++;
-                        } else if (chapters.includes('chapter-1')) {
-                            checkoutUsersByChapter['chapter-1']++;
-                        } else if (chapters.includes('chapter-2')) {
-                            checkoutUsersByChapter['chapter-2']++;
-                        } else {
-                            checkoutUsersByChapter.unknown++;
-                        }
-                    }
-                });
+                const counts = presence.computeOnlineFromActivityData(activityData, auth.OWNER_EMAIL);
 
                 const visitStats = await db.getSiteDailyVisits();
                 const todayKey = db.formatDayKeyEuropeLisbon(new Date());
@@ -165,15 +124,17 @@ module.exports = async (req, res) => {
 
                 res.status(200).json({
                     success: true,
-                    onlineUsers: onlineUsers,
-                    checkoutUsers: checkoutUsers,
-                    checkoutUsersByChapter: checkoutUsersByChapter,
-                    activeSessions: activeSessions.length,
-                    totalSessions: Object.keys(activityData).length,
-                    sessions: activeSessions,
+                    onlineUsers: counts.onlineUsers,
+                    checkoutUsers: counts.checkoutUsers,
+                    checkoutUsersByChapter: counts.checkoutUsersByChapter,
+                    activeSessions: counts.rawActiveCount,
+                    openBrowserTabs: counts.rawActiveCount,
+                    totalSessions: counts.totalSessions,
+                    sessions: counts.activeSessions,
                     visitedToday,
                     lisbonToday: todayKey,
-                    visitStatsTimezone: db.VISIT_STATS_TIMEZONE
+                    visitStatsTimezone: db.VISIT_STATS_TIMEZONE,
+                    presenceThresholdMs: presence.ONLINE_THRESHOLD_MS
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users

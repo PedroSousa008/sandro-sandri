@@ -5,6 +5,7 @@
 
 const db = require('../../lib/storage');
 const auth = require('../../lib/auth');
+const presence = require('../../lib/presence');
 const validation = require('../../lib/validation');
 const securityLog = require('../../lib/security-log');
 const cors = require('../../lib/cors');
@@ -24,7 +25,18 @@ module.exports = async (req, res) => {
     try {
         // ACTIVITY TRACKING (POST with action=activity)
         if (req.method === 'POST' && action === 'activity') {
-            const { sessionId, email, page, pageName, isCheckout, userAgent, cart, chapters } = req.body;
+            const body = req.body || {};
+            const {
+                sessionId,
+                email,
+                page,
+                pageName,
+                isCheckout,
+                userAgent,
+                cart,
+                chapters,
+                leave
+            } = body;
 
             if (!sessionId) {
                 return res.status(400).json({ error: 'Session ID is required' });
@@ -32,18 +44,37 @@ module.exports = async (req, res) => {
 
             await db.initDb();
 
+            const ownerEmail = (auth.getOwnerEmailPublic && auth.getOwnerEmailPublic()) || auth.OWNER_EMAIL || '';
+            const emailNorm = email ? String(email).toLowerCase().trim() : '';
+            const ownerNorm = ownerEmail ? String(ownerEmail).toLowerCase().trim() : '';
+
             let activityData = await db.getActivityData();
             if (!activityData) {
                 activityData = {};
             }
-            
+
+            // Tab closed / navigated away — remove this tab from presence immediately
+            if (leave === true) {
+                if (activityData[sessionId]) {
+                    delete activityData[sessionId];
+                    presence.pruneStaleActivityEntries(activityData);
+                    await db.saveActivityData(activityData);
+                }
+                return res.status(200).json({ success: true, left: true });
+            }
+
+            // Owner traffic does not affect live presence or daily stats (handled separately in admin UI)
+            if (ownerNorm && emailNorm === ownerNorm) {
+                return res.status(200).json({ success: true, message: 'Owner excluded from presence' });
+            }
+
             const existingSession = activityData[sessionId];
             if (existingSession && existingSession.lastActivity) {
                 const lastUpdate = new Date(existingSession.lastActivity);
                 const now = new Date();
                 const secondsSinceUpdate = (now - lastUpdate) / 1000;
-                
-                if (secondsSinceUpdate < 2) {
+
+                if (secondsSinceUpdate < presence.SERVER_ACTIVITY_THROTTLE_SEC) {
                     return res.status(200).json({
                         success: true,
                         message: 'Activity recorded (throttled)'
@@ -77,8 +108,11 @@ module.exports = async (req, res) => {
                 chaptersInCart = Array.from(chapterSet);
             }
 
+            const visitorKey = presence.buildVisitorPresenceKey(email, sessionId);
+
             activityData[sessionId] = {
                 sessionId: sessionId,
+                visitorKey: visitorKey || null,
                 email: email || null,
                 page: currentPage,
                 isCheckout: onCheckoutPage,
@@ -88,30 +122,14 @@ module.exports = async (req, res) => {
                 createdAt: activityData[sessionId]?.createdAt || new Date().toISOString()
             };
 
-            const shouldCleanup = Math.random() < 0.1;
-            if (shouldCleanup) {
-                const now = new Date();
-                Object.keys(activityData).forEach(id => {
-                    const session = activityData[id];
-                    if (session && session.lastActivity) {
-                        const lastActivityTime = new Date(session.lastActivity);
-                        const minutesSinceActivity = (now - lastActivityTime) / (1000 * 60);
-                        if (minutesSinceActivity > 10) {
-                            delete activityData[id];
-                        }
-                    }
-                });
-            }
+            presence.pruneStaleActivityEntries(activityData);
 
             await db.saveActivityData(activityData);
 
-            // Persistent daily unique visitors (browser sessions), Europe/Lisbon calendar day — excludes owner account
-            const ownerEmail = (auth.getOwnerEmailPublic && auth.getOwnerEmailPublic()) || auth.OWNER_EMAIL || '';
-            const emailNorm = email ? String(email).toLowerCase().trim() : '';
-            const ownerNorm = ownerEmail ? String(ownerEmail).toLowerCase().trim() : '';
-            if (!ownerNorm || emailNorm !== ownerNorm) {
+            // Daily unique visitors: one key per logged-in user, else per guest session (Lisbon day).
+            if (visitorKey) {
                 try {
-                    await db.recordSiteDailyVisit(sessionId);
+                    await db.recordSiteDailyVisit(visitorKey);
                 } catch (visitErr) {
                     console.warn('recordSiteDailyVisit:', visitErr.message);
                 }
