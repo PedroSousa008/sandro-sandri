@@ -368,27 +368,58 @@ class AdminSystem {
         
         // Update UI (only if owner is logged in)
         if (window.auth && window.auth.isOwner()) {
-            const countEl = document.getElementById('admin-online-count');
-            if (countEl) {
-                let countText = `${this.onlineUsers} user${this.onlineUsers !== 1 ? 's' : ''} online`;
-                if (checkoutUsers > 0) {
-                    countText += ` (${checkoutUsers} on checkout)`;
-                }
-                countEl.textContent = countText;
-            }
-            
-            // Also update dashboard if on admin page
-            const dashboardCount = document.getElementById('dashboard-online-count');
-            if (dashboardCount) {
-                dashboardCount.textContent = this.onlineUsers;
-            }
-            
-            // Update checkout count if element exists
-            const checkoutCount = document.getElementById('dashboard-checkout-count');
-            if (checkoutCount) {
-                checkoutCount.textContent = checkoutUsers;
-            }
+            this.fetchOwnerServerActivity();
         }
+    }
+
+    fetchOwnerServerActivity() {
+        if (!window.auth || !window.auth.isOwner()) return;
+        const token = localStorage.getItem('sandroSandri_session_token');
+        const headers = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            headers['X-Session-Token'] = token;
+        }
+        fetch('/api/admin?endpoint=activity', { credentials: 'include', headers })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                if (!data || !data.success) return;
+                const n = data.onlineUsers || 0;
+                const co = data.checkoutUsers || 0;
+                const v = typeof data.visitedToday === 'number' ? data.visitedToday : 0;
+                const countEl = document.getElementById('admin-online-count');
+                if (countEl) {
+                    let countText = `${n} user${n !== 1 ? 's' : ''} online`;
+                    if (co > 0) {
+                        countText += ` (${co} on checkout)`;
+                    }
+                    countEl.textContent = countText;
+                }
+                const visEl = document.getElementById('admin-visited-today');
+                if (visEl) {
+                    visEl.textContent = `${v} visited today`;
+                }
+                const dashOnline = document.getElementById('dashboard-online-count');
+                if (dashOnline) dashOnline.textContent = n;
+                const dashCheckout = document.getElementById('dashboard-checkout-count');
+                if (dashCheckout) dashCheckout.textContent = co;
+                const dashVisited = document.getElementById('dashboard-visited-today');
+                if (dashVisited) dashVisited.textContent = v;
+                const checkoutChapterEl = document.getElementById('checkout-by-chapter');
+                const checkoutByChapter = data.checkoutUsersByChapter || {};
+                if (checkoutChapterEl && Object.keys(checkoutByChapter).length > 0) {
+                    const c1 = document.getElementById('checkout-chapter-1');
+                    const c2 = document.getElementById('checkout-chapter-2');
+                    const cb = document.getElementById('checkout-both');
+                    if (c1) c1.textContent = checkoutByChapter['chapter-1'] || 0;
+                    if (c2) c2.textContent = checkoutByChapter['chapter-2'] || 0;
+                    if (cb) cb.textContent = checkoutByChapter.both || 0;
+                    checkoutChapterEl.style.display = 'block';
+                } else if (checkoutChapterEl) {
+                    checkoutChapterEl.style.display = 'none';
+                }
+            })
+            .catch(() => {});
     }
     
     // Show notification

@@ -237,6 +237,7 @@ class AuthSystem {
                     <div class="admin-bar-left">
                         <span class="admin-badge">OWNER MODE</span>
                         <span class="admin-online-count" id="admin-online-count">0 users online</span>
+                        <span class="admin-online-count" id="admin-visited-today">0 visited today</span>
                     </div>
                     <div class="admin-bar-right">
                         <button class="admin-btn" id="admin-dashboard-btn">Dashboard</button>

@@ -147,6 +147,48 @@
             color: var(--color-text-light);
             margin-top: var(--space-xs);
         }
+
+        .visit-cal-table th,
+        .visit-cal-table td {
+            border: 1px solid var(--color-gray);
+            text-align: center;
+            padding: 0.5rem 0.35rem;
+            min-width: 2.75rem;
+            vertical-align: middle;
+        }
+        .visit-cal-table thead th {
+            background: #1a1a2e;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        .visit-cal-table tbody td.visit-cal-out {
+            background: var(--color-gray-light);
+            color: transparent;
+            border-color: #e8e8e8;
+        }
+        .visit-cal-table tbody td.visit-cal-day {
+            background: var(--color-white);
+            font-weight: 500;
+        }
+        .visit-cal-table tbody td.visit-cal-today {
+            outline: 2px solid var(--color-navy);
+            outline-offset: -2px;
+            background: rgba(26, 26, 46, 0.06);
+        }
+        .visit-cal-num {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--color-text-light);
+            font-weight: 600;
+        }
+        .visit-cal-count {
+            display: block;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--color-navy);
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -185,9 +227,39 @@
                     <div>Both: <span id="checkout-both">0</span></div>
                 </div>
             </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-label">Visitas hoje</div>
+                <div class="admin-stat-value" id="dashboard-visited-today">0</div>
+                <div style="font-size: 0.75rem; color: var(--color-text-light); margin-top: var(--space-xs);">
+                    Sessões únicas (calendário Lisboa)
+                </div>
+            </div>
         </div>
 
-        <!-- Chapter Mode Control -->
+        <!-- Daily site visits calendar -->
+        <div class="admin-section" style="margin-top: var(--space-xl);">
+            <h2 class="admin-section-title">Calendário de visitas</h2>
+            <p style="font-family: var(--font-sans); font-size: 0.8125rem; color: var(--color-text-light); margin-bottom: var(--space-md); max-width: 52rem;">
+                Cada célula mostra quantas <strong>sessões de browser distintas</strong> acederam ao site nesse dia (fuso horário de Lisboa).
+                A tua sessão enquanto owner não entra nestes números. Só há dados para os dias em que o registo já estava ativo no servidor — não há histórico retroactivo antes dessa data.
+            </p>
+            <div style="display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; margin-bottom: var(--space-md);">
+                <button type="button" class="admin-action-btn admin-action-btn-secondary" id="visit-cal-prev" aria-label="Mês anterior">← Mês anterior</button>
+                <h3 id="visit-cal-title" style="margin: 0; font-family: var(--font-sans); font-size: 1.125rem; font-weight: 600; color: var(--color-navy); min-width: 12rem; text-align: center;">—</h3>
+                <button type="button" class="admin-action-btn admin-action-btn-secondary" id="visit-cal-next" aria-label="Mês seguinte">Mês seguinte →</button>
+                <span id="visit-cal-month-total" style="font-size: 0.875rem; color: var(--color-text-light);"></span>
+            </div>
+            <div id="visit-cal-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
+            <div id="visit-cal-loading" style="display: none; text-align: center; padding: var(--space-md); color: var(--color-text-light);">A carregar…</div>
+            <div id="visit-cal-table-wrap" style="overflow-x: auto;">
+                <table class="visit-cal-table" id="visit-cal-table" style="display: none; width: 100%; max-width: 42rem; border-collapse: collapse; font-size: 0.8125rem;">
+                    <thead>
+                        <tr id="visit-cal-thead-row"></tr>
+                    </thead>
+                    <tbody id="visit-cal-tbody"></tbody>
+                </table>
+            </div>
+        </div>
         <div class="admin-section" style="margin-top: var(--space-xl);">
             <h2 class="admin-section-title">Site Commerce Mode</h2>
             <div style="margin-bottom: var(--space-md); padding: var(--space-md); background: var(--color-gray-light); border-radius: 4px;">
@@ -447,18 +519,29 @@
         // Initialize dashboard
         async function updateDashboard() {
             try {
-                // Fetch active users from server
-                const response = await fetch('/api/admin?endpoint=activity');
+                const token = localStorage.getItem('sandroSandri_session_token');
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                    headers['X-Session-Token'] = token;
+                }
+                const response = await fetch('/api/admin?endpoint=activity', {
+                    credentials: 'include',
+                    headers
+                });
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
                         const onlineCount = data.onlineUsers || 0;
                         const checkoutCount = data.checkoutUsers || 0;
                         const checkoutByChapter = data.checkoutUsersByChapter || {};
+                        const visitedToday = typeof data.visitedToday === 'number' ? data.visitedToday : 0;
                         
                         // Update dashboard stats
                         document.getElementById('dashboard-online-count').textContent = onlineCount;
                         document.getElementById('dashboard-checkout-count').textContent = checkoutCount;
+                        const dashVisited = document.getElementById('dashboard-visited-today');
+                        if (dashVisited) dashVisited.textContent = visitedToday;
                         
                         // Update chapter-specific checkout stats
                         const checkoutChapterEl = document.getElementById('checkout-by-chapter');
@@ -474,7 +557,15 @@
                         // Update header admin bar counter (same tracking method)
                         const adminOnlineCount = document.getElementById('admin-online-count');
                         if (adminOnlineCount) {
-                            adminOnlineCount.textContent = `${onlineCount} user${onlineCount !== 1 ? 's' : ''} online`;
+                            let countText = `${onlineCount} user${onlineCount !== 1 ? 's' : ''} online`;
+                            if (checkoutCount > 0) {
+                                countText += ` (${checkoutCount} on checkout)`;
+                            }
+                            adminOnlineCount.textContent = countText;
+                        }
+                        const adminVisited = document.getElementById('admin-visited-today');
+                        if (adminVisited) {
+                            adminVisited.textContent = `${visitedToday} visited today`;
                         }
                     }
                 }
@@ -482,6 +573,106 @@
                 console.error('Error updating dashboard:', error);
             }
         }
+
+        let visitCalYear = null;
+        let visitCalMonth = null;
+
+        function visitCalDefaultFromClient() {
+            try {
+                const parts = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Europe/Lisbon',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }).formatToParts(new Date());
+                const yp = parts.find((p) => p.type === 'year');
+                const mp = parts.find((p) => p.type === 'month');
+                if (yp && mp) {
+                    return { year: parseInt(yp.value, 10), month: parseInt(mp.value, 10) };
+                }
+            } catch (e) { /* ignore */ }
+            const now = new Date();
+            return { year: now.getFullYear(), month: now.getMonth() + 1 };
+        }
+
+        async function loadVisitCalendar() {
+            const errEl = document.getElementById('visit-cal-error');
+            const loadEl = document.getElementById('visit-cal-loading');
+            const table = document.getElementById('visit-cal-table');
+            const tbody = document.getElementById('visit-cal-tbody');
+            const theadRow = document.getElementById('visit-cal-thead-row');
+            const titleEl = document.getElementById('visit-cal-title');
+            const totalEl = document.getElementById('visit-cal-month-total');
+            if (visitCalYear == null || visitCalMonth == null) {
+                const d = visitCalDefaultFromClient();
+                visitCalYear = d.year;
+                visitCalMonth = d.month;
+            }
+            errEl.style.display = 'none';
+            errEl.textContent = '';
+            loadEl.style.display = 'block';
+            table.style.display = 'none';
+            const token = localStorage.getItem('sandroSandri_session_token');
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                headers['X-Session-Token'] = token;
+            }
+            try {
+                const url = `/api/admin?endpoint=visit-calendar&year=${visitCalYear}&month=${visitCalMonth}`;
+                const res = await fetch(url, { credentials: 'include', headers });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || res.statusText || 'Pedido falhou');
+                }
+                titleEl.textContent = data.monthTitle || `${visitCalYear}-${String(visitCalMonth).padStart(2, '0')}`;
+                const mt = typeof data.monthTotal === 'number' ? data.monthTotal : 0;
+                totalEl.textContent = `Soma dos dias: ${mt} (a mesma pessoa em dias diferentes conta mais do que uma vez)`;
+                theadRow.innerHTML = (data.weekdayHeaders || []).map((h) =>
+                    `<th>${h}</th>`
+                ).join('');
+                tbody.innerHTML = '';
+                (data.weeks || []).forEach((row) => {
+                    const tr = document.createElement('tr');
+                    row.forEach((cell) => {
+                        const td = document.createElement('td');
+                        if (!cell.inMonth || cell.day == null) {
+                            td.className = 'visit-cal-out';
+                            td.innerHTML = '&nbsp;';
+                        } else {
+                            td.className = 'visit-cal-day' + (cell.isToday ? ' visit-cal-today' : '');
+                            td.innerHTML = `<span class="visit-cal-num">${cell.day}</span><span class="visit-cal-count">${cell.count != null ? cell.count : 0}</span>`;
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                table.style.display = 'table';
+            } catch (e) {
+                console.error('visit calendar', e);
+                errEl.textContent = e.message || 'Erro ao carregar calendário';
+                errEl.style.display = 'block';
+            } finally {
+                loadEl.style.display = 'none';
+            }
+        }
+
+        document.getElementById('visit-cal-prev').addEventListener('click', () => {
+            visitCalMonth -= 1;
+            if (visitCalMonth < 1) {
+                visitCalMonth = 12;
+                visitCalYear -= 1;
+            }
+            loadVisitCalendar();
+        });
+        document.getElementById('visit-cal-next').addEventListener('click', () => {
+            visitCalMonth += 1;
+            if (visitCalMonth > 12) {
+                visitCalMonth = 1;
+                visitCalYear += 1;
+            }
+            loadVisitCalendar();
+        });
         
         // Bind reset inventory button – calls server to reset Chapter I and Chapter II to full stock
         document.getElementById('reset-inventory-btn').addEventListener('click', async () => {
@@ -530,6 +721,7 @@
             updateDashboard();
         }, 3000);
         updateDashboard();
+        loadVisitCalendar();
 
         // Chapter Mode Management
         let chapterModeData = null;

@@ -92,7 +92,7 @@ module.exports = async (req, res) => {
     }
     
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
-    if (endpoint === 'customers' || endpoint === 'orders' || endpoint === 'adjust-inventory' || (endpoint === 'activity' && req.method === 'GET')) {
+    if (endpoint === 'customers' || endpoint === 'orders' || endpoint === 'adjust-inventory' || endpoint === 'visit-calendar' || (endpoint === 'activity' && req.method === 'GET')) {
         const adminCheck = auth.requireAdmin(req);
         if (!adminCheck.authorized) {
             // SECURITY: Log unauthorized access attempt
@@ -159,6 +159,10 @@ module.exports = async (req, res) => {
                     }
                 });
 
+                const visitStats = await db.getSiteDailyVisits();
+                const todayKey = db.formatDayKeyEuropeLisbon(new Date());
+                const visitedToday = db.countSessionsForDayKey(visitStats, todayKey);
+
                 res.status(200).json({
                     success: true,
                     onlineUsers: onlineUsers,
@@ -166,12 +170,73 @@ module.exports = async (req, res) => {
                     checkoutUsersByChapter: checkoutUsersByChapter,
                     activeSessions: activeSessions.length,
                     totalSessions: Object.keys(activityData).length,
-                    sessions: activeSessions
+                    sessions: activeSessions,
+                    visitedToday,
+                    lisbonToday: todayKey,
+                    visitStatsTimezone: db.VISIT_STATS_TIMEZONE
                 });
             } catch (error) {
                 // SECURITY: Don't expose error details to users
                 errorHandler.sendSecureError(res, error, 500, 'Failed to fetch activity. Please try again.', 'FETCH_ACTIVITY_ERROR');
             }
+        }
+    } else if (endpoint === 'visit-calendar') {
+        if (req.method !== 'GET') {
+            return res.status(405).json({ success: false, error: 'Method not allowed' });
+        }
+        try {
+            await db.initDb();
+            const todayKey = db.formatDayKeyEuropeLisbon(new Date());
+            const [defY, defM] = todayKey.split('-').map((x) => parseInt(x, 10));
+            let year = parseInt(req.query.year, 10);
+            let month = parseInt(req.query.month, 10);
+            if (!Number.isFinite(year) || year < 2020 || year > 2100) year = defY;
+            if (!Number.isFinite(month) || month < 1 || month > 12) month = defM;
+
+            const counts = await db.getSiteDailyVisitCountsForMonth(year, month);
+            const first = new Date(year, month - 1, 1);
+            const startOffset = (first.getDay() + 6) % 7;
+            const lastDay = new Date(year, month, 0).getDate();
+            const cells = [];
+            for (let i = 0; i < startOffset; i++) {
+                cells.push({ day: null, count: null, inMonth: false });
+            }
+            for (let d = 1; d <= lastDay; d++) {
+                const key = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                cells.push({
+                    day: d,
+                    count: counts[d] || 0,
+                    inMonth: true,
+                    isToday: key === todayKey
+                });
+            }
+            while (cells.length % 7 !== 0) {
+                cells.push({ day: null, count: null, inMonth: false });
+            }
+            const weeks = [];
+            for (let i = 0; i < cells.length; i += 7) {
+                weeks.push(cells.slice(i, i + 7));
+            }
+
+            const monthTitle = new Date(year, month - 1, 15).toLocaleString('pt-PT', {
+                month: 'long',
+                year: 'numeric'
+            });
+            const monthTotal = Object.values(counts).reduce((a, b) => a + b, 0);
+
+            return res.status(200).json({
+                success: true,
+                year,
+                month,
+                monthTitle,
+                monthTotal,
+                timezone: db.VISIT_STATS_TIMEZONE,
+                weekdayHeaders: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                weeks
+            });
+        } catch (error) {
+            errorHandler.sendSecureError(res, error, 500, 'Failed to load visit calendar.', 'VISIT_CALENDAR_ERROR');
+            return;
         }
     } else if (endpoint === 'customers') {
         // Customers endpoint (GET and DELETE)
@@ -687,7 +752,7 @@ module.exports = async (req, res) => {
             return;
         }
     } else {
-        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, customers, orders, adjust-inventory, or init-inventory' });
+        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, visit-calendar, customers, orders, adjust-inventory, or init-inventory' });
     }
     } catch (error) {
         // CRITICAL: Catch ALL errors and return success to prevent 500 errors

@@ -105,6 +105,18 @@ module.exports = async (req, res) => {
 
             await db.saveActivityData(activityData);
 
+            // Persistent daily unique visitors (browser sessions), Europe/Lisbon calendar day — excludes owner account
+            const ownerEmail = (auth.getOwnerEmailPublic && auth.getOwnerEmailPublic()) || auth.OWNER_EMAIL || '';
+            const emailNorm = email ? String(email).toLowerCase().trim() : '';
+            const ownerNorm = ownerEmail ? String(ownerEmail).toLowerCase().trim() : '';
+            if (!ownerNorm || emailNorm !== ownerNorm) {
+                try {
+                    await db.recordSiteDailyVisit(sessionId);
+                } catch (visitErr) {
+                    console.warn('recordSiteDailyVisit:', visitErr.message);
+                }
+            }
+
             res.status(200).json({
                 success: true,
                 message: 'Activity recorded'
