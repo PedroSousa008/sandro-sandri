@@ -14,7 +14,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -55,7 +55,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -96,7 +96,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -137,7 +137,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -178,7 +178,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -220,7 +220,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -260,7 +260,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -300,7 +300,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -340,7 +340,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
@@ -380,7 +380,7 @@ const PRODUCTS = [
             "Relaxed Fit",
             "Screen Printed",
             "Signature White",
-            "Model is 182 cm (6'0'') and wears size M",
+            "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
         sizes: ["XS", "S", "M", "L", "XL"],
