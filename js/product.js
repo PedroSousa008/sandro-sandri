@@ -275,6 +275,27 @@ function populateProduct(product) {
     }
 }
 
+function isXxlSizeSelected(size) {
+    return !!(window.ProductsAPI && window.ProductsAPI.isXxlSize(size));
+}
+
+function setQuantityVisibilityForSize(size) {
+    const quantityGroup = document.querySelector('.add-to-cart-form .quantity-selector')?.closest('.form-group');
+    if (!quantityGroup) return;
+    quantityGroup.style.display = isXxlSizeSelected(size) ? 'none' : '';
+}
+
+function applyEmailRequestButtonStyle(btn) {
+    if (!btn) return;
+    btn.textContent = 'Email Request';
+    btn.disabled = false;
+    btn.classList.remove('waitlist-btn');
+    btn.style.background = '#1a1a2e';
+    btn.style.color = '#ffffff';
+    btn.style.cursor = 'pointer';
+    btn.style.opacity = '1';
+}
+
 function initSizeSelection(product) {
     const sizeOptions = document.getElementById('size-options');
     const sizeInput = document.getElementById('selected-size-input');
@@ -323,13 +344,17 @@ function initSizeSelection(product) {
             console.error('Size input element not found!');
         }
         
+        setQuantityVisibilityForSize(size);
+
         // Check inventory and update Add to Cart button (async)
         if (window.updateAddToCartButton) {
             window.updateAddToCartButton(product.id, size);
         }
         
         // Update quantity max based on available inventory (async)
-        updateQuantityMaxAsync(product.id, size);
+        if (!isXxlSizeSelected(size)) {
+            updateQuantityMaxAsync(product.id, size);
+        }
     }
     
     // Function to update quantity max based on available inventory (async)
@@ -395,7 +420,7 @@ function initSizeSelection(product) {
         for (let index = 0; index < product.sizes.length; index++) {
             const size = product.sizes[index];
             const stockCount = product.inventory?.[size] ?? defaultStock[size] ?? 0;
-            const inStock = stockCount > 0;
+            const inStock = isXxlSizeSelected(size) || stockCount > 0;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'size-btn';
@@ -436,6 +461,7 @@ function initSizeSelection(product) {
         }
         const stockCounts = await Promise.all(
             product.sizes.map(async (size) => {
+                if (isXxlSizeSelected(size)) return -1;
                 if (window.InventoryAPI) return await window.InventoryAPI.get(product.id, size);
                 const count = product.inventory?.[size];
                 if (count !== undefined && count !== null) return count;
@@ -449,7 +475,7 @@ function initSizeSelection(product) {
                 const size = product.sizes[index];
                 if (!size) return;
                 const stockCount = stockCounts[index] || 0;
-                const inStock = stockCount > 0;
+                const inStock = isXxlSizeSelected(size) || stockCount > 0;
                 btn.textContent = inStock ? size : `${size} - Sold Out`;
                 btn.disabled = !inStock;
                 btn.classList.toggle('sold-out', !inStock);
@@ -459,8 +485,8 @@ function initSizeSelection(product) {
             // Preserve current size if still in stock; only reset to first available if current is out of stock or unset
             const currentSize = sizeInput && sizeInput.value ? sizeInput.value.trim() : '';
             const currentIndex = currentSize ? product.sizes.indexOf(currentSize) : -1;
-            const currentInStock = currentIndex >= 0 && (stockCounts[currentIndex] || 0) > 0;
-            const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
+            const currentInStock = currentIndex >= 0 && (isXxlSizeSelected(currentSize) || (stockCounts[currentIndex] || 0) > 0);
+            const firstAvailableSize = product.sizes.find((s, i) => isXxlSizeSelected(s) || stockCounts[i] > 0);
             if (sizeInput) {
                 if (currentInStock) {
                     selectSize(currentSize);
@@ -475,7 +501,7 @@ function initSizeSelection(product) {
             for (let index = 0; index < product.sizes.length; index++) {
                 const size = product.sizes[index];
                 const stockCount = stockCounts[index];
-                const inStock = stockCount > 0;
+                const inStock = isXxlSizeSelected(size) || stockCount > 0;
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'size-btn';
@@ -499,7 +525,7 @@ function initSizeSelection(product) {
                 fragment.appendChild(btn);
             }
             sizeOptions.appendChild(fragment);
-            const firstAvailableSize = product.sizes.find((_, i) => stockCounts[i] > 0);
+            const firstAvailableSize = product.sizes.find((s, i) => isXxlSizeSelected(s) || stockCounts[i] > 0);
             if (firstAvailableSize && sizeInput) {
                 sizeInput.value = firstAvailableSize;
                 selectSize(firstAvailableSize);
@@ -525,6 +551,11 @@ function initSizeSelection(product) {
             // Get the product to determine its chapter
             const product = window.ProductsAPI?.getById(productId);
             if (!product) return;
+
+            if (isXxlSizeSelected(size)) {
+                applyEmailRequestButtonStyle(addToCartBtn);
+                return;
+            }
             
             // Check if size is in stock (async)
             let inStock = false;
@@ -744,6 +775,12 @@ function waitForChapterModeAndUpdateButton(product) {
 function updateProductButtonForMode(product) {
     const submitBtn = document.querySelector('.add-to-cart-btn');
     if (!submitBtn) return;
+
+    const sizeInput = document.getElementById('selected-size-input');
+    if (sizeInput && isXxlSizeSelected(sizeInput.value)) {
+        applyEmailRequestButtonStyle(submitBtn);
+        return;
+    }
     
     // Get product's chapter ID
     // ALL products (including Chapter I) should respect the chapter mode set in Owner Mode
@@ -821,6 +858,16 @@ function initAddToCartForm(product) {
             isSubmitting = false;
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
+            return;
+        }
+
+        if (isXxlSizeSelected(size)) {
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            if (window.showXxlEmailRequestForm) {
+                window.showXxlEmailRequestForm(product);
+            }
             return;
         }
         
@@ -1751,4 +1798,111 @@ function showWaitlistEmailForm(product, size, color, quantity, addToCartAfterEma
 
 // Make function globally accessible
 window.showWaitlistEmailForm = showWaitlistEmailForm;
+
+function showXxlEmailRequestForm(product) {
+    if (!product) return;
+
+    let modal = document.getElementById('xxl-email-modal');
+    if (modal) modal.remove();
+
+    const isLoggedIn = !!(window.auth?.isLoggedIn?.() || window.AuthSystem?.isLoggedIn?.());
+    const currentUser = window.AuthSystem?.currentUser || window.auth?.currentUser;
+    const profile = JSON.parse(localStorage.getItem('sandroSandriProfile') || 'null');
+    const defaultEmail = currentUser?.email || '';
+    const defaultName = profile?.name || (defaultEmail ? defaultEmail.split('@')[0] : '');
+
+    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' :
+        product.chapter === 'chapter_ii' ? 'chapter-2' : 'chapter-1';
+    const chapterNum = parseInt(productChapter.replace('chapter-', ''), 10) || 1;
+    const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    const chapterName = `Chapter ${roman[chapterNum - 1] || chapterNum}`;
+
+    modal = document.createElement('div');
+    modal.id = 'xxl-email-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:var(--space-md);';
+    modal.innerHTML = `
+        <div class="xxl-modal-overlay" style="position:absolute;inset:0;background:rgba(0,0,0,0.5);"></div>
+        <div style="position:relative;background:#fff;max-width:420px;width:100%;padding:var(--space-xl);border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+            <button type="button" class="close-xxl-modal" style="position:absolute;top:var(--space-md);right:var(--space-md);background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--color-text-light);">&times;</button>
+            <h2 style="font-family:var(--font-serif);font-size:1.5rem;margin:0 0 var(--space-sm);color:var(--color-navy);">XXL — Email Request</h2>
+            <p style="font-family:var(--font-sans);font-size:0.875rem;color:var(--color-text-light);margin:0 0 var(--space-md);">
+                Size XXL is available on request for <strong>${product.name}</strong>. Leave your details and we will contact you.
+            </p>
+            <form id="xxl-email-form">
+                <div style="margin-bottom:var(--space-md);">
+                    <label for="xxl-name" class="form-label" style="display:block;font-size:0.875rem;margin-bottom:var(--space-xs);">Name</label>
+                    <input type="text" id="xxl-name" required maxlength="200" value="${defaultName.replace(/"/g, '&quot;')}" ${isLoggedIn && defaultName ? 'readonly' : ''} style="width:100%;padding:12px;border:1px solid var(--color-gray);border-radius:2px;font-size:1rem;">
+                </div>
+                <div style="margin-bottom:var(--space-md);">
+                    <label for="xxl-email" class="form-label" style="display:block;font-size:0.875rem;margin-bottom:var(--space-xs);">Email</label>
+                    <input type="email" id="xxl-email" required value="${defaultEmail.replace(/"/g, '&quot;')}" ${isLoggedIn && defaultEmail ? 'readonly' : ''} style="width:100%;padding:12px;border:1px solid var(--color-gray);border-radius:2px;font-size:1rem;">
+                </div>
+                <div id="xxl-error" style="display:none;padding:var(--space-sm);background:#fee;border:1px solid #fcc;color:#c00;border-radius:2px;margin-bottom:var(--space-md);font-size:0.875rem;"></div>
+                <div id="xxl-success" style="display:none;padding:var(--space-sm);background:#efe;border:1px solid #cfc;color:#0a0;border-radius:2px;margin-bottom:var(--space-md);font-size:0.875rem;"></div>
+                <button type="submit" id="xxl-submit-btn" style="width:100%;padding:18px 24px;font-family:var(--font-sans);font-size:1rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;background:var(--color-navy);color:white;border:none;border-radius:2px;cursor:pointer;">Send Request</button>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const closeModal = () => modal.remove();
+    modal.querySelector('.close-xxl-modal')?.addEventListener('click', closeModal);
+    modal.querySelector('.xxl-modal-overlay')?.addEventListener('click', closeModal);
+
+    const form = document.getElementById('xxl-email-form');
+    const nameInput = document.getElementById('xxl-name');
+    const emailInput = document.getElementById('xxl-email');
+    const errorEl = document.getElementById('xxl-error');
+    const successEl = document.getElementById('xxl-success');
+    const submitBtn = document.getElementById('xxl-submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorEl.style.display = 'none';
+        successEl.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+
+        try {
+            const response = await fetch('/api/user?action=xxl-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    customer_name: nameInput.value.trim(),
+                    customer_email: emailInput.value.trim(),
+                    product_id: product.id,
+                    product_name: product.name,
+                    product_sku: product.sku || 'N/A',
+                    chapter: chapterName,
+                    chapter_id: productChapter,
+                    page_url: window.location.href
+                })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to submit request');
+            }
+            successEl.textContent = 'Request sent! We will contact you about size XXL.';
+            successEl.style.display = 'block';
+            setTimeout(() => {
+                closeModal();
+                if (window.showNotification) {
+                    showNotification('XXL request sent successfully!', 'success');
+                }
+            }, 2000);
+        } catch (err) {
+            errorEl.textContent = err.message || 'Please try again.';
+            errorEl.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Request';
+        }
+    });
+
+    setTimeout(() => {
+        if (nameInput && !nameInput.value) nameInput.focus();
+        else emailInput.focus();
+    }, 100);
+}
+
+window.showXxlEmailRequestForm = showXxlEmailRequestForm;
 

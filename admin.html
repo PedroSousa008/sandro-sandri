@@ -441,6 +441,42 @@
         </div>
 
         <div class="admin-section">
+            <h2 class="admin-section-title">XXL Email Requests</h2>
+            <div style="margin-bottom: var(--space-md); padding: var(--space-md); background: var(--color-gray-light); border-radius: 4px;">
+                <div style="font-family: var(--font-sans); font-size: 0.875rem; color: var(--color-text); margin-bottom: var(--space-sm);">
+                    <strong>Total XXL Requests:</strong> <span id="xxl-requests-total-count" style="color: var(--color-navy); font-weight: 600;">—</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--color-text-light);">
+                    Customers who selected size XXL and submitted an email request (all models and chapters).
+                </div>
+            </div>
+            <div style="margin-bottom: var(--space-md);">
+                <button class="admin-action-btn admin-action-btn-primary" id="load-xxl-requests-btn">Load XXL Requests</button>
+                <button class="admin-action-btn admin-action-btn-secondary" id="refresh-xxl-requests-btn" style="display: none;">Refresh</button>
+            </div>
+            <div id="xxl-requests-loading" style="display: none; text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
+                Loading XXL requests...
+            </div>
+            <div id="xxl-requests-error" style="display: none; padding: var(--space-md); background: #fee; border: 1px solid #fcc; color: #c00; border-radius: 4px; margin-bottom: var(--space-md);"></div>
+            <div id="xxl-requests-table-container" style="overflow-x: auto; display: none;">
+                <table id="xxl-requests-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="background: var(--color-gray-light);">
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Date</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Name</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Email</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Model</th>
+                            <th style="padding: var(--space-sm); text-align: center; border: 1px solid var(--color-gray); font-weight: 600;">Size</th>
+                            <th style="padding: var(--space-sm); text-align: left; border: 1px solid var(--color-gray); font-weight: 600;">Chapter</th>
+                        </tr>
+                    </thead>
+                    <tbody id="xxl-requests-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
             <h2 class="admin-section-title">Orders Management</h2>
             <div style="margin-bottom: var(--space-md);">
                 <button class="admin-action-btn admin-action-btn-primary" id="load-orders-btn">Load All Orders</button>
@@ -2198,6 +2234,94 @@
         document.getElementById('apply-presential-adjustments-btn').addEventListener('click', applyPresentialAdjustments);
         loadStock();
         startStockAutoRefresh();
+
+        // XXL Email Requests
+        async function loadXxlRequests() {
+            const loadingEl = document.getElementById('xxl-requests-loading');
+            const errorEl = document.getElementById('xxl-requests-error');
+            const tableContainer = document.getElementById('xxl-requests-table-container');
+            const tbody = document.getElementById('xxl-requests-tbody');
+            const totalCountEl = document.getElementById('xxl-requests-total-count');
+            const refreshBtn = document.getElementById('refresh-xxl-requests-btn');
+
+            try {
+                loadingEl.style.display = 'block';
+                errorEl.style.display = 'none';
+                tableContainer.style.display = 'none';
+
+                const token = localStorage.getItem('sandroSandri_session_token');
+                if (!token) {
+                    throw new Error('Not authenticated. Please log in.');
+                }
+
+                const response = await fetch('/api/admin?endpoint=xxl-requests', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-Session-Token': token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Failed to load XXL requests: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load XXL requests');
+                }
+
+                const requests = data.requests || [];
+                totalCountEl.textContent = requests.length;
+                tbody.innerHTML = '';
+
+                if (requests.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: var(--space-lg); color: var(--color-text-light);">
+                                No XXL email requests yet.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    requests.forEach((entry) => {
+                        const date = new Date(entry.createdAt || Date.now());
+                        const formattedDate = date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        const row = document.createElement('tr');
+                        row.style.borderBottom = '1px solid var(--color-gray)';
+                        row.innerHTML = `
+                            <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); white-space: nowrap;">${formattedDate}</td>
+                            <td style="padding: var(--space-sm); border: 1px solid var(--color-gray);">${escapeHtml(entry.customer_name || 'N/A')}</td>
+                            <td style="padding: var(--space-sm); border: 1px solid var(--color-gray);">${escapeHtml(entry.customer_email || 'N/A')}</td>
+                            <td style="padding: var(--space-sm); border: 1px solid var(--color-gray);">${escapeHtml(entry.product_name || 'N/A')}</td>
+                            <td style="padding: var(--space-sm); border: 1px solid var(--color-gray); text-align: center;">XXL</td>
+                            <td style="padding: var(--space-sm); border: 1px solid var(--color-gray);">${escapeHtml(entry.chapter || 'N/A')}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+
+                loadingEl.style.display = 'none';
+                tableContainer.style.display = 'block';
+                refreshBtn.style.display = 'inline-block';
+            } catch (error) {
+                console.error('Error loading XXL requests:', error);
+                loadingEl.style.display = 'none';
+                errorEl.textContent = error.message || 'Failed to load XXL requests. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        document.getElementById('load-xxl-requests-btn').addEventListener('click', loadXxlRequests);
+        document.getElementById('refresh-xxl-requests-btn').addEventListener('click', loadXxlRequests);
 
         // Waitlist Information Management
         async function loadWaitlist() {

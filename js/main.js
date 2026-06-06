@@ -526,6 +526,14 @@ function createInlineSizeSelector(button, product) {
         sizeBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             e.stopPropagation();
+
+            if (window.ProductsAPI?.isXxlSize?.(size)) {
+                if (window.showXxlEmailRequestForm) {
+                    window.showXxlEmailRequestForm(product);
+                }
+                sizeSelector.remove();
+                return;
+            }
             
             // Get product's chapter ID and mode from table
             const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
@@ -732,6 +740,14 @@ function openSizeSelectionModal(product) {
     addBtn.style.opacity = '0.5';
     addBtn.addEventListener('click', () => {
         if (!selectedSize) return;
+
+        if (window.ProductsAPI?.isXxlSize?.(selectedSize)) {
+            if (window.showXxlEmailRequestForm) {
+                window.showXxlEmailRequestForm(product);
+            }
+            closeSizeSelectionModal();
+            return;
+        }
         
         if (window.cart) {
             window.cart.addItem(product.id, selectedSize, null, 1);

@@ -142,6 +142,62 @@ module.exports = async (req, res) => {
             return;
         }
 
+        // XXL SIZE EMAIL REQUEST (POST with action=xxl-request)
+        if (req.method === 'POST' && action === 'xxl-request') {
+            const {
+                customer_name,
+                customer_email,
+                product_id,
+                product_name,
+                product_sku,
+                chapter,
+                chapter_id,
+                page_url
+            } = req.body || {};
+
+            if (!customer_email || !product_id || !product_name) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Missing required fields: customer_email, product_id, product_name'
+                });
+            }
+
+            const emailValidation = validation.validateEmail(customer_email);
+            if (!emailValidation.valid) {
+                return res.status(400).json({ success: false, error: emailValidation.error });
+            }
+
+            const name = (customer_name && String(customer_name).trim()) || 'Guest';
+            if (name.length > 200) {
+                return res.status(400).json({ success: false, error: 'Name is too long' });
+            }
+
+            const productId = parseInt(product_id, 10);
+            if (!Number.isInteger(productId) || productId < 1) {
+                return res.status(400).json({ success: false, error: 'Invalid product_id' });
+            }
+
+            await db.initDb();
+
+            const entry = await db.addXxlRequest({
+                customer_name: name,
+                customer_email: emailValidation.sanitized,
+                product_id: productId,
+                product_name: String(product_name).trim().slice(0, 200),
+                product_sku: (product_sku && String(product_sku).trim()) || 'N/A',
+                size: 'XXL',
+                chapter: (chapter && String(chapter).trim()) || 'Unknown',
+                chapter_id: (chapter_id && String(chapter_id).trim()) || 'chapter-1',
+                page_url: (page_url && String(page_url).trim().slice(0, 500)) || 'Unknown'
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: 'XXL request submitted successfully',
+                entry
+            });
+        }
+
         // USER SYNC (GET and POST)
         if (action === 'sync' || !action) {
             // SECURITY: Require authentication for user sync

@@ -93,7 +93,7 @@ module.exports = async (req, res) => {
     }
     
     // SECURITY: Protect all admin endpoints (except activity POST which is public for tracking)
-    if (endpoint === 'customers' || endpoint === 'orders' || endpoint === 'adjust-inventory' || endpoint === 'visit-calendar' || (endpoint === 'activity' && req.method === 'GET')) {
+    if (endpoint === 'customers' || endpoint === 'orders' || endpoint === 'adjust-inventory' || endpoint === 'visit-calendar' || endpoint === 'xxl-requests' || (endpoint === 'activity' && req.method === 'GET')) {
         const adminCheck = auth.requireAdmin(req);
         if (!adminCheck.authorized) {
             // SECURITY: Log unauthorized access attempt
@@ -197,6 +197,27 @@ module.exports = async (req, res) => {
             });
         } catch (error) {
             errorHandler.sendSecureError(res, error, 500, 'Failed to load visit calendar.', 'VISIT_CALENDAR_ERROR');
+            return;
+        }
+    } else if (endpoint === 'xxl-requests') {
+        if (req.method !== 'GET') {
+            return res.status(405).json({ success: false, error: 'Method not allowed' });
+        }
+        try {
+            await db.initDb();
+            const requests = await db.getXxlRequests();
+            requests.sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0);
+                const dateB = new Date(b.createdAt || 0);
+                return dateB - dateA;
+            });
+            return res.status(200).json({
+                success: true,
+                requests,
+                count: requests.length
+            });
+        } catch (error) {
+            errorHandler.sendSecureError(res, error, 500, 'Failed to load XXL requests.', 'XXL_REQUESTS_ERROR');
             return;
         }
     } else if (endpoint === 'customers') {
@@ -713,7 +734,7 @@ module.exports = async (req, res) => {
             return;
         }
     } else {
-        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, visit-calendar, customers, orders, adjust-inventory, or init-inventory' });
+        return res.status(400).json({ error: 'Invalid endpoint. Use ?endpoint=activity, visit-calendar, xxl-requests, customers, orders, adjust-inventory, or init-inventory' });
     }
     } catch (error) {
         // CRITICAL: Catch ALL errors and return success to prevent 500 errors

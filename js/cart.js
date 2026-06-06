@@ -69,6 +69,13 @@ class ShoppingCart {
         const product = window.ProductsAPI.getById(productId);
         if (!product) return false;
 
+        if (window.ProductsAPI.isXxlSize && window.ProductsAPI.isXxlSize(size)) {
+            if (window.showXxlEmailRequestForm) {
+                window.showXxlEmailRequestForm(product);
+            }
+            return false;
+        }
+
         // Ensure quantity is a valid number
         quantity = parseInt(quantity) || 1;
         if (quantity < 1) quantity = 1;

@@ -2,6 +2,13 @@
    Sandro Sandri - Products Data
    ======================================== */
 
+/** Request-only size (no inventory / cart); shown on all chapters and products. */
+const XXL_SIZE = 'XXL';
+
+function isXxlSize(size) {
+    return String(size || '').trim().toUpperCase() === XXL_SIZE;
+}
+
 const PRODUCTS = [
     {
         id: 1,
@@ -17,7 +24,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -58,7 +65,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -99,7 +106,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -140,7 +147,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -181,7 +188,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -223,7 +230,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -263,7 +270,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -303,7 +310,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -343,7 +350,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -383,7 +390,7 @@ const PRODUCTS = [
             "Model is 182 cm (6'0'') and wears size L",
             "Made in Portugal"
         ],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        sizes: ["XS", "S", "M", "L", "XL", "XXL"],
         colors: [
             { name: "White", code: "#f5f4f0" }
         ],
@@ -493,7 +500,9 @@ window.ProductsAPI = {
     getFeatured: getFeaturedProducts,
     search: searchProducts,
     getCategories: getCategories,
-    formatPrice: formatPrice
+    formatPrice: formatPrice,
+    XXL_SIZE,
+    isXxlSize
 };
 
 
