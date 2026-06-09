@@ -106,16 +106,27 @@
         <!-- Collection Preview -->
         <section class="collection-preview" id="collection">
             <div class="container">
-                <div class="preview-header">
-                    <span class="chapter-label" id="collection-chapter-label">Chapter I</span>
-                </div>
-                
-                <div class="products-grid" id="homepage-products-grid">
-                    <!-- Products will be dynamically loaded based on active chapter -->
-                    <div style="text-align: center; padding: var(--space-xl); color: var(--color-text-light);">
-                        Loading products...
+                <div id="chapter-ii-preview-block" class="homepage-chapter-block" style="display: none;">
+                    <div class="preview-header">
+                        <span class="chapter-label">Chapter II</span>
+                    </div>
+                    <div class="products-grid" id="homepage-chapter-ii-grid">
+                        <div style="text-align: center; padding: var(--space-xl); color: var(--color-text-light); width: 100%;">
+                            Loading products...
+                        </div>
                     </div>
                 </div>
+                <div id="chapter-i-preview-block" class="homepage-chapter-block">
+                    <div class="preview-header">
+                        <span class="chapter-label" id="collection-chapter-label">Chapter I</span>
+                    </div>
+                    <div class="products-grid" id="homepage-chapter-i-grid">
+                        <div style="text-align: center; padding: var(--space-xl); color: var(--color-text-light); width: 100%;">
+                            Loading products...
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Story Section -->
@@ -246,229 +257,186 @@
     <script src="js/cart.js"></script>
     <script src="js/main.js"></script>
     <script>
+        function homepageCardImage(product) {
+            const imgs = product.images || [];
+            if (imgs.length > 1) return imgs[1];
+            return imgs[0] || '';
+        }
+
+        function renderHomepageProductCard(product) {
+            const imageUrl = homepageCardImage(product);
+            const isChapterII = product.chapter === 'chapter_ii' || product.id >= 6;
+            const productHref = isChapterII
+                ? `product.html?id=${product.id}&chapter=ii`
+                : `product.html?id=${product.id}`;
+            const price = window.ProductsAPI
+                ? window.ProductsAPI.formatPrice(product.price)
+                : `€${product.price}`;
+            return `
+                <article class="product-card" data-product-id="${product.id}">
+                    <a href="${productHref}" class="product-link">
+                        <div class="product-image">
+                            <img src="${imageUrl}?v=3.1" alt="${product.name}">
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">${product.name}</h3>
+                            <p class="product-price">${price}</p>
+                        </div>
+                    </a>
+                    <button class="quick-add" data-product-id="${product.id}">Add to Cart</button>
+                </article>
+            `;
+        }
+
+        function renderHomepageChapterIGrid() {
+            const chapterIProducts = window.ProductsAPI
+                ? window.ProductsAPI.getByChapter('chapter_i')
+                : [];
+            if (chapterIProducts.length > 0) {
+                return chapterIProducts.map(renderHomepageProductCard).join('');
+            }
+            return `
+                <article class="product-card" data-product-id="1">
+                    <a href="product.html?id=1" class="product-link">
+                        <div class="product-image"><img src="images/tshirt-1b.png" alt="Isole Cayman"></div>
+                        <div class="product-info"><h3 class="product-name">Isole Cayman</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="1">Add to Cart</button>
+                </article>
+                <article class="product-card" data-product-id="2">
+                    <a href="product.html?id=2" class="product-link">
+                        <div class="product-image"><img src="images/tshirt-2b.png" alt="Isola di Necker"></div>
+                        <div class="product-info"><h3 class="product-name">Isola di Necker</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="2">Add to Cart</button>
+                </article>
+                <article class="product-card" data-product-id="3">
+                    <a href="product.html?id=3" class="product-link">
+                        <div class="product-image"><img src="images/tshirt-3b.png" alt="Monroe's Kisses"></div>
+                        <div class="product-info"><h3 class="product-name">Monroe's Kisses</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="3">Add to Cart</button>
+                </article>
+                <article class="product-card" data-product-id="4">
+                    <a href="product.html?id=4" class="product-link">
+                        <div class="product-image"><img src="images/tshirt-4b.png" alt="Sardinia"></div>
+                        <div class="product-info"><h3 class="product-name">Sardinia</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="4">Add to Cart</button>
+                </article>
+                <article class="product-card" data-product-id="5">
+                    <a href="product.html?id=5" class="product-link">
+                        <div class="product-image"><img src="images/tshirt-5b.png" alt="Port-Coton"></div>
+                        <div class="product-info"><h3 class="product-name">Port-Coton</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="5">Add to Cart</button>
+                </article>
+            `;
+        }
+
+        function renderHomepageChapterIIGrid() {
+            const chapterIIProducts = window.ProductsAPI
+                ? window.ProductsAPI.getByChapter('chapter_ii')
+                : [];
+            if (chapterIIProducts.length > 0) {
+                return chapterIIProducts.slice(0, 5).map(renderHomepageProductCard).join('');
+            }
+            return `
+                <article class="product-card" data-product-id="6">
+                    <a href="product.html?id=6&chapter=ii" class="product-link">
+                        <div class="product-image"><img src="images/maldives3.png?v=1" alt="Maldives"></div>
+                        <div class="product-info"><h3 class="product-name">Maldives</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="6">Add to Cart</button>
+                </article>
+                <article class="product-card" data-product-id="7">
+                    <a href="product.html?id=7&chapter=ii" class="product-link">
+                        <div class="product-image"><img src="images/palma3.png?v=1" alt="Palma Mallorca"></div>
+                        <div class="product-info"><h3 class="product-name">Palma Mallorca</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="7">Add to Cart</button>
+                </article>
+                <article class="product-card" data-product-id="8">
+                    <a href="product.html?id=8&chapter=ii" class="product-link">
+                        <div class="product-image"><img src="images/lago3.png?v=1" alt="Lago di Como"></div>
+                        <div class="product-info"><h3 class="product-name">Lago di Como</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="8">Add to Cart</button>
+                </article>
+                <article class="product-card" data-product-id="9">
+                    <a href="product.html?id=9&chapter=ii" class="product-link">
+                        <div class="product-image"><img src="images/gisele3.png?v=1" alt="Gisele"></div>
+                        <div class="product-info"><h3 class="product-name">Gisele</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="9">Add to Cart</button>
+                </article>
+                <article class="product-card" data-product-id="10">
+                    <a href="product.html?id=10&chapter=ii" class="product-link">
+                        <div class="product-image"><img src="images/pourville3.png?v=1" alt="Pourville"></div>
+                        <div class="product-info"><h3 class="product-name">Pourville</h3><p class="product-price">€55</p></div>
+                    </a>
+                    <button class="quick-add" data-product-id="10">Add to Cart</button>
+                </article>
+            `;
+        }
+
+        function applyHomepageQuickAddLabels(root) {
+            if (!root || !window.ChapterMode || !window.ChapterMode.isInitialized || !window.ProductsAPI) return;
+            root.querySelectorAll('.quick-add').forEach(btn => {
+                const productId = parseInt(btn.dataset.productId, 10);
+                if (!productId) return;
+                const product = window.ProductsAPI.getById(productId);
+                if (!product) return;
+                const productChapter = product.chapter === 'chapter_i' ? 'chapter-1'
+                    : product.chapter === 'chapter_ii' ? 'chapter-2' : null;
+                const isCreated = productChapter && window.ChapterMode.isChapterCreated(productChapter);
+                const chapterMode = productChapter ? window.ChapterMode.getChapterMode(productChapter) : null;
+                if (isCreated && chapterMode === 'waitlist') {
+                    btn.textContent = 'Join the Waitlist';
+                    btn.classList.add('waitlist-btn');
+                } else if (isCreated && chapterMode === 'early_access') {
+                    btn.textContent = 'Early Access';
+                    btn.classList.remove('waitlist-btn');
+                } else {
+                    btn.textContent = 'Add to Cart';
+                    btn.classList.remove('waitlist-btn');
+                }
+            });
+        }
+
         // Update homepage based on active chapter
         async function updateHomepageForChapter() {
-            const chapter = window.ActiveChapter.getChapter();
             const isChapterII = window.ActiveChapter.isChapterII();
             const chapterLabel = window.ActiveChapter.getChapterLabel();
-            
-            // Update chapter labels
+
             const heroLabel = document.getElementById('hero-chapter-label');
             const collectionLabel = document.getElementById('collection-chapter-label');
+            const chapterIIBlock = document.getElementById('chapter-ii-preview-block');
+            const chapterIBlock = document.getElementById('chapter-i-preview-block');
+            const chapterIIGrid = document.getElementById('homepage-chapter-ii-grid');
+            const chapterIGrid = document.getElementById('homepage-chapter-i-grid');
+
             if (heroLabel) heroLabel.textContent = chapterLabel;
-            if (collectionLabel) collectionLabel.textContent = chapterLabel;
-            
-            // Update page title
+            if (collectionLabel) collectionLabel.textContent = 'Chapter I';
             document.title = `Sandro Sandri | ${chapterLabel}`;
-            
-            // Load products based on chapter
-            const productsGrid = document.getElementById('homepage-products-grid');
-            if (!productsGrid) return;
-            
+
+            if (!chapterIIGrid || !chapterIGrid) return;
+
             if (isChapterII) {
-                // Chapter II products (IDs 6-10) - Use ProductsAPI to get correct data
-                const chapterIIProducts = window.ProductsAPI ? window.ProductsAPI.getByChapter('chapter_ii') : [];
-                console.log('Chapter II Products from API:', chapterIIProducts);
-                if (chapterIIProducts.length > 0) {
-                    // Use ProductsAPI data to ensure correct images and names
-                    productsGrid.innerHTML = chapterIIProducts.slice(0, 5).map(product => {
-                        const imageUrl = product.images && product.images.length > 1 ? product.images[1] : product.images[0];
-                        console.log(`Product ${product.id} (${product.name}): Using image:`, imageUrl);
-                        return `
-                        <article class="product-card" data-product-id="${product.id}">
-                            <a href="product.html?id=${product.id}&chapter=ii" class="product-link">
-                                <div class="product-image">
-                                    <img src="${imageUrl}?v=3.1" alt="${product.name}" onerror="console.error('Failed to load:', '${imageUrl}');">
-                                </div>
-                                <div class="product-info">
-                                    <h3 class="product-name">${product.name}</h3>
-                                    <p class="product-price">${window.ProductsAPI.formatPrice(product.price)}</p>
-                                </div>
-                            </a>
-                            <button class="quick-add" data-product-id="${product.id}">Add to Cart</button>
-                        </article>
-                    `;
-                    }).join('');
-                } else {
-                     // Fallback: hardcoded Chapter II products
-                     productsGrid.innerHTML = `
-                         <article class="product-card" data-product-id="6">
-                             <a href="product.html?id=6&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/maldives3.png?v=1" alt="Maldives" onerror="console.error('Failed to load maldives3.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Maldives</h3>
-                                     <p class="product-price">€55</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="6">Add to Cart</button>
-                         </article>
-                         <article class="product-card" data-product-id="7">
-                             <a href="product.html?id=7&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/palma3.png?v=1" alt="Palma Mallorca" onerror="console.error('Failed to load palma3.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Palma Mallorca</h3>
-                                     <p class="product-price">€55</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="7">Add to Cart</button>
-                         </article>
-                         <article class="product-card" data-product-id="8">
-                             <a href="product.html?id=8&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/lago3.png?v=1" alt="Lago di Como" onerror="console.error('Failed to load lago3.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Lago di Como</h3>
-                                     <p class="product-price">€55</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="8">Add to Cart</button>
-                         </article>
-                         <article class="product-card" data-product-id="9">
-                             <a href="product.html?id=9&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/gisele3.png?v=1" alt="Gisele" onerror="console.error('Failed to load gisele3.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Gisele</h3>
-                                     <p class="product-price">€55</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="9">Add to Cart</button>
-                         </article>
-                         <article class="product-card" data-product-id="10">
-                             <a href="product.html?id=10&chapter=ii" class="product-link">
-                                 <div class="product-image">
-                                     <img src="images/pourville3.png?v=1" alt="Pourville" onerror="console.error('Failed to load pourville3.png');">
-                                 </div>
-                                 <div class="product-info">
-                                     <h3 class="product-name">Pourville</h3>
-                                     <p class="product-price">€55</p>
-                                 </div>
-                             </a>
-                             <button class="quick-add" data-product-id="10">Add to Cart</button>
-                         </article>
-                     `;
-                }
-                
-                // Update button text based on each product's chapter mode (for Chapter II)
-                if (window.ChapterMode && window.ChapterMode.isInitialized) {
-                    productsGrid.querySelectorAll('.quick-add').forEach(btn => {
-                        const productId = parseInt(btn.dataset.productId);
-                        if (!productId || !window.ProductsAPI) return;
-                        
-                        const product = window.ProductsAPI.getById(productId);
-                        if (!product) return;
-                        
-                        const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                             product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-                        const isCreated = productChapter && window.ChapterMode.isChapterCreated(productChapter);
-                        const chapterMode = productChapter ? window.ChapterMode.getChapterMode(productChapter) : null;
-                        
-                        if (isCreated && chapterMode === 'waitlist') {
-                            btn.textContent = 'Join the Waitlist';
-                            btn.classList.add('waitlist-btn');
-                        } else {
-                            btn.textContent = 'Add to Cart';
-                            btn.classList.remove('waitlist-btn');
-                        }
-                    });
-                }
+                if (chapterIIBlock) chapterIIBlock.style.display = '';
+                if (chapterIBlock) chapterIBlock.style.display = '';
+                chapterIIGrid.innerHTML = renderHomepageChapterIIGrid();
+                chapterIGrid.innerHTML = renderHomepageChapterIGrid();
             } else {
-                // Chapter I products (IDs 1-5)
-                productsGrid.innerHTML = `
-                    <article class="product-card" data-product-id="1">
-                        <a href="product.html?id=1" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-1b.png" alt="Isole Cayman">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Isole Cayman</h3>
-                                <p class="product-price">€55</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="1">Add to Cart</button>
-                    </article>
-                    <article class="product-card" data-product-id="2">
-                        <a href="product.html?id=2" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-2b.png" alt="Isola di Necker">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Isola di Necker</h3>
-                                <p class="product-price">€55</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="2">Add to Cart</button>
-                    </article>
-                    <article class="product-card" data-product-id="3">
-                        <a href="product.html?id=3" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-3b.png" alt="Monroe's Kisses">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Monroe's Kisses</h3>
-                                <p class="product-price">€55</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="3">Add to Cart</button>
-                    </article>
-                    <article class="product-card" data-product-id="4">
-                        <a href="product.html?id=4" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-4b.png" alt="Sardinia">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Sardinia</h3>
-                                <p class="product-price">€55</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="4">Add to Cart</button>
-                    </article>
-                    <article class="product-card" data-product-id="5">
-                        <a href="product.html?id=5" class="product-link">
-                            <div class="product-image">
-                                <img src="images/tshirt-5b.png" alt="Port-Coton">
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">Port-Coton</h3>
-                                <p class="product-price">€55</p>
-                            </div>
-                        </a>
-                        <button class="quick-add" data-product-id="5">Add to Cart</button>
-                    </article>
-                `;
+                if (chapterIIBlock) chapterIIBlock.style.display = 'none';
+                if (chapterIBlock) chapterIBlock.style.display = '';
+                chapterIGrid.innerHTML = renderHomepageChapterIGrid();
             }
-            
-            // Update button text based on each product's chapter mode
-            if (window.ChapterMode && window.ChapterMode.isInitialized) {
-                productsGrid.querySelectorAll('.quick-add').forEach(btn => {
-                    const productId = parseInt(btn.dataset.productId);
-                    if (!productId || !window.ProductsAPI) return;
-                    
-                    const product = window.ProductsAPI.getById(productId);
-                    if (!product) return;
-                    
-                    const productChapter = product.chapter === 'chapter_i' ? 'chapter-1' : 
-                                         product.chapter === 'chapter_ii' ? 'chapter-2' : null;
-                    const isCreated = productChapter && window.ChapterMode.isChapterCreated(productChapter);
-                    const chapterMode = productChapter ? window.ChapterMode.getChapterMode(productChapter) : null;
-                    
-                    if (isCreated && chapterMode === 'waitlist') {
-                        btn.textContent = 'Join the Waitlist';
-                        btn.classList.add('waitlist-btn');
-                    } else {
-                        btn.textContent = 'Add to Cart';
-                        btn.classList.remove('waitlist-btn');
-                    }
-                });
+
+            const collectionSection = document.getElementById('collection');
+            if (collectionSection) {
+                applyHomepageQuickAddLabels(collectionSection);
             }
-            
-            // Re-initialize quick-add buttons after updating products
             if (window.initQuickAddButtons) {
                 window.initQuickAddButtons();
             }
