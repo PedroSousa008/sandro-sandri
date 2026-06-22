@@ -238,7 +238,8 @@ const PRODUCTS = [
             "images/maldives1.png",
             "images/maldives2.png",
             "images/maldives3.png",
-            "images/maldives4.png"
+            "images/maldives4.png",
+            "images/maldives5.png"
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
@@ -278,7 +279,8 @@ const PRODUCTS = [
             "images/palma1.png",
             "images/palma2.png",
             "images/palma3.png",
-            "images/palma4.png"
+            "images/palma4.png",
+            "images/palma5.png"
         ],
         collection: {
             title: "Voglia di Viaggiare Signature",
@@ -318,7 +320,8 @@ const PRODUCTS = [
             "images/lago1.png",
             "images/lago2.png",
             "images/lago3.png",
-            "images/lago4.png"
+            "images/lago4.png",
+            "images/lago5.png"
         ],
         collection: {
             title: "L'Italia per un viaggio indimenticabile Signature",
@@ -358,7 +361,8 @@ const PRODUCTS = [
             "images/gisele1.png",
             "images/gisele2.png",
             "images/gisele3.png",
-            "images/gisele4.png"
+            "images/gisele4.png",
+            "images/gisele5.png"
         ],
         collection: {
             title: "Connoisseur Signature",
@@ -398,7 +402,8 @@ const PRODUCTS = [
             "images/pourville1.png",
             "images/pourville2.png",
             "images/pourville3.png",
-            "images/pourville4.png"
+            "images/pourville4.png",
+            "images/pourville5.png"
         ],
         collection: {
             title: "Rinascimento Couture Signature",
